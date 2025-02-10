@@ -9,7 +9,7 @@ type UnraidSystem struct {
 type UnraidArray struct {
 	Disks         map[string]*UnraidDisk
 	Status        string
-	TurboMode     bool
+	TurboSetting  string
 	ParityRunning bool
 }
 

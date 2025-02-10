@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -55,4 +57,58 @@ func parseInt(value string) int {
 		return -1
 	}
 	return intValue
+}
+
+func parseStateFile(filename string) (map[string]map[string]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data := make(map[string]map[string]string)
+
+	currentSection := "global"
+	data[currentSection] = make(map[string]string)
+
+	scanner := bufio.NewScanner(file)
+	lineNumber := 0
+
+	for scanner.Scan() {
+		lineNumber++
+		line := strings.TrimSpace(scanner.Text())
+
+		if line == "" {
+			continue
+		}
+
+		if strings.HasPrefix(line, `["`) && strings.HasSuffix(line, `"]`) {
+			currentSection = line[2 : len(line)-2]
+			if _, exists := data[currentSection]; !exists {
+				data[currentSection] = make(map[string]string)
+			}
+			continue
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			fmt.Printf("Warning: Invalid format on line %d: %s\n", lineNumber, line)
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
+			value = value[1 : len(value)-1]
+		}
+
+		data[currentSection][key] = value
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

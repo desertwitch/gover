@@ -152,10 +152,51 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 }
 
 // establishArray returns a pointer to an established Unraid array
-// func establishArray(disks *[]UnraidDisk) (*UnraidArray, error) {
+func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
+	stateFile := "/var/local/emhttp/var.ini"
 
-// }
+	configMap, err := godotenv.Read(stateFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load disk state file %s: %v", stateFile, err)
+	}
 
-// func establishSystem() (*UnraidSystem, error) {
+	array := &UnraidArray{
+		Disks:         disks,
+		Status:        getConfigValue(configMap, "mdState"),
+		TurboSetting:  getConfigValue(configMap, "md_write_method"),
+		ParityRunning: parseInt(getConfigValue(configMap, "mdResyncPos")) > 0,
+	}
 
-// }
+	return array, nil
+}
+
+// establishSystem returns a pointer to an established Unraid system
+func establishSystem() (*UnraidSystem, error) {
+	disks, err := establishDisks()
+	if err != nil {
+		return nil, fmt.Errorf("failed establishing disks: %v", err)
+	}
+
+	pools, err := establishPools()
+	if err != nil {
+		return nil, fmt.Errorf("failed establishing pools: %v", err)
+	}
+
+	shares, err := establishShares(disks, pools)
+	if err != nil {
+		return nil, fmt.Errorf("failed establishing shares: %v", err)
+	}
+
+	array, err := establishArray(disks)
+	if err != nil {
+		return nil, fmt.Errorf("failed establishing array: %v", err)
+	}
+
+	system := &UnraidSystem{
+		Array:  array,
+		Pools:  pools,
+		Shares: shares,
+	}
+
+	return system, nil
+}
