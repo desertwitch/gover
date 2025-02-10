@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// establishDisks returns a slice of pointers to established Unraid disks
+// establishDisks returns a map of pointers to established Unraid disks
 func establishDisks() (map[string]*UnraidDisk, error) {
 	basePath := "/mnt/"
 	diskPattern := regexp.MustCompile(`^disk[1-9][0-9]?$`)
@@ -36,7 +36,7 @@ func establishDisks() (map[string]*UnraidDisk, error) {
 	return disks, nil
 }
 
-// establishPools returns a slice of pointers to established Unraid pools
+// establishPools returns a map of pointers to established Unraid pools
 func establishPools() (map[string]*UnraidPool, error) {
 	basePath := "/boot/config/pools"
 
@@ -75,7 +75,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 	return pools, nil
 }
 
-// establishShares returns a slice of pointers to established Unraid shares
+// establishShares returns a map of pointers to established Unraid shares
 func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := "/boot/config/shares"
 
