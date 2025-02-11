@@ -80,12 +80,12 @@ type UnraidShare struct {
 }
 
 type Moveable struct {
-	Share             *UnraidShare
-	Source            UnraidStoreable
-	SourceFSPath      string
-	Destination       UnraidStoreable
-	DestinationFSPath string
-	MD5               string
-	Processed         bool
-	Success           bool
+	Share      *UnraidShare
+	Inode      uint64
+	Size       int64
+	Path       string
+	Source     UnraidStoreable
+	Dest       UnraidStoreable
+	Hardlink   bool
+	HardlinkTo *Moveable
 }

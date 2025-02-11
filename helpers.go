@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// getConfigValue returns an element of a string map or "" if not existing
+// getConfigValue returns an string element of a string map or "" if not existing
 func getConfigValue(envMap map[string]string, key string) string {
 	if value, exists := envMap[key]; exists {
 		return value
@@ -16,7 +16,7 @@ func getConfigValue(envMap map[string]string, key string) string {
 	return ""
 }
 
-// findPool dereferences a textual pool name into an established pool pointer
+// findPool dereferences a textual pool name into a pool pointer
 func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error) {
 	if poolName == "" {
 		return nil, nil
@@ -27,7 +27,7 @@ func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error
 	return nil, fmt.Errorf("configured pool %s not found in mounted pools", poolName)
 }
 
-// findDisks dereferences a list of textual disk names into a map of established disk pointers
+// findDisks dereferences a list of textual disk names into a map of disk pointers
 func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*UnraidDisk, error) {
 	if diskNames == "" {
 		return nil, nil
