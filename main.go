@@ -56,7 +56,7 @@ func main() {
 
 	for _, moveable := range moveables {
 		fmt.Println("-------------------------------------------")
-		fmt.Printf("[C] %s (I:%d/S:%d)\n", moveable.Path, moveable.Inode, moveable.Size)
+		fmt.Printf("[C] %s (I:%d/S:%d) [%v] [%v]\n", moveable.Path, moveable.Metadata.Inode, moveable.Metadata.Size, moveable.Metadata, moveable.ParentDirs)
 
 		if moveable.Share.SplitLevel >= 0 {
 			d, err := allocateDisksBySplitLevel(moveable, moveable.Share.SplitLevel)

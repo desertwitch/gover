@@ -1,5 +1,10 @@
 package main
 
+import (
+	"os"
+	"syscall"
+)
+
 type UnraidSystem struct {
 	Array  *UnraidArray
 	Pools  map[string]*UnraidPool
@@ -81,11 +86,21 @@ type UnraidShare struct {
 
 type Moveable struct {
 	Share      *UnraidShare
-	Inode      uint64
-	Size       int64
 	Path       string
 	Source     UnraidStoreable
 	Dest       UnraidStoreable
 	Hardlink   bool
 	HardlinkTo *Moveable
+	Metadata   *Metadata
+	ParentDirs map[string]*Metadata
+}
+
+type Metadata struct {
+	Inode       uint64
+	Permissions os.FileMode
+	UID         uint32
+	GID         uint32
+	CreatedAt   syscall.Timespec
+	ModifiedAt  syscall.Timespec
+	Size        int64
 }
