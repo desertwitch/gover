@@ -11,6 +11,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 	var moveables []*Moveable
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
+	inodes := make(map[uint64]*Moveable)
 
 	err := filepath.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -50,9 +51,17 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		}
 		m.Metadata = metadata
 
+		// TO-DO SYMLINKS
+		if value, exists := inodes[metadata.Inode]; exists {
+			m.Hardlink = true
+			m.HardlinkTo = value
+		} else {
+			inodes[metadata.Inode] = m
+		}
+
 		parents, err := walkParentDirs(m, shareDir)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get metadata for %s: %v", m.Path, err)
+			return nil, fmt.Errorf("failed to get parents for %s: %v", m.Path, err)
 		}
 		m.ParentDirs = parents
 	}
