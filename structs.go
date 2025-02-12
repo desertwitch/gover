@@ -103,4 +103,5 @@ type Metadata struct {
 	CreatedAt   syscall.Timespec
 	ModifiedAt  syscall.Timespec
 	Size        int64
+	IsDir       bool
 }

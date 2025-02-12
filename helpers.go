@@ -131,6 +131,7 @@ func getMetadata(path string) (*Metadata, error) {
 		CreatedAt:   stat.Ctim,
 		ModifiedAt:  stat.Mtim,
 		Size:        stat.Size,
+		IsDir:       info.Mode().IsDir(),
 	}
 
 	return metadata, nil
@@ -157,4 +158,12 @@ func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) 
 	}
 
 	return parentDirs, nil
+}
+
+func isEmptyFolder(path string) (bool, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	return len(entries) == 0, nil
 }

@@ -17,7 +17,17 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 			fmt.Println("Error accessing path:", path, err)
 			return nil
 		}
-		if !d.IsDir() {
+
+		isEmptyDir := false
+		if d.IsDir() {
+			isEmptyDir, err = isEmptyFolder(path)
+			if err != nil {
+				fmt.Println("Error checking for folder emptiness:", path, err)
+				return nil
+			}
+		}
+
+		if !d.IsDir() || (d.IsDir() && isEmptyDir) {
 			moveable := &Moveable{
 				Share:  share,
 				Path:   path,
@@ -26,6 +36,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 
 			moveables = append(moveables, moveable)
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -81,7 +92,9 @@ func allocateDisksBySplitLevel(m *Moveable, maxLevel int) ([]*UnraidDisk, error)
 					continue
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
+				fmt.Printf("Probe [%s]: %s\n", name, dirToCheck)
 				if _, err := os.Stat(dirToCheck); err == nil {
+					fmt.Printf("Found disk: %s\n", name)
 					foundDisks = append(foundDisks, disk)
 					found = true
 				}
