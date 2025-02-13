@@ -85,14 +85,17 @@ type UnraidShare struct {
 }
 
 type Moveable struct {
-	Share      *UnraidShare
-	Path       string
-	Source     UnraidStoreable
-	Dest       UnraidStoreable
-	Hardlink   bool
-	HardlinkTo *Moveable
-	Metadata   *Metadata
-	ParentDirs map[string]*Metadata
+	Share         *UnraidShare
+	Path          string
+	Source        UnraidStoreable
+	Dest          UnraidStoreable
+	Hardlink      bool
+	HardlinkTo    *Moveable
+	Symlink       bool
+	SymlinkTo     *Moveable
+	Metadata      *Metadata
+	ParentDirs    map[string]*Metadata
+	InternalLinks []*Moveable
 }
 
 type Metadata struct {
@@ -104,4 +107,6 @@ type Metadata struct {
 	ModifiedAt  syscall.Timespec
 	Size        int64
 	IsDir       bool
+	IsSymlink   bool
+	SymlinkTo   string
 }

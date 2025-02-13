@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 )
 
 func main() {
 	system, err := establishSystem()
 	if err != nil {
-		fmt.Printf("Error: %+v", err)
+		slog.Error("failed to establish unraid system", "err", err)
 	}
 
 	shares := system.Shares
@@ -22,7 +22,7 @@ func main() {
 		}
 		files, err := getMoveables(share.CachePool, share)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			slog.Error("failed to get moveables", "share", share.Name, "pool", share.CachePool.Name, "err", err)
 			continue
 		}
 		moveables = append(moveables, files...)
@@ -38,7 +38,7 @@ func main() {
 			for _, disk := range disks {
 				files, err := getMoveables(disk, share)
 				if err != nil {
-					fmt.Printf("Error: %v\n", err)
+					slog.Error("failed to get moveables", "share", share.Name, "disk", disk.Name, "err", err)
 					continue
 				}
 				moveables = append(moveables, files...)
@@ -47,7 +47,7 @@ func main() {
 			// Cache2 to Cache
 			files, err := getMoveables(share.CachePool2, share)
 			if err != nil {
-				fmt.Printf("Error: %v", err)
+				slog.Error("failed to get moveables", "share", share.Name, "pool", share.CachePool2.Name, "err", err)
 				continue
 			}
 			moveables = append(moveables, files...)
@@ -55,15 +55,16 @@ func main() {
 	}
 
 	for _, moveable := range moveables {
-		fmt.Println("-------------------------------------------")
-		fmt.Printf("[C] %s (I:%d/S:%d) [%v] [%v]\n", moveable.Path, moveable.Metadata.Inode, moveable.Metadata.Size, moveable.Metadata, moveable.ParentDirs)
-
 		if moveable.Share.SplitLevel >= 0 {
-			d, err := allocateDisksBySplitLevel(moveable, moveable.Share.SplitLevel)
+			_, err := allocateDisksBySplitLevel(moveable, moveable.Share.SplitLevel)
 			if err != nil {
-				fmt.Printf("Error: %v\n", err)
+				slog.Error("failed to allocate disk by split level",
+					"share", moveable.Share.Name,
+					"splitlevel", moveable.Share.SplitLevel,
+					"path", moveable.Path,
+					"err", err,
+				)
 			}
-			fmt.Printf("%v", d)
 		}
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +13,10 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 	var moveables []*Moveable
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
-	inodes := make(map[uint64]*Moveable)
 
 	err := filepath.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			fmt.Println("Error accessing path:", path, err)
+			slog.Error("getMoveables: error accessing path", "share", share.Name, "path", path, "err", err)
 			return nil
 		}
 
@@ -24,7 +24,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		if d.IsDir() {
 			isEmptyDir, err = isEmptyFolder(path)
 			if err != nil {
-				fmt.Println("Error checking for folder emptiness:", path, err)
+				slog.Error("getMoveables: error checking folder emptiness", "share", share.Name, "path", path, "err", err)
 				return nil
 			}
 		}
@@ -42,38 +42,76 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		return nil
 	})
 	if err != nil {
+		slog.Error("getMoveables: error walking directory", "share", share.Name, "err", err)
 		return nil, fmt.Errorf("error walking directory: %w", err)
 	}
 
 	for _, m := range moveables {
 		metadata, err := getMetadata(m.Path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get metadata for %s: %v", m.Path, err)
+			slog.Error("getMoveables: failed to get metadata", "share", m.Share.Name, "path", m.Path, "err", err)
+			return nil, fmt.Errorf("failed to get metadata for %s: %w", m.Path, err)
 		}
 		m.Metadata = metadata
 
-		// TO-DO SYMLINKS
-		if value, exists := inodes[metadata.Inode]; exists {
-			m.Hardlink = true
-			m.HardlinkTo = value
-		} else {
-			inodes[metadata.Inode] = m
-		}
-
 		parents, err := walkParentDirs(m, shareDir)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get parents for %s: %v", m.Path, err)
+			slog.Error("getMoveables: failed to get parents", "share", share.Name, "path", m.Path, "err", err)
+			return nil, fmt.Errorf("failed to get parents for %s: %w", m.Path, err)
 		}
 		m.ParentDirs = parents
 	}
 
+	establishSymlinks(moveables)
+	establishHardlinks(moveables)
+
+	moveables = removeInternalLinks(moveables)
+
 	return moveables, nil
 }
 
+func establishSymlinks(moveables []*Moveable) {
+	realFiles := make(map[string]*Moveable)
+
+	for _, m := range moveables {
+		if !m.Hardlink && !m.Metadata.IsSymlink {
+			realFiles[m.Path] = m
+		}
+	}
+
+	for _, m := range moveables {
+		if m.Metadata.IsSymlink {
+			if target, exists := realFiles[m.Metadata.SymlinkTo]; exists {
+				m.Symlink = true
+				m.SymlinkTo = target
+
+				target.InternalLinks = append(target.InternalLinks, m)
+				slog.Debug("establishSymlinks: found internal symlink", "from", m, "to", target)
+			}
+		}
+	}
+}
+
+func establishHardlinks(moveables []*Moveable) {
+	inodes := make(map[uint64]*Moveable)
+	for _, m := range moveables {
+		if target, exists := inodes[m.Metadata.Inode]; exists {
+			m.Hardlink = true
+			m.HardlinkTo = target
+
+			target.InternalLinks = append(target.InternalLinks, m)
+			slog.Debug("establishHardlinks: found internal hardlink", "from", m, "to", target)
+		} else {
+			inodes[m.Metadata.Inode] = m
+		}
+	}
+}
+
 func getMetadata(path string) (*Metadata, error) {
-	info, err := os.Stat(path)
+	info, err := os.Lstat(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to stat %s: %v", path, err)
+		slog.Error("getMetadata: failed to lstat", "path", path, "err", err)
+		return nil, fmt.Errorf("failed to lstat %s: %w", path, err)
 	}
 
 	stat := info.Sys().(*syscall.Stat_t)
@@ -87,6 +125,17 @@ func getMetadata(path string) (*Metadata, error) {
 		ModifiedAt:  stat.Mtim,
 		Size:        stat.Size,
 		IsDir:       info.Mode().IsDir(),
+		IsSymlink:   info.Mode()&os.ModeSymlink != 0,
+	}
+
+	if metadata.IsSymlink {
+		target, err := os.Readlink(path)
+		if err != nil {
+			slog.Error("getMetadata: failed to read symlink target", "path", path, "err", err)
+			return nil, fmt.Errorf("failed to read symlink target for %s: %w", path, err)
+		}
+		metadata.SymlinkTo = target
+		slog.Debug("getMetadata: found fs symlink", "from", path, "to", target)
 	}
 
 	return metadata, nil
@@ -102,7 +151,8 @@ func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) 
 		if strings.HasPrefix(path, basePath) && path != basePath {
 			metadata, err := getMetadata(path)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get metadata for %s: %v", path, err)
+				slog.Error("walkParentDirs: failed to get metadata", "path", path, "err", err)
+				return nil, fmt.Errorf("failed to get metadata for %s: %w", path, err)
 			}
 			parentDirs[path] = metadata
 		} else {
@@ -116,6 +166,7 @@ func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) 
 func isEmptyFolder(path string) (bool, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
+		slog.Error("isEmptyFolder: failed to read folder", "path", path, "err", err)
 		return false, err
 	}
 	return len(entries) == 0, nil

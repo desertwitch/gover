@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -24,6 +23,7 @@ func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error
 	if pool, exists := pools[poolName]; exists {
 		return pool, nil
 	}
+	slog.Error("findPool: configured pool not found in mounted pools", "pool", poolName)
 	return nil, fmt.Errorf("configured pool %s not found in mounted pools", poolName)
 }
 
@@ -40,6 +40,7 @@ func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*Unra
 		if disk, exists := disks[name]; exists {
 			foundDisks[name] = disk
 		} else {
+			slog.Error("findDisks: configured disk not found in mounted disk", "disk", name)
 			return nil, fmt.Errorf("configured disk %s not found in mounted disks", name)
 		}
 	}
@@ -59,56 +60,15 @@ func parseInt(value string) int {
 	return intValue
 }
 
-func parseStateFile(filename string) (map[string]map[string]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+// removeInternalLinks removes symbolic and hardlink moveable pointers from a slice of moveable pointers
+func removeInternalLinks(moveables []*Moveable) []*Moveable {
+	var ms []*Moveable
 
-	data := make(map[string]map[string]string)
-
-	currentSection := "global"
-	data[currentSection] = make(map[string]string)
-
-	scanner := bufio.NewScanner(file)
-	lineNumber := 0
-
-	for scanner.Scan() {
-		lineNumber++
-		line := strings.TrimSpace(scanner.Text())
-
-		if line == "" {
-			continue
+	for _, m := range moveables {
+		if !m.Symlink && !m.Hardlink {
+			ms = append(ms, m)
 		}
-
-		if strings.HasPrefix(line, `["`) && strings.HasSuffix(line, `"]`) {
-			currentSection = line[2 : len(line)-2]
-			if _, exists := data[currentSection]; !exists {
-				data[currentSection] = make(map[string]string)
-			}
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			fmt.Printf("Warning: Invalid format on line %d: %s\n", lineNumber, line)
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
-			value = value[1 : len(value)-1]
-		}
-
-		data[currentSection][key] = value
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return ms
 }
