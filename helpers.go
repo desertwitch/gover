@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -23,7 +22,6 @@ func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error
 	if pool, exists := pools[poolName]; exists {
 		return pool, nil
 	}
-	slog.Error("findPool: configured pool not found in mounted pools")
 	return nil, fmt.Errorf("configured pool %s not found in mounted pools", poolName)
 }
 
@@ -40,7 +38,6 @@ func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*Unra
 		if disk, exists := disks[name]; exists {
 			foundDisks[name] = disk
 		} else {
-			slog.Error("findDisks: configured disk not found in mounted disk")
 			return nil, fmt.Errorf("configured disk %s not found in mounted disks", name)
 		}
 	}
