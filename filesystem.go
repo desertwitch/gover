@@ -16,7 +16,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 
 	err := filepath.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			slog.Error("getMoveables: error accessing path", "share", share.Name, "path", path, "err", err)
+			slog.Error("getMoveables: error accessing path")
 			return nil
 		}
 
@@ -24,7 +24,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		if d.IsDir() {
 			isEmptyDir, err = isEmptyFolder(path)
 			if err != nil {
-				slog.Error("getMoveables: error checking folder emptiness", "share", share.Name, "path", path, "err", err)
+				slog.Error("getMoveables: error checking folder emptiness")
 				return nil
 			}
 		}
@@ -42,21 +42,21 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		return nil
 	})
 	if err != nil {
-		slog.Error("getMoveables: error walking directory", "share", share.Name, "err", err)
+		slog.Error("getMoveables: error walking directory")
 		return nil, fmt.Errorf("error walking directory: %w", err)
 	}
 
 	for _, m := range moveables {
 		metadata, err := getMetadata(m.Path)
 		if err != nil {
-			slog.Error("getMoveables: failed to get metadata", "share", m.Share.Name, "path", m.Path, "err", err)
+			slog.Error("getMoveables: failed to get metadata")
 			return nil, fmt.Errorf("failed to get metadata for %s: %w", m.Path, err)
 		}
 		m.Metadata = metadata
 
 		parents, err := walkParentDirs(m, shareDir)
 		if err != nil {
-			slog.Error("getMoveables: failed to get parents", "share", share.Name, "path", m.Path, "err", err)
+			slog.Error("getMoveables: failed to get parents")
 			return nil, fmt.Errorf("failed to get parents for %s: %w", m.Path, err)
 		}
 		m.ParentDirs = parents
@@ -86,7 +86,7 @@ func establishSymlinks(moveables []*Moveable) {
 				m.SymlinkTo = target
 
 				target.InternalLinks = append(target.InternalLinks, m)
-				slog.Debug("establishSymlinks: found internal symlink", "from", m, "to", target)
+				slog.Debug("establishSymlinks: found internal symlink")
 			}
 		}
 	}
@@ -100,7 +100,7 @@ func establishHardlinks(moveables []*Moveable) {
 			m.HardlinkTo = target
 
 			target.InternalLinks = append(target.InternalLinks, m)
-			slog.Debug("establishHardlinks: found internal hardlink", "from", m, "to", target)
+			slog.Debug("establishHardlinks: found internal hardlink")
 		} else {
 			inodes[m.Metadata.Inode] = m
 		}
@@ -110,7 +110,7 @@ func establishHardlinks(moveables []*Moveable) {
 func getMetadata(path string) (*Metadata, error) {
 	info, err := os.Lstat(path)
 	if err != nil {
-		slog.Error("getMetadata: failed to lstat", "path", path, "err", err)
+		slog.Error("getMetadata: failed to lstat")
 		return nil, fmt.Errorf("failed to lstat %s: %w", path, err)
 	}
 
@@ -131,11 +131,11 @@ func getMetadata(path string) (*Metadata, error) {
 	if metadata.IsSymlink {
 		target, err := os.Readlink(path)
 		if err != nil {
-			slog.Error("getMetadata: failed to read symlink target", "path", path, "err", err)
+			slog.Error("getMetadata: failed to read symlink target")
 			return nil, fmt.Errorf("failed to read symlink target for %s: %w", path, err)
 		}
 		metadata.SymlinkTo = target
-		slog.Debug("getMetadata: found fs symlink", "from", path, "to", target)
+		slog.Debug("getMetadata: found fs symlink")
 	}
 
 	return metadata, nil
@@ -151,7 +151,7 @@ func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) 
 		if strings.HasPrefix(path, basePath) && path != basePath {
 			metadata, err := getMetadata(path)
 			if err != nil {
-				slog.Error("walkParentDirs: failed to get metadata", "path", path, "err", err)
+				slog.Error("walkParentDirs: failed to get metadata")
 				return nil, fmt.Errorf("failed to get metadata for %s: %w", path, err)
 			}
 			parentDirs[path] = metadata
@@ -166,7 +166,7 @@ func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) 
 func isEmptyFolder(path string) (bool, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		slog.Error("isEmptyFolder: failed to read folder", "path", path, "err", err)
+		slog.Error("isEmptyFolder: failed to read folder")
 		return false, err
 	}
 	return len(entries) == 0, nil

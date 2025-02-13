@@ -20,7 +20,7 @@ func establishDisks() (map[string]*UnraidDisk, error) {
 
 	entries, err := os.ReadDir(basePath)
 	if err != nil {
-		slog.Error("establishDisks: failed to read mount directory", "basePath", basePath, "err", err)
+		slog.Error("establishDisks: failed to read mount directory")
 		return nil, fmt.Errorf("failed to read mount directory %s: %w", basePath, err)
 	}
 
@@ -43,7 +43,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 	basePath := "/boot/config/pools"
 
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
-		slog.Error("establishPools: pool configuration directory does not exist", "basePath", basePath, "err", err)
+		slog.Error("establishPools: pool configuration directory does not exist")
 		return nil, fmt.Errorf("pool configuration directory %s does not exist: %w", basePath, err)
 	}
 
@@ -51,7 +51,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 
 	files, err := os.ReadDir(basePath)
 	if err != nil {
-		slog.Error("establishPools: failed to read pool configuration directory", "basePath", basePath, "err", err)
+		slog.Error("establishPools: failed to read pool configuration directory")
 		return nil, fmt.Errorf("failed to read pool configuration directory %s: %w", basePath, err)
 	}
 
@@ -62,7 +62,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
 			if _, err := os.Lstat(fsPath); os.IsNotExist(err) {
-				slog.Error("establishPools: pool mount does not exist despite configuration", "cfgPath", cfgPath, "fsPath", fsPath, "err", err)
+				slog.Error("establishPools: pool mount does not exist despite configuration")
 				return nil, fmt.Errorf("pool mount %s does not exist despite configuration at %s: %w", fsPath, cfgPath, err)
 			}
 
@@ -85,7 +85,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 	basePath := "/boot/config/shares"
 
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
-		slog.Error("establishShares: share configuration directory does not exist", "basePath", basePath, "err", err)
+		slog.Error("establishShares: share configuration directory does not exist")
 		return nil, fmt.Errorf("share configuration directory %s does not exist: %w", basePath, err)
 	}
 
@@ -93,7 +93,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 
 	files, err := os.ReadDir(basePath)
 	if err != nil {
-		slog.Error("establishShares: failed to read share configuration directory", "basePath", basePath, "err", err)
+		slog.Error("establishShares: failed to read share configuration directory")
 		return nil, fmt.Errorf("failed to read share configuration directory %s: %w", basePath, err)
 	}
 
@@ -104,7 +104,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 
 			configMap, err := godotenv.Read(filePath)
 			if err != nil {
-				slog.Error("establishShares: failed to read share configuration", "path", filePath, "err", err)
+				slog.Error("establishShares: failed to read share configuration")
 				return nil, fmt.Errorf("failed to read share configuration %s: %w", filePath, err)
 			}
 
@@ -120,21 +120,21 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 
 			cachepool, err := findPool(pools, getConfigValue(configMap, "shareCachePool"))
 			if err != nil {
-				slog.Error("establishShares: failed to dereference primary cache pool for share", "share", nameWithoutExt, "err", err)
+				slog.Error("establishShares: failed to dereference primary cache pool for share")
 				return nil, fmt.Errorf("failed to dereference primary cache pool for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool = cachepool
 
 			cachepool2, err := findPool(pools, getConfigValue(configMap, "shareCachePool2"))
 			if err != nil {
-				slog.Error("establishShares: failed to dereference secondary cache pool for share", "share", nameWithoutExt, "err", err)
+				slog.Error("establishShares: failed to dereference secondary cache pool for share")
 				return nil, fmt.Errorf("failed to dereference secondary cache pool for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool2 = cachepool2
 
 			includedDisks, err := findDisks(disks, getConfigValue(configMap, "shareInclude"))
 			if err != nil {
-				slog.Error("establishShares: failed to dereference included disks for share", "share", nameWithoutExt, "err", err)
+				slog.Error("establishShares: failed to dereference included disks for share")
 				return nil, fmt.Errorf("failed to dereference included disks for share %s: %w", nameWithoutExt, err)
 			}
 			if includedDisks != nil {
@@ -146,7 +146,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 
 			excludedDisks, err := findDisks(disks, getConfigValue(configMap, "shareExclude"))
 			if err != nil {
-				slog.Error("establishShares: failed to dereference excluded disks for share", "share", nameWithoutExt, "err", err)
+				slog.Error("establishShares: failed to dereference excluded disks for share")
 				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
 			}
 			if excludedDisks != nil {
@@ -169,7 +169,7 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 
 	configMap, err := godotenv.Read(stateFile)
 	if err != nil {
-		slog.Error("establishArray: failed to load disk state file", "stateFile", stateFile, "err", err)
+		slog.Error("establishArray: failed to load disk state file")
 		return nil, fmt.Errorf("failed to load disk state file %s: %w", stateFile, err)
 	}
 
@@ -187,25 +187,25 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 func establishSystem() (*UnraidSystem, error) {
 	disks, err := establishDisks()
 	if err != nil {
-		slog.Error("establishSystem: failed establishing disks", "err", err)
+		slog.Error("establishSystem: failed establishing disks")
 		return nil, fmt.Errorf("failed establishing disks: %w", err)
 	}
 
 	pools, err := establishPools()
 	if err != nil {
-		slog.Error("establishSystem: failed establishing pools", "err", err)
+		slog.Error("establishSystem: failed establishing pools")
 		return nil, fmt.Errorf("failed establishing pools: %w", err)
 	}
 
 	shares, err := establishShares(disks, pools)
 	if err != nil {
-		slog.Error("establishSystem: failed establishing shares", "err", err)
+		slog.Error("establishSystem: failed establishing shares")
 		return nil, fmt.Errorf("failed establishing shares: %w", err)
 	}
 
 	array, err := establishArray(disks)
 	if err != nil {
-		slog.Error("establishSystem: failed establishing array", "err", err)
+		slog.Error("establishSystem: failed establishing array")
 		return nil, fmt.Errorf("failed establishing array: %w", err)
 	}
 

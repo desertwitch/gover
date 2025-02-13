@@ -20,7 +20,7 @@ func main() {
 
 	system, err := establishSystem()
 	if err != nil {
-		slog.Error("failed to establish unraid system", "err", err)
+		slog.Error("failed to establish unraid system")
 	}
 
 	shares := system.Shares
@@ -35,7 +35,7 @@ func main() {
 		}
 		files, err := getMoveables(share.CachePool, share)
 		if err != nil {
-			slog.Error("failed to get moveables", "share", share.Name, "pool", share.CachePool.Name, "err", err)
+			slog.Error("failed to get moveables")
 			continue
 		}
 		moveables = append(moveables, files...)
@@ -51,7 +51,7 @@ func main() {
 			for _, disk := range disks {
 				files, err := getMoveables(disk, share)
 				if err != nil {
-					slog.Error("failed to get moveables", "share", share.Name, "disk", disk.Name, "err", err)
+					slog.Error("failed to get moveables")
 					continue
 				}
 				moveables = append(moveables, files...)
@@ -60,7 +60,7 @@ func main() {
 			// Cache2 to Cache
 			files, err := getMoveables(share.CachePool2, share)
 			if err != nil {
-				slog.Error("failed to get moveables", "share", share.Name, "pool", share.CachePool2.Name, "err", err)
+				slog.Error("failed to get moveables")
 				continue
 			}
 			moveables = append(moveables, files...)
@@ -71,12 +71,7 @@ func main() {
 		if moveable.Share.SplitLevel >= 0 {
 			_, err := allocateDisksBySplitLevel(moveable, moveable.Share.SplitLevel)
 			if err != nil {
-				slog.Error("failed to allocate disk by split level",
-					"share", moveable.Share.Name,
-					"splitlevel", moveable.Share.SplitLevel,
-					"path", moveable.Path,
-					"err", err,
-				)
+				slog.Error("failed to allocate disk by split level")
 			}
 		}
 	}
