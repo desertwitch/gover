@@ -17,7 +17,6 @@ func allocateDisksBySplitLevel(m *Moveable, maxLevel int) ([]*UnraidDisk, error)
 	// Idea is hard-link original could be not found, but child(s) could be found
 
 	foundDisks := []*UnraidDisk{}
-
 	path := filepath.Dir(m.Path)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)
@@ -26,7 +25,6 @@ func allocateDisksBySplitLevel(m *Moveable, maxLevel int) ([]*UnraidDisk, error)
 	}
 
 	pathParts := strings.Split(relPath, string(os.PathSeparator))
-
 	splitLevel := len(pathParts)
 
 	if splitLevel == 0 {
