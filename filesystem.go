@@ -179,10 +179,29 @@ func isEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func getDiskUsage(path string) (int64, int64, error) {
+func getDiskUsage(path string) (*DiskStats, error) {
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	return int64(stat.Blocks) * int64(stat.Bsize), int64(stat.Bavail) * int64(stat.Bsize), nil
+	stats := &DiskStats{
+		TotalSize: int64(stat.Blocks) * int64(stat.Bsize),
+		FreeSpace: int64(stat.Bavail) * int64(stat.Bsize),
+	}
+	return stats, nil
+}
+
+func hasEnoughFreeSpace(disk *UnraidDisk, minFree int64, fileSize int64) (bool, error) {
+	path := disk.FSPath
+
+	stats, err := getDiskUsage(path)
+	if err != nil {
+		return false, err
+	}
+
+	if (stats.FreeSpace - fileSize) > minFree {
+		return true, nil
+	}
+
+	return false, nil
 }

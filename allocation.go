@@ -58,12 +58,11 @@ func allocateMostFreeDisk(includedDisks map[string]*UnraidDisk, excludedDisks ma
 			continue
 		}
 
-		totalSize, freeSpace, err := getDiskUsage(disk.FSPath)
+		stats, err := getDiskUsage(disk.FSPath)
 		if err != nil {
 			continue
 		}
-
-		diskStats[disk] = &DiskStats{TotalSize: totalSize, FreeSpace: freeSpace}
+		diskStats[disk] = stats
 
 		disks = append(disks, disk)
 	}
@@ -88,12 +87,11 @@ func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[
 			continue
 		}
 
-		totalSize, freeSpace, err := getDiskUsage(disk.FSPath)
+		stats, err := getDiskUsage(disk.FSPath)
 		if err != nil {
 			continue
 		}
-
-		diskStats[disk] = &DiskStats{TotalSize: totalSize, FreeSpace: freeSpace}
+		diskStats[disk] = stats
 
 		disks = append(disks, disk)
 	}
@@ -122,15 +120,14 @@ func allocateHighWaterDisk(includedDisks map[string]*UnraidDisk, excludedDisks m
 			continue
 		}
 
-		totalSize, freeSpace, err := getDiskUsage(disk.FSPath)
+		stats, err := getDiskUsage(disk.FSPath)
 		if err != nil {
 			continue
 		}
+		diskStats[disk] = stats
 
-		diskStats[disk] = &DiskStats{TotalSize: totalSize, FreeSpace: freeSpace}
-
-		if totalSize > maxDiskSize {
-			maxDiskSize = totalSize
+		if stats.TotalSize > maxDiskSize {
+			maxDiskSize = stats.TotalSize
 		}
 
 		disks = append(disks, disk)
