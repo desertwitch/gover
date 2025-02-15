@@ -107,7 +107,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 				Allocator:  getConfigValue(configMap, "shareAllocator"),
 				DisableCOW: strings.ToLower(getConfigValue(configMap, "shareCOW")) == "no",
 				SplitLevel: parseInt(getConfigValue(configMap, "shareSplitLevel")),
-				SpaceFloor: parseInt(getConfigValue(configMap, "shareFloor")),
+				SpaceFloor: parseInt64(getConfigValue(configMap, "shareFloor")),
 			}
 
 			cachepool, err := findPool(pools, getConfigValue(configMap, "shareCachePool"))

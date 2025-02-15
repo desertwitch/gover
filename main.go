@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -68,11 +69,11 @@ func main() {
 	}
 
 	for _, moveable := range moveables {
-		if moveable.Share.SplitLevel >= 0 {
-			_, err := allocateDisksBySplitLevel(moveable, moveable.Share.SplitLevel)
-			if err != nil {
-				slog.Error("failed to allocate disk by split level", "err", err)
-			}
+
+		dest, err := proposeArrayDestination(moveable)
+		if err != nil {
+			fmt.Printf("Error: %v", err)
 		}
+		fmt.Printf("%s --> %s\n", moveable.Path, dest.Name)
 	}
 }

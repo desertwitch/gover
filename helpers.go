@@ -57,6 +57,18 @@ func parseInt(value string) int {
 	return intValue
 }
 
+// parseInt64 safely converts a string to a 64-bit integer (returns -1 if empty or invalid)
+func parseInt64(value string) int64 {
+	if value == "" {
+		return -1
+	}
+	intValue, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return -1
+	}
+	return intValue
+}
+
 // removeInternalLinks removes symbolic and hardlink moveable pointers from a slice of moveable pointers
 func removeInternalLinks(moveables []*Moveable) []*Moveable {
 	var ms []*Moveable

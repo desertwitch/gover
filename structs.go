@@ -77,7 +77,7 @@ type UnraidShare struct {
 	CachePool2    *UnraidPool
 	Allocator     string
 	SplitLevel    int
-	SpaceFloor    int
+	SpaceFloor    int64
 	DisableCOW    bool
 	IncludedDisks map[string]*UnraidDisk
 	ExcludedDisks map[string]*UnraidDisk
@@ -85,17 +85,27 @@ type UnraidShare struct {
 }
 
 type Moveable struct {
-	Share         *UnraidShare
-	Path          string
-	Source        UnraidStoreable
-	Dest          UnraidStoreable
-	Hardlink      bool
-	HardlinkTo    *Moveable
-	Symlink       bool
-	SymlinkTo     *Moveable
-	Metadata      *Metadata
-	ParentDirs    map[string]*Metadata
-	InternalLinks []*Moveable
+	Share      *UnraidShare
+	Path       string
+	Source     UnraidStoreable
+	Dest       UnraidStoreable
+	Hardlinks  []*Moveable
+	Hardlink   bool
+	HardlinkTo *Moveable
+	Symlinks   []*Moveable
+	Symlink    bool
+	SymlinkTo  *Moveable
+	Metadata   *Metadata
+	Parent     *RelatedDirectory
+	RootDir    *RelatedDirectory
+}
+
+type RelatedDirectory struct {
+	Path         string
+	RelativePath string
+	Metadata     *Metadata
+	Parent       *RelatedDirectory
+	Child        *RelatedDirectory
 }
 
 type Metadata struct {
@@ -109,4 +119,9 @@ type Metadata struct {
 	IsDir       bool
 	IsSymlink   bool
 	SymlinkTo   string
+}
+
+type DiskStats struct {
+	TotalSize int64
+	FreeSpace int64
 }

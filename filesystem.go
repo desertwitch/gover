@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
 	"syscall"
 )
 
@@ -49,11 +50,9 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 		}
 		m.Metadata = metadata
 
-		parents, err := walkParentDirs(m, shareDir)
-		if err != nil {
+		if err := walkParentDirs(m, shareDir); err != nil {
 			return nil, fmt.Errorf("failed to get parents for %s: %w", m.Path, err)
 		}
-		m.ParentDirs = parents
 	}
 
 	establishSymlinks(moveables)
@@ -79,7 +78,7 @@ func establishSymlinks(moveables []*Moveable) {
 				m.Symlink = true
 				m.SymlinkTo = target
 
-				target.InternalLinks = append(target.InternalLinks, m)
+				target.Symlinks = append(target.Symlinks, m)
 			}
 		}
 	}
@@ -92,7 +91,7 @@ func establishHardlinks(moveables []*Moveable) {
 			m.Hardlink = true
 			m.HardlinkTo = target
 
-			target.InternalLinks = append(target.InternalLinks, m)
+			target.Hardlinks = append(target.Hardlinks, m)
 		} else {
 			inodes[m.Metadata.Inode] = m
 		}
@@ -105,7 +104,10 @@ func getMetadata(path string) (*Metadata, error) {
 		return nil, fmt.Errorf("failed to lstat %s: %w", path, err)
 	}
 
-	stat := info.Sys().(*syscall.Stat_t)
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type from Sys(): %T", info.Sys())
+	}
 
 	metadata := &Metadata{
 		Inode:       stat.Ino,
@@ -130,25 +132,43 @@ func getMetadata(path string) (*Metadata, error) {
 	return metadata, nil
 }
 
-func walkParentDirs(m *Moveable, basePath string) (map[string]*Metadata, error) {
+func walkParentDirs(m *Moveable, basePath string) error {
+	var prevElement *RelatedDirectory
 	path := m.Path
-	parentDirs := make(map[string]*Metadata)
 
 	for path != basePath && path != "/" && path != "." {
 		path = filepath.Dir(path)
 
-		if strings.HasPrefix(path, basePath) && path != basePath {
+		if strings.HasPrefix(path, basePath) {
+			relativePath, err := filepath.Rel(basePath, path)
+			if err != nil {
+				return fmt.Errorf("failed to establish relative path with base %s for %s", basePath, path)
+			}
+
+			thisElement := &RelatedDirectory{
+				Path:         path,
+				RelativePath: relativePath,
+			}
+
 			metadata, err := getMetadata(path)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get metadata for %s: %w", path, err)
+				return fmt.Errorf("failed to get metadata for %s: %w", path, err)
 			}
-			parentDirs[path] = metadata
+			thisElement.Metadata = metadata
+
+			if prevElement != nil {
+				thisElement.Child = prevElement
+				prevElement.Parent = thisElement
+			}
+
+			prevElement = thisElement
 		} else {
 			break
 		}
 	}
+	m.RootDir = prevElement
 
-	return parentDirs, nil
+	return nil
 }
 
 func isEmptyFolder(path string) (bool, error) {
@@ -157,4 +177,12 @@ func isEmptyFolder(path string) (bool, error) {
 		return false, err
 	}
 	return len(entries) == 0, nil
+}
+
+func getDiskUsage(path string) (int64, int64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0, 0, err
+	}
+	return int64(stat.Blocks) * int64(stat.Bsize), int64(stat.Bavail) * int64(stat.Bsize), nil
 }
