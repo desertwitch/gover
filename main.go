@@ -72,8 +72,9 @@ func main() {
 
 		dest, err := proposeArrayDestination(moveable)
 		if err != nil {
-			fmt.Printf("Error: %v", err)
+			fmt.Printf("%s --> error: %v\n", moveable.Path, err)
+		} else {
+			fmt.Printf("%s --> %s\n", moveable.Path, dest.Name)
 		}
-		fmt.Printf("%s --> %s\n", moveable.Path, dest.Name)
 	}
 }

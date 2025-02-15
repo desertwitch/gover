@@ -17,11 +17,8 @@ func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by split level: %w", err)
 		}
-		if returnDisks != nil && len(returnDisks) > 0 {
-			includedDisks := make(map[string]*UnraidDisk)
-			for _, disk := range returnDisks {
-				includedDisks[disk.Name] = disk
-			}
+		if returnDisks != nil {
+			includedDisks = returnDisks
 		}
 	}
 
@@ -160,48 +157,56 @@ func allocateHighWaterDisk(includedDisks map[string]*UnraidDisk, excludedDisks m
 	return nil, nil
 }
 
-func allocateDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, error) {
-	matches := make(map[int][]*UnraidDisk)
+func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
+	matches := make(map[int]map[string]*UnraidDisk)
 
-	mainMatches, splitLevel, err := findDisksBySplitLevel(m)
+	mainMatches, mainLevel, err := findDisksBySplitLevel(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed allocating disk by split level: %w", err)
 	}
 
-	if len(m.Hardlinks) > 0 {
+	if len(mainMatches) > 0 {
+		matches[mainLevel] = make(map[string]*UnraidDisk)
 		for _, disk := range mainMatches {
-			matches[splitLevel] = append(matches[splitLevel], disk)
+			matches[mainLevel][disk.Name] = disk
 		}
+	}
 
+	if len(m.Hardlinks) > 0 {
 		for _, s := range m.Hardlinks {
-			if !s.Hardlink {
-				continue
-			}
 			subMatches, subLevel, err := findDisksBySplitLevel(s)
 			if err != nil {
 				return nil, fmt.Errorf("failed suballocating disk by split level: %w", err)
 			}
-			for _, disk := range subMatches {
-				matches[subLevel] = append(matches[subLevel], disk)
+			if len(subMatches) > 0 {
+				if matches[subLevel] == nil {
+					matches[subLevel] = make(map[string]*UnraidDisk)
+				}
+				for _, disk := range subMatches {
+					matches[subLevel][disk.Name] = disk
+				}
 			}
 		}
 
 		maxKey := -1
-
-		for k := range matches {
-			if k > maxKey {
-				maxKey = k
+		for key := range matches {
+			if key > maxKey {
+				maxKey = key
 			}
 		}
 
-		if v, exists := matches[maxKey]; exists {
-			return v, nil
+		if bestMatch, exists := matches[maxKey]; exists {
+			return bestMatch, nil
 		}
 
 		return nil, nil
 	}
 
-	return mainMatches, nil
+	if len(matches[mainLevel]) > 0 {
+		return matches[mainLevel], nil
+	}
+
+	return nil, nil
 }
 
 func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
