@@ -191,17 +191,30 @@ func getDiskUsage(path string) (*DiskStats, error) {
 	return stats, nil
 }
 
-func hasEnoughFreeSpace(disk *UnraidDisk, minFree int64, fileSize int64) (bool, error) {
-	path := disk.FSPath
+func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
+	if fileSize < 0 {
+		return false, fmt.Errorf("invalid file size: %d", fileSize)
+	}
+
+	name := s.GetName()
+	path := s.GetFSPath()
 
 	stats, err := getDiskUsage(path)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get disk usage for %s: %w", name, err)
 	}
 
-	if (stats.FreeSpace - fileSize) > minFree {
+	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
+		return false, fmt.Errorf("invalid disk statistics for %s (TotalSize: %d, FreeSpace: %d)", name, stats.TotalSize, stats.FreeSpace)
+	}
+
+	requiredFree := minFree
+	if minFree <= 0 {
+		requiredFree = fileSize
+	}
+
+	if stats.FreeSpace > requiredFree {
 		return true, nil
 	}
-
 	return false, nil
 }
