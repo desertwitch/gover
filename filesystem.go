@@ -216,5 +216,6 @@ func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool,
 	if stats.FreeSpace > requiredFree {
 		return true, nil
 	}
+
 	return false, nil
 }
