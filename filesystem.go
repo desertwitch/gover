@@ -179,12 +179,12 @@ func isEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func getDiskUsage(path string) (*DiskStats, error) {
+func getDiskUsage(path string) (DiskStats, error) {
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
-		return nil, err
+		return DiskStats{}, err
 	}
-	stats := &DiskStats{
+	stats := DiskStats{
 		TotalSize: int64(stat.Blocks) * int64(stat.Bsize),
 		FreeSpace: int64(stat.Bavail) * int64(stat.Bsize),
 	}

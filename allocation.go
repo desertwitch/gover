@@ -50,7 +50,7 @@ func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
 }
 
 func allocateMostFreeDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]*DiskStats)
+	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
 	for name, disk := range includedDisks {
@@ -79,7 +79,7 @@ func allocateMostFreeDisk(includedDisks map[string]*UnraidDisk, excludedDisks ma
 }
 
 func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk, minFree int64) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]*DiskStats)
+	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
 	for name, disk := range includedDisks {
@@ -110,7 +110,7 @@ func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[
 }
 
 func allocateHighWaterDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]*DiskStats)
+	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
 	var maxDiskSize int64
