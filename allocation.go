@@ -24,21 +24,21 @@ func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
 
 	switch allocationMethod := m.Share.Allocator; allocationMethod {
 	case "highwater":
-		ret, err := allocateHighWaterDisk(includedDisks, excludedDisks)
+		ret, err := allocateHighWaterDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
 		return ret, nil
 
 	case "fillup":
-		ret, err := allocateFillUpDisk(includedDisks, excludedDisks, m.Share.SpaceFloor)
+		ret, err := allocateFillUpDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
 		return ret, nil
 
 	case "mostfree":
-		ret, err := allocateMostFreeDisk(includedDisks, excludedDisks)
+		ret, err := allocateMostFreeDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)
 		}
@@ -49,7 +49,7 @@ func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	}
 }
 
-func allocateMostFreeDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
+func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
 	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
@@ -71,14 +71,16 @@ func allocateMostFreeDisk(includedDisks map[string]*UnraidDisk, excludedDisks ma
 		return diskStats[disks[i]].FreeSpace > diskStats[disks[j]].FreeSpace
 	})
 
-	if len(disks) == 0 {
-		return nil, nil
+	for _, disk := range disks {
+		if enoughSpace, _ := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size); enoughSpace {
+			return disk, nil
+		}
 	}
 
-	return disks[0], nil
+	return nil, nil
 }
 
-func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk, minFree int64) (*UnraidDisk, error) {
+func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
 	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
@@ -101,7 +103,8 @@ func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[
 	})
 
 	for _, disk := range disks {
-		if diskStats[disk].FreeSpace > minFree {
+		enoughSpace, _ := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+		if enoughSpace && diskStats[disk].FreeSpace > m.Share.SpaceFloor {
 			return disk, nil
 		}
 	}
@@ -109,7 +112,7 @@ func allocateFillUpDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[
 	return nil, nil
 }
 
-func allocateHighWaterDisk(includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
+func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
 	diskStats := make(map[*UnraidDisk]DiskStats)
 	var disks []*UnraidDisk
 
@@ -144,7 +147,8 @@ func allocateHighWaterDisk(includedDisks map[string]*UnraidDisk, excludedDisks m
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			if stats, exists := diskStats[disk]; exists && stats.FreeSpace >= highWaterMark {
+			enoughSpace, _ := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+			if stats, exists := diskStats[disk]; exists && enoughSpace && stats.FreeSpace >= highWaterMark {
 				return disk, nil
 			}
 		}
@@ -236,8 +240,10 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
 				if _, err := os.Stat(dirToCheck); err == nil {
-					foundDisks = append(foundDisks, disk)
-					found = true
+					if enoughSpace, _ := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size); enoughSpace {
+						foundDisks = append(foundDisks, disk)
+						found = true
+					}
 				}
 			}
 			if found {

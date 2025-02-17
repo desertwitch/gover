@@ -34,12 +34,23 @@ func main() {
 		if share.UseCache != "yes" || share.CachePool == nil {
 			continue
 		}
-		files, err := getMoveables(share.CachePool, share)
-		if err != nil {
-			slog.Error("failed to get moveables", "err", err)
-			continue
+		if share.CachePool2 == nil {
+			// Cache to Array
+			files, err := getMoveables(share.CachePool, share, nil)
+			if err != nil {
+				slog.Error("failed to get moveables", "err", err)
+				continue
+			}
+			moveables = append(moveables, files...)
+		} else {
+			// Cache to Cache2
+			files, err := getMoveables(share.CachePool, share, share.CachePool2)
+			if err != nil {
+				slog.Error("failed to get moveables", "err", err)
+				continue
+			}
+			moveables = append(moveables, files...)
 		}
-		moveables = append(moveables, files...)
 	}
 
 	// Secondary to Primary
@@ -50,7 +61,7 @@ func main() {
 		if share.CachePool2 == nil {
 			// Array to Cache
 			for _, disk := range disks {
-				files, err := getMoveables(disk, share)
+				files, err := getMoveables(disk, share, share.CachePool)
 				if err != nil {
 					slog.Error("failed to get moveables", "err", err)
 					continue
@@ -59,7 +70,7 @@ func main() {
 			}
 		} else {
 			// Cache2 to Cache
-			files, err := getMoveables(share.CachePool2, share)
+			files, err := getMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
 				slog.Error("failed to get moveables", "err", err)
 				continue
@@ -69,7 +80,6 @@ func main() {
 	}
 
 	for _, moveable := range moveables {
-
 		dest, err := proposeArrayDestination(moveable)
 		if err != nil {
 			fmt.Printf("%s --> error: %v\n", moveable.Path, err)

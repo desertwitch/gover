@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, error) {
+func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
@@ -32,6 +32,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare) ([]*Moveable, erro
 				Share:  share,
 				Path:   path,
 				Source: source,
+				Dest:   knownTarget,
 			}
 
 			moveables = append(moveables, moveable)
