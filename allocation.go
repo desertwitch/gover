@@ -280,7 +280,7 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 }
 
 func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
-	foundDisks := []*UnraidDisk{}
+	var foundDisks []*UnraidDisk
 	path := filepath.Dir(m.Path)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)

@@ -28,7 +28,7 @@ func main() {
 	shares := system.Shares
 	disks := system.Array.Disks
 
-	moveables := []*Moveable{}
+	var moveables []*Moveable
 
 	// Primary to Secondary
 	for _, share := range shares {
