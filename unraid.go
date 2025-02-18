@@ -103,26 +103,26 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 			share := &UnraidShare{
 				Name:       nameWithoutExt,
 				CFGFile:    filePath,
-				UseCache:   getConfigValue(configMap, "shareUseCache"),
-				Allocator:  getConfigValue(configMap, "shareAllocator"),
-				DisableCOW: strings.ToLower(getConfigValue(configMap, "shareCOW")) == "no",
-				SplitLevel: parseInt(getConfigValue(configMap, "shareSplitLevel")),
-				SpaceFloor: parseInt64(getConfigValue(configMap, "shareFloor")),
+				UseCache:   getConfigValue(configMap, SettingShareUseCache),
+				Allocator:  getConfigValue(configMap, SettingShareAllocator),
+				DisableCOW: strings.ToLower(getConfigValue(configMap, SettingShareCOW)) == "no",
+				SplitLevel: parseInt(getConfigValue(configMap, SettingShareSplitLevel)),
+				SpaceFloor: parseInt64(getConfigValue(configMap, SettingShareFloor)),
 			}
 
-			cachepool, err := findPool(pools, getConfigValue(configMap, "shareCachePool"))
+			cachepool, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference primary cache pool for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool = cachepool
 
-			cachepool2, err := findPool(pools, getConfigValue(configMap, "shareCachePool2"))
+			cachepool2, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool2))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference secondary cache pool for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool2 = cachepool2
 
-			includedDisks, err := findDisks(disks, getConfigValue(configMap, "shareInclude"))
+			includedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareIncludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference included disks for share %s: %w", nameWithoutExt, err)
 			}
@@ -133,7 +133,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 				share.IncludedDisks = disks
 			}
 
-			excludedDisks, err := findDisks(disks, getConfigValue(configMap, "shareExclude"))
+			excludedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareExcludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
 			}
@@ -157,9 +157,9 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 
 	array := &UnraidArray{
 		Disks:         disks,
-		Status:        getConfigValue(configMap, "mdState"),
-		TurboSetting:  getConfigValue(configMap, "md_write_method"),
-		ParityRunning: parseInt(getConfigValue(configMap, "mdResyncPos")) > 0,
+		Status:        getConfigValue(configMap, StateArrayStatus),
+		TurboSetting:  getConfigValue(configMap, StateTurboSetting),
+		ParityRunning: parseInt(getConfigValue(configMap, StateParityPosition)) > 0,
 	}
 
 	return array, nil

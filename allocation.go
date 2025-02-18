@@ -25,17 +25,19 @@ func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 			h.Dest = dest
 		}
 
-		var filteredSyms []*Moveable
+		symlinkFailure := false
 		for _, s := range m.Symlinks {
 			dest, err := allocateArrayDestination(s)
 			if err != nil {
-				slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", s.Path, "share", s.Share.Name)
-				continue
+				slog.Warn("Skipped job: failed to allocate array destination for subjob", "path", s.Path, "err", err, "job", m.Path, "share", s.Share.Name)
+				symlinkFailure = true
+				break
 			}
 			s.Dest = dest
-			filteredSyms = append(filteredSyms, s)
 		}
-		m.Symlinks = filteredSyms
+		if symlinkFailure {
+			continue
+		}
 
 		filtered = append(filtered, m)
 	}
@@ -59,21 +61,21 @@ func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	}
 
 	switch allocationMethod := m.Share.Allocator; allocationMethod {
-	case "highwater":
+	case AllocHighWater:
 		ret, err := allocateHighWaterDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
 		return ret, nil
 
-	case "fillup":
+	case AllocFillUp:
 		ret, err := allocateFillUpDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
 		return ret, nil
 
-	case "mostfree":
+	case AllocMostFree:
 		ret, err := allocateMostFreeDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)

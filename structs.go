@@ -4,6 +4,27 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const (
+	AllocHighWater = "highwater"
+	AllocMostFree  = "mostfree"
+	AllocFillUp    = "fillup"
+
+	SettingShareUseCache   = "shareUseCache"
+	SettingShareAllocator  = "shareAllocator"
+	SettingShareCOW        = "shareCOW"
+	SettingShareSplitLevel = "shareSplitLevel"
+	SettingShareFloor      = "shareFloor"
+
+	SettingShareCachePool    = "shareCachePool"
+	SettingShareCachePool2   = "shareCachePool2"
+	SettingShareIncludeDisks = "shareInclude"
+	SettingShareExcludeDisks = "shareExclude"
+
+	StateArrayStatus    = "mdState"
+	StateTurboSetting   = "md_write_method"
+	StateParityPosition = "mdResyncPos"
+)
+
 type UnraidSystem struct {
 	Array  *UnraidArray
 	Pools  map[string]*UnraidPool
