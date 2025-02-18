@@ -62,14 +62,14 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 		moveables = append(moveables, m)
 	}
 
-	establishSymlinks(moveables)
-	establishHardlinks(moveables)
+	establishSymlinks(moveables, knownTarget)
+	establishHardlinks(moveables, knownTarget)
 	moveables = removeInternalLinks(moveables)
 
 	return moveables, nil
 }
 
-func establishSymlinks(moveables []*Moveable) {
+func establishSymlinks(moveables []*Moveable, knownTarget UnraidStoreable) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
@@ -84,19 +84,21 @@ func establishSymlinks(moveables []*Moveable) {
 				m.Symlink = true
 				m.SymlinkTo = target
 
+				m.Dest = knownTarget
 				target.Symlinks = append(target.Symlinks, m)
 			}
 		}
 	}
 }
 
-func establishHardlinks(moveables []*Moveable) {
+func establishHardlinks(moveables []*Moveable, knownTarget UnraidStoreable) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
 			m.Hardlink = true
 			m.HardlinkTo = target
 
+			m.Dest = knownTarget
 			target.Hardlinks = append(target.Hardlinks, m)
 		} else {
 			inodes[m.Metadata.Inode] = m

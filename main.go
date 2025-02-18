@@ -87,5 +87,12 @@ func main() {
 
 	for _, m := range moveables {
 		fmt.Printf("%s --> %s [%v]\n", m.Path, m.Dest.GetName(), m)
+		for _, h := range m.Hardlinks {
+			fmt.Printf("|- %s --> %s [%v]\n", h.Path, h.Dest.GetName(), h)
+		}
+		for _, s := range m.Symlinks {
+			fmt.Printf("|- %s --> %s [%v]\n", s.Path, s.Dest.GetName(), s)
+		}
+		fmt.Println()
 	}
 }

@@ -12,6 +12,7 @@ import (
 
 func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 	var filtered []*Moveable
+
 	for _, m := range moveables {
 		dest, err := allocateArrayDestination(m)
 		if err != nil {
@@ -19,8 +20,26 @@ func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 			continue
 		}
 		m.Dest = dest
+
+		for _, h := range m.Hardlinks {
+			h.Dest = dest
+		}
+
+		var filteredSyms []*Moveable
+		for _, s := range m.Symlinks {
+			dest, err := allocateArrayDestination(s)
+			if err != nil {
+				slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", s.Path, "share", s.Share.Name)
+				continue
+			}
+			s.Dest = dest
+			filteredSyms = append(filteredSyms, s)
+		}
+		m.Symlinks = filteredSyms
+
 		filtered = append(filtered, m)
 	}
+
 	return filtered, nil
 }
 
@@ -240,8 +259,10 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 			}
 		}
 
-		if bestMatch, exists := matches[maxKey]; exists {
-			return bestMatch, nil
+		if maxKey >= 0 {
+			if bestMatch, exists := matches[maxKey]; exists {
+				return bestMatch, nil
+			}
 		}
 	}
 
