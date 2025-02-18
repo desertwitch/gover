@@ -30,6 +30,7 @@ func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
 
 	if m.Share.SplitLevel >= 0 {
 		returnDisks, err := allocateDisksBySplitLevel(m)
+		// TO-DO: Configurable, if not found split level files should proceed anyhow
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by split level: %w", err)
 		}
@@ -99,7 +100,7 @@ func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exc
 		}
 	}
 
-	return nil, fmt.Errorf("no suitable disks for allocation method")
+	return nil, ErrNotAllocatable
 }
 
 func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
@@ -136,7 +137,7 @@ func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exclu
 		}
 	}
 
-	return nil, fmt.Errorf("no suitable disks for allocation method")
+	return nil, ErrNotAllocatable
 }
 
 func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
@@ -187,7 +188,7 @@ func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, ex
 		highWaterMark /= 2
 	}
 
-	return nil, fmt.Errorf("no suitable disks for allocation method")
+	return nil, ErrNotAllocatable
 }
 
 func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
@@ -252,7 +253,7 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 		return nil, nil
 	}
 
-	return nil, fmt.Errorf("no suitable disks for allocation method")
+	return nil, ErrNotAllocatable
 }
 
 func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
