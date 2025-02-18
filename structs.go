@@ -5,6 +5,14 @@ import (
 )
 
 const (
+	ArrayStateFile = "/var/local/emhttp/var.ini"
+
+	ConfigDirShares = "/boot/config/shares"
+	ConfigDirPools  = "/boot/config/pools"
+
+	BasePathMounts = "/mnt/"
+	PatternDisks   = `^disk[1-9][0-9]?$`
+
 	AllocHighWater = "highwater"
 	AllocMostFree  = "mostfree"
 	AllocFillUp    = "fillup"

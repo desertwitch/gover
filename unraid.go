@@ -12,8 +12,8 @@ import (
 
 // establishDisks returns a map of pointers to established Unraid disks
 func establishDisks() (map[string]*UnraidDisk, error) {
-	basePath := "/mnt/"
-	diskPattern := regexp.MustCompile(`^disk[1-9][0-9]?$`)
+	basePath := BasePathMounts
+	diskPattern := regexp.MustCompile(PatternDisks)
 
 	disks := make(map[string]*UnraidDisk)
 
@@ -38,7 +38,7 @@ func establishDisks() (map[string]*UnraidDisk, error) {
 
 // establishPools returns a map of pointers to established Unraid pools
 func establishPools() (map[string]*UnraidPool, error) {
-	basePath := "/boot/config/pools"
+	basePath := ConfigDirPools
 
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("pool configuration directory %s does not exist: %w", basePath, err)
@@ -77,7 +77,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 
 // establishShares returns a map of pointers to established Unraid shares
 func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
-	basePath := "/boot/config/shares"
+	basePath := ConfigDirShares
 
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("share configuration directory %s does not exist: %w", basePath, err)
@@ -148,7 +148,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 
 // establishArray returns a pointer to an established Unraid array
 func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
-	stateFile := "/var/local/emhttp/var.ini"
+	stateFile := ArrayStateFile
 
 	configMap, err := godotenv.Read(stateFile)
 	if err != nil {
