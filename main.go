@@ -22,6 +22,7 @@ func main() {
 	system, err := establishSystem()
 	if err != nil {
 		slog.Error("failed to establish unraid system", "err", err)
+		os.Exit(1)
 	}
 
 	shares := system.Shares
@@ -38,15 +39,20 @@ func main() {
 			// Cache to Array
 			files, err := getMoveables(share.CachePool, share, nil)
 			if err != nil {
-				slog.Error("failed to get moveables", "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
 				continue
 			}
-			moveables = append(moveables, files...)
+			allocated, err := allocateArrayDestinations(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to allocate jobs", "share", share.Name, "err", err)
+				continue
+			}
+			moveables = append(moveables, allocated...)
 		} else {
 			// Cache to Cache2
 			files, err := getMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
-				slog.Error("failed to get moveables", "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
 				continue
 			}
 			moveables = append(moveables, files...)
@@ -63,7 +69,7 @@ func main() {
 			for _, disk := range disks {
 				files, err := getMoveables(disk, share, share.CachePool)
 				if err != nil {
-					slog.Error("failed to get moveables", "err", err)
+					slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
 					continue
 				}
 				moveables = append(moveables, files...)
@@ -72,19 +78,14 @@ func main() {
 			// Cache2 to Cache
 			files, err := getMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
-				slog.Error("failed to get moveables", "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
 				continue
 			}
 			moveables = append(moveables, files...)
 		}
 	}
 
-	for _, moveable := range moveables {
-		dest, err := proposeArrayDestination(moveable)
-		if err != nil {
-			fmt.Printf("%s --> error: %v\n", moveable.Path, err)
-		} else {
-			fmt.Printf("%s --> %s [%v]\n", moveable.Path, dest.Name, moveable.Metadata)
-		}
+	for _, m := range moveables {
+		fmt.Printf("%s --> %s [%v]\n", m.Path, m.Dest.GetName(), m)
 	}
 }

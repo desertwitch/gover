@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
+	var preSelection []*Moveable
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
 
@@ -35,30 +37,33 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 				Dest:   knownTarget,
 			}
 
-			moveables = append(moveables, moveable)
+			preSelection = append(preSelection, moveable)
 		}
 
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error walking directory: %w", err)
+		return nil, fmt.Errorf("error walking share (shareDir: %s): %w", shareDir, err)
 	}
 
-	for _, m := range moveables {
+	for _, m := range preSelection {
 		metadata, err := getMetadata(m.Path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get metadata for %s: %w", m.Path, err)
+			slog.Warn("Skipped job: failed to get metadata", "path", m.Path, "err", err)
+			continue
 		}
 		m.Metadata = metadata
 
 		if err := walkParentDirs(m, shareDir); err != nil {
-			return nil, fmt.Errorf("failed to get parents for %s: %w", m.Path, err)
+			slog.Warn("Skipped job: failed to get parent folders", "path", m.Path, "err", err)
+			continue
 		}
+
+		moveables = append(moveables, m)
 	}
 
 	establishSymlinks(moveables)
 	establishHardlinks(moveables)
-
 	moveables = removeInternalLinks(moveables)
 
 	return moveables, nil
@@ -121,7 +126,7 @@ func getMetadata(path string) (*Metadata, error) {
 	if metadata.IsSymlink {
 		target, err := filepath.EvalSymlinks(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read symlink target for %s: %w", path, err)
+			return nil, fmt.Errorf("failed to read symlink: %w", err)
 		}
 		metadata.SymlinkTo = target
 	}
@@ -139,7 +144,7 @@ func walkParentDirs(m *Moveable, basePath string) error {
 		if strings.HasPrefix(path, basePath) {
 			relativePath, err := filepath.Rel(basePath, path)
 			if err != nil {
-				return fmt.Errorf("failed to establish relative path with base %s for %s", basePath, path)
+				return fmt.Errorf("failed to relative path (basePath: %s): %w", basePath, err)
 			}
 
 			thisElement := &RelatedDirectory{
@@ -149,7 +154,7 @@ func walkParentDirs(m *Moveable, basePath string) error {
 
 			metadata, err := getMetadata(path)
 			if err != nil {
-				return fmt.Errorf("failed to get metadata for %s: %w", path, err)
+				return fmt.Errorf("failed to get metadata: %w", err)
 			}
 			thisElement.Metadata = metadata
 
@@ -171,7 +176,7 @@ func walkParentDirs(m *Moveable, basePath string) error {
 func isEmptyFolder(path string) (bool, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to readdir: %w", err)
 	}
 	return len(entries) == 0, nil
 }
@@ -179,7 +184,7 @@ func isEmptyFolder(path string) (bool, error) {
 func getDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
 	if err := unix.Statfs(path, &stat); err != nil {
-		return DiskStats{}, err
+		return DiskStats{}, fmt.Errorf("failed to statfs: %w", err)
 	}
 	stats := DiskStats{
 		TotalSize: int64(stat.Blocks) * int64(stat.Bsize),
@@ -190,19 +195,18 @@ func getDiskUsage(path string) (DiskStats, error) {
 
 func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
 	if fileSize < 0 {
-		return false, fmt.Errorf("invalid file size: %d", fileSize)
+		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
 	}
 
-	name := s.GetName()
 	path := s.GetFSPath()
 
 	stats, err := getDiskUsage(path)
 	if err != nil {
-		return false, fmt.Errorf("failed to get disk usage for %s: %w", name, err)
+		return false, fmt.Errorf("failed to get usage: %w", err)
 	}
 
 	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
-		return false, fmt.Errorf("invalid disk statistics for %s (TotalSize: %d, FreeSpace: %d)", name, stats.TotalSize, stats.FreeSpace)
+		return false, fmt.Errorf("invalid stats (TotalSize: %d, FreeSpace: %d)", stats.TotalSize, stats.FreeSpace)
 	}
 
 	requiredFree := minFree
