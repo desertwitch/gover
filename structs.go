@@ -108,16 +108,16 @@ type RelatedDirectory struct {
 }
 
 type Metadata struct {
-	Inode       uint64
-	Permissions uint32
-	UID         uint32
-	GID         uint32
-	CreatedAt   unix.Timespec
-	ModifiedAt  unix.Timespec
-	Size        int64
-	IsDir       bool
-	IsSymlink   bool
-	SymlinkTo   string
+	Inode      uint64
+	Perms      uint32
+	UID        uint32
+	GID        uint32
+	CreatedAt  unix.Timespec
+	ModifiedAt unix.Timespec
+	Size       int64
+	IsDir      bool
+	IsSymlink  bool
+	SymlinkTo  string
 }
 
 type DiskStats struct {

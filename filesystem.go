@@ -107,15 +107,15 @@ func getMetadata(path string) (*Metadata, error) {
 	}
 
 	metadata := &Metadata{
-		Inode:       stat.Ino,
-		Permissions: (uint32(stat.Mode) & 0777),
-		UID:         stat.Uid,
-		GID:         stat.Gid,
-		CreatedAt:   stat.Ctim,
-		ModifiedAt:  stat.Mtim,
-		Size:        stat.Size,
-		IsDir:       (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
-		IsSymlink:   (stat.Mode & unix.S_IFMT) == unix.S_IFLNK,
+		Inode:      stat.Ino,
+		Perms:      (uint32(stat.Mode) & 0777),
+		UID:        stat.Uid,
+		GID:        stat.Gid,
+		CreatedAt:  stat.Ctim,
+		ModifiedAt: stat.Mtim,
+		Size:       stat.Size,
+		IsDir:      (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
+		IsSymlink:  (stat.Mode & unix.S_IFMT) == unix.S_IFLNK,
 	}
 
 	if metadata.IsSymlink {
