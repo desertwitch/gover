@@ -137,12 +137,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool)
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
 			}
-			if excludedDisks != nil {
-				share.ExcludedDisks = excludedDisks
-			} else {
-				// If nil, assume no disks are excluded
-				share.ExcludedDisks = make(map[string]*UnraidDisk)
-			}
+			share.ExcludedDisks = excludedDisks
 
 			shares[share.Name] = share
 		}
