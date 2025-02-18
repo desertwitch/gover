@@ -206,7 +206,7 @@ func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool,
 	}
 
 	requiredFree := minFree
-	if minFree <= 0 {
+	if minFree <= fileSize {
 		requiredFree = fileSize
 	}
 
