@@ -1,8 +1,7 @@
 package main
 
 import (
-	"os"
-	"syscall"
+	"golang.org/x/sys/unix"
 )
 
 type UnraidSystem struct {
@@ -110,11 +109,11 @@ type RelatedDirectory struct {
 
 type Metadata struct {
 	Inode       uint64
-	Permissions os.FileMode
+	Permissions uint32
 	UID         uint32
 	GID         uint32
-	CreatedAt   syscall.Timespec
-	ModifiedAt  syscall.Timespec
+	CreatedAt   unix.Timespec
+	ModifiedAt  unix.Timespec
 	Size        int64
 	IsDir       bool
 	IsSymlink   bool

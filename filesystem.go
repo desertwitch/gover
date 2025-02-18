@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"syscall"
+	"golang.org/x/sys/unix"
 )
 
 func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget UnraidStoreable) ([]*Moveable, error) {
@@ -100,30 +100,26 @@ func establishHardlinks(moveables []*Moveable) {
 }
 
 func getMetadata(path string) (*Metadata, error) {
-	info, err := os.Lstat(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to lstat %s: %w", path, err)
-	}
+	var stat unix.Stat_t
 
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type from Sys(): %T", info.Sys())
+	if err := unix.Lstat(path, &stat); err != nil {
+		return nil, fmt.Errorf("failed to stat: %w", err)
 	}
 
 	metadata := &Metadata{
 		Inode:       stat.Ino,
-		Permissions: info.Mode().Perm(),
+		Permissions: (uint32(stat.Mode) & 0777),
 		UID:         stat.Uid,
 		GID:         stat.Gid,
 		CreatedAt:   stat.Ctim,
 		ModifiedAt:  stat.Mtim,
 		Size:        stat.Size,
-		IsDir:       info.Mode().IsDir(),
-		IsSymlink:   info.Mode()&os.ModeSymlink != 0,
+		IsDir:       (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
+		IsSymlink:   (stat.Mode & unix.S_IFMT) == unix.S_IFLNK,
 	}
 
 	if metadata.IsSymlink {
-		target, err := os.Readlink(path)
+		target, err := filepath.EvalSymlinks(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read symlink target for %s: %w", path, err)
 		}
@@ -181,8 +177,8 @@ func isEmptyFolder(path string) (bool, error) {
 }
 
 func getDiskUsage(path string) (DiskStats, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
+	var stat unix.Statfs_t
+	if err := unix.Statfs(path, &stat); err != nil {
 		return DiskStats{}, err
 	}
 	stats := DiskStats{

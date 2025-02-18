@@ -84,7 +84,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("%s --> error: %v\n", moveable.Path, err)
 		} else {
-			fmt.Printf("%s --> %s\n", moveable.Path, dest.Name)
+			fmt.Printf("%s --> %s [%v]\n", moveable.Path, dest.Name, moveable.Metadata)
 		}
 	}
 }

@@ -5,3 +5,5 @@ go 1.23.6
 require github.com/joho/godotenv v1.5.1
 
 require github.com/lmittmann/tint v1.0.7
+
+require golang.org/x/sys v0.30.0
