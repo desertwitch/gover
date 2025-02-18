@@ -13,7 +13,7 @@ import (
 func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 	var filtered []*Moveable
 	for _, m := range moveables {
-		dest, err := proposeArrayDestination(m)
+		dest, err := allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", m.Path, "share", m.Share.Name)
 			continue
@@ -24,7 +24,7 @@ func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 	return filtered, nil
 }
 
-func proposeArrayDestination(m *Moveable) (*UnraidDisk, error) {
+func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 

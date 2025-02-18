@@ -42,12 +42,12 @@ func main() {
 				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
 				continue
 			}
-			allocated, err := allocateArrayDestinations(files)
+			allocateds, err := allocateArrayDestinations(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to allocate jobs", "share", share.Name, "err", err)
 				continue
 			}
-			moveables = append(moveables, allocated...)
+			moveables = append(moveables, allocateds...)
 		} else {
 			// Cache to Cache2
 			files, err := getMoveables(share.CachePool, share, share.CachePool2)
