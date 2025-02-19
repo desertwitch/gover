@@ -39,7 +39,7 @@ func main() {
 			// Cache to Array
 			files, err := getMoveables(share.CachePool, share, nil)
 			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
 			allocateds, err := allocateArrayDestinations(files)
@@ -52,7 +52,7 @@ func main() {
 			// Cache to Cache2
 			files, err := getMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
 			moveables = append(moveables, files...)
@@ -69,7 +69,7 @@ func main() {
 			for _, disk := range disks {
 				files, err := getMoveables(disk, share, share.CachePool)
 				if err != nil {
-					slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
+					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 					continue
 				}
 				moveables = append(moveables, files...)
@@ -78,7 +78,7 @@ func main() {
 			// Cache2 to Cache
 			files, err := getMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "share", share.Name, "err", err)
+				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
 			moveables = append(moveables, files...)

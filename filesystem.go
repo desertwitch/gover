@@ -49,13 +49,13 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 	for _, m := range preSelection {
 		metadata, err := getMetadata(m.Path)
 		if err != nil {
-			slog.Warn("Skipped job: failed to get metadata", "path", m.Path, "err", err)
+			slog.Warn("Skipped job: failed to get metadata", "err", err, "job", m.Path, "share", m.Share.Name)
 			continue
 		}
 		m.Metadata = metadata
 
 		if err := walkParentDirs(m, shareDir); err != nil {
-			slog.Warn("Skipped job: failed to get parent folders", "path", m.Path, "err", err)
+			slog.Warn("Skipped job: failed to get parent folders", "err", err, "job", m.Path, "share", m.Share.Name)
 			continue
 		}
 
@@ -126,11 +126,39 @@ func getMetadata(path string) (*Metadata, error) {
 	}
 
 	if metadata.IsSymlink {
-		target, err := filepath.EvalSymlinks(path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read symlink: %w", err)
+		var symlinkTarget string
+		var symlinkError error
+		var symlinkResolved bool
+
+		if osTarget, err := os.Readlink(path); err == nil {
+			if filepath.IsAbs(osTarget) {
+				symlinkTarget = osTarget
+				symlinkResolved = true
+			} else {
+				if resolvTarget, err := filepath.EvalSymlinks(path); err == nil {
+					symlinkTarget = resolvTarget
+					symlinkResolved = true
+				} else {
+					// Maybe warn could not resolve relative symlink, but keeping relative?
+					symlinkTarget = osTarget
+					symlinkResolved = true
+				}
+			}
+		} else {
+			if resolvTarget, err := filepath.EvalSymlinks(path); err == nil {
+				symlinkTarget = resolvTarget
+				symlinkResolved = true
+			} else {
+				symlinkError = err
+				symlinkResolved = false
+			}
 		}
-		metadata.SymlinkTo = target
+
+		if !symlinkResolved || symlinkError != nil {
+			return nil, fmt.Errorf("failed to read symlink: %w", symlinkError)
+		}
+
+		metadata.SymlinkTo = symlinkTarget
 	}
 
 	return metadata, nil
