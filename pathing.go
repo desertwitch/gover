@@ -9,25 +9,34 @@ import (
 func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	var filtered []*Moveable
 
-OUTER:
 	for _, m := range moveables {
 		if err := establishPath(m); err != nil {
 			slog.Warn("Skipped job: cannot generate destination path for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
 
+		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
 			if err := establishPath(h); err != nil {
 				slog.Warn("Skipped job: cannot generate destination path for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-				continue OUTER
+				hardLinkFailure = true
+				break
 			}
 		}
+		if hardLinkFailure {
+			continue
+		}
 
+		symlinkFailure := false
 		for _, s := range m.Symlinks {
 			if err := establishPath(s); err != nil {
 				slog.Warn("Skipped job: cannot generate destination path for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-				continue OUTER
+				symlinkFailure = true
+				break
 			}
+		}
+		if symlinkFailure {
+			continue
 		}
 
 		filtered = append(filtered, m)
@@ -56,7 +65,7 @@ func establishPath(m *Moveable) error {
 
 func establishRelatedDirPaths(m *Moveable) error {
 	if m.RootDir == nil {
-		return fmt.Errorf("dir path root is nil")
+		return fmt.Errorf("dir root is nil")
 	}
 
 	dir := m.RootDir

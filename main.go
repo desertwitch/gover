@@ -42,17 +42,37 @@ func main() {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			allocateds, err := allocateArrayDestinations(files)
+			files, err = allocateArrayDestinations(files)
 			if err != nil {
-				slog.Warn("Skipped share: failed to allocate jobs", "share", share.Name, "err", err)
+				slog.Warn("Skipped share: failed to allocate jobs", "err", err, "share", share.Name)
 				continue
 			}
-			moveables = append(moveables, allocateds...)
+			files, err = establishPaths(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+				continue
+			}
+			files, err = validateMoveables(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+				continue
+			}
+			moveables = append(moveables, files...)
 		} else {
 			// Cache to Cache2
 			files, err := getMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
+				continue
+			}
+			files, err = establishPaths(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+				continue
+			}
+			files, err = validateMoveables(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
 			moveables = append(moveables, files...)
@@ -72,6 +92,16 @@ func main() {
 					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 					continue
 				}
+				files, err = establishPaths(files)
+				if err != nil {
+					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+					continue
+				}
+				files, err = validateMoveables(files)
+				if err != nil {
+					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+					continue
+				}
 				moveables = append(moveables, files...)
 			}
 		} else {
@@ -81,19 +111,30 @@ func main() {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
+			files, err = establishPaths(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+				continue
+			}
+			files, err = validateMoveables(files)
+			if err != nil {
+				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+				continue
+			}
 			moveables = append(moveables, files...)
 		}
 	}
 
-	moveables, _ = establishPaths(moveables)
-
 	for _, m := range moveables {
-		fmt.Printf("%s --> %s [%v]\n", m.SourcePath, m.DestPath, m)
+		if valid, err := validateMoveable(m, make(map[*Moveable]bool)); !valid || err != nil {
+			fmt.Printf("Error: %v", err)
+		}
+		fmt.Printf("%s --> %s\n", m.SourcePath, m.DestPath)
 		for _, h := range m.Hardlinks {
-			fmt.Printf("|- %s --> %s [%v]\n", h.SourcePath, h.DestPath, h)
+			fmt.Printf("|- [HL] %s --> %s\n", h.SourcePath, h.DestPath)
 		}
 		for _, s := range m.Symlinks {
-			fmt.Printf("|- %s --> %s [%v]\n", s.SourcePath, s.DestPath, s)
+			fmt.Printf("|- [SL] %s --> %s\n", s.SourcePath, s.DestPath)
 		}
 		fmt.Println()
 	}

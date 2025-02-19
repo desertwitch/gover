@@ -1,7 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"log/slog"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -80,4 +85,29 @@ func removeInternalLinks(moveables []*Moveable) []*Moveable {
 	}
 
 	return ms
+}
+
+func existsOnAnyShareDisk(m *Moveable) (bool, []*UnraidDisk) {
+	var foundDisks []*UnraidDisk
+
+	for name, disk := range m.Share.IncludedDisks {
+		if _, exists := m.Share.ExcludedDisks[name]; exists {
+			continue
+		}
+		relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
+		if err != nil {
+			slog.Warn("Skipped disk for destination file existence consideration", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			continue
+		}
+		probePath := filepath.Join(disk.FSPath, relPath)
+		if _, err := os.Stat(probePath); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				slog.Warn("Skipped disk for destination file existence consideration", "path", probePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			}
+			continue
+		}
+		foundDisks = append(foundDisks, disk)
+	}
+
+	return len(foundDisks) > 0, foundDisks
 }

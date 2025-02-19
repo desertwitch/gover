@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,7 +43,7 @@ func establishDisks() (map[string]*UnraidDisk, error) {
 func establishPools() (map[string]*UnraidPool, error) {
 	basePath := ConfigDirPools
 
-	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+	if _, err := os.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("pool config dir does not exist: %w", err)
 	}
 
@@ -58,7 +60,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
-			if _, err := os.Lstat(fsPath); os.IsNotExist(err) {
+			if _, err := os.Stat(fsPath); errors.Is(err, fs.ErrNotExist) {
 				return nil, fmt.Errorf("pool mount %s does not exist: %w", fsPath, err)
 			}
 
@@ -81,7 +83,7 @@ func establishPools() (map[string]*UnraidPool, error) {
 func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 
-	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+	if _, err := os.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("share config dir does not exist: %w", err)
 	}
 
