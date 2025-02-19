@@ -22,7 +22,7 @@ func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error
 	if pool, exists := pools[poolName]; exists {
 		return pool, nil
 	}
-	return nil, fmt.Errorf("configured pool %s not found in mounted pools", poolName)
+	return nil, fmt.Errorf("configured pool %s does not exist", poolName)
 }
 
 // findDisks dereferences a list of textual disk names into a map of disk pointers
@@ -38,7 +38,7 @@ func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*Unra
 		if disk, exists := disks[name]; exists {
 			foundDisks[name] = disk
 		} else {
-			return nil, fmt.Errorf("configured disk %s not found in mounted disks", name)
+			return nil, fmt.Errorf("configured disk %s does not exist", name)
 		}
 	}
 

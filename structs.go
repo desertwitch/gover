@@ -114,9 +114,10 @@ type UnraidShare struct {
 
 type Moveable struct {
 	Share      *UnraidShare
-	Path       string
 	Source     UnraidStoreable
+	SourcePath string
 	Dest       UnraidStoreable
+	DestPath   string
 	Hardlinks  []*Moveable
 	Hardlink   bool
 	HardlinkTo *Moveable
@@ -124,16 +125,16 @@ type Moveable struct {
 	Symlink    bool
 	SymlinkTo  *Moveable
 	Metadata   *Metadata
-	Parent     *RelatedDirectory
 	RootDir    *RelatedDirectory
+	DeepestDir *RelatedDirectory
 }
 
 type RelatedDirectory struct {
-	Path         string
-	RelativePath string
-	Metadata     *Metadata
-	Parent       *RelatedDirectory
-	Child        *RelatedDirectory
+	SourcePath string
+	DestPath   string
+	Metadata   *Metadata
+	Parent     *RelatedDirectory
+	Child      *RelatedDirectory
 }
 
 type Metadata struct {

@@ -85,13 +85,15 @@ func main() {
 		}
 	}
 
+	moveables, _ = establishPaths(moveables)
+
 	for _, m := range moveables {
-		fmt.Printf("%s --> %s [%v]\n", m.Path, m.Dest.GetName(), m)
+		fmt.Printf("%s --> %s [%v]\n", m.SourcePath, m.DestPath, m)
 		for _, h := range m.Hardlinks {
-			fmt.Printf("|- %s --> %s [%v]\n", h.Path, h.Dest.GetName(), h)
+			fmt.Printf("|- %s --> %s [%v]\n", h.SourcePath, h.DestPath, h)
 		}
 		for _, s := range m.Symlinks {
-			fmt.Printf("|- %s --> %s [%v]\n", s.Path, s.Dest.GetName(), s)
+			fmt.Printf("|- %s --> %s [%v]\n", s.SourcePath, s.DestPath, s)
 		}
 		fmt.Println()
 	}
