@@ -72,18 +72,52 @@ func validateMoveable(m *Moveable, visited map[*Moveable]bool) (bool, error) {
 		}
 	}
 
-	dir := m.RootDir
-	for dir != nil {
-		if dir.Metadata == nil {
+	numDirsA := 0
+	dirA := m.RootDir
+	for dirA != nil {
+		if dirA.Metadata == nil {
 			return false, fmt.Errorf("no related dir metadata")
 		}
-		if dir.SourcePath == "" {
+		if dirA.Metadata.IsSymlink {
+			return false, fmt.Errorf("related dir is a symlink")
+		}
+		if !dirA.Metadata.IsDir {
+			return false, fmt.Errorf("related dir is not a dir")
+		}
+		if dirA.SourcePath == "" {
 			return false, fmt.Errorf("no related dir source path")
 		}
-		if dir.DestPath == "" {
+		if dirA.DestPath == "" {
 			return false, fmt.Errorf("no related dir destination path")
 		}
-		dir = dir.Child
+		dirA = dirA.Child
+		numDirsA++
+	}
+
+	numDirsB := 0
+	dirB := m.DeepestDir
+	for dirB != nil {
+		if dirB.Metadata == nil {
+			return false, fmt.Errorf("no related dir metadata")
+		}
+		if dirB.Metadata.IsSymlink {
+			return false, fmt.Errorf("related dir is a symlink")
+		}
+		if !dirB.Metadata.IsDir {
+			return false, fmt.Errorf("related dir is not a dir")
+		}
+		if dirB.SourcePath == "" {
+			return false, fmt.Errorf("no related dir source path")
+		}
+		if dirB.DestPath == "" {
+			return false, fmt.Errorf("no related dir destination path")
+		}
+		dirB = dirB.Parent
+		numDirsB++
+	}
+
+	if numDirsA != numDirsB {
+		return false, fmt.Errorf("related dir parent/child mismatch")
 	}
 
 	return true, nil

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -49,7 +50,19 @@ func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 
-	if m.Share.SplitLevel >= 0 {
+	exactDirFound := false
+	if m.Metadata.IsDir {
+		returnDisks, err := findDisksWithExactDirectory(m)
+		if err != nil {
+			return nil, fmt.Errorf("failed allocating for directory: %w", err)
+		}
+		if returnDisks != nil {
+			includedDisks = returnDisks
+			exactDirFound = true
+		}
+	}
+
+	if !exactDirFound && m.Share.SplitLevel >= 0 {
 		returnDisks, err := allocateDisksBySplitLevel(m)
 		// TO-DO: Configurable, if not found split level files should proceed anyhow
 		if err != nil {
@@ -309,6 +322,7 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
 				if _, err := os.Stat(dirToCheck); err == nil {
+					// OK to follow symlinks here, mkdir also respects them
 					enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
@@ -326,4 +340,35 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 		}
 		return nil, -1, nil
 	}
+}
+
+func findDisksWithExactDirectory(m *Moveable) (map[string]*UnraidDisk, error) {
+	var foundDisks map[string]*UnraidDisk
+
+	for name, disk := range m.Share.IncludedDisks {
+		if _, exists := m.Share.ExcludedDisks[name]; exists {
+			continue
+		}
+
+		relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
+		if err != nil {
+			slog.Warn("Skipped disk for empty folder allocation consideration", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			continue
+		}
+
+		probePath := filepath.Join(disk.FSPath, relPath)
+		if _, err := os.Stat(probePath); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				slog.Warn("Skipped disk for empty folder allocation consideration", "path", probePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			}
+			continue
+		}
+
+		if foundDisks == nil {
+			foundDisks = make(map[string]*UnraidDisk)
+		}
+		foundDisks[name] = disk
+	}
+
+	return foundDisks, nil
 }
