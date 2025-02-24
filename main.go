@@ -126,9 +126,6 @@ func main() {
 	}
 
 	for _, m := range moveables {
-		if valid, err := validateMoveable(m, make(map[*Moveable]bool)); !valid || err != nil {
-			fmt.Printf("Error: %v", err)
-		}
 		fmt.Printf("%s --> %s\n", m.SourcePath, m.DestPath)
 		for _, h := range m.Hardlinks {
 			fmt.Printf("|- [HL] %s --> %s\n", h.SourcePath, h.DestPath)

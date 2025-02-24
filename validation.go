@@ -3,27 +3,49 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"path/filepath"
 )
 
 func validateMoveables(moveables []*Moveable) ([]*Moveable, error) {
 	var filtered []*Moveable
+
 	for _, m := range moveables {
-		if _, err := validateMoveable(m, make(map[*Moveable]bool)); err != nil {
-			slog.Warn("Skipped job: failed pre-move validation", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+		if _, err := validateMoveable(m); err != nil {
+			slog.Warn("Skipped job: failed pre-move validation for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
+
+		hardLinkFailure := false
+		for _, h := range m.Hardlinks {
+			if _, err := validateMoveable(h); err != nil {
+				slog.Warn("Skipped job: failed pre-move validation for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				hardLinkFailure = true
+				break
+			}
+		}
+		if hardLinkFailure {
+			continue
+		}
+
+		symlinkFailure := false
+		for _, s := range m.Symlinks {
+			if _, err := validateMoveable(s); err != nil {
+				slog.Warn("Skipped job: failed pre-move validation for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				symlinkFailure = true
+				break
+			}
+		}
+		if symlinkFailure {
+			continue
+		}
+
 		filtered = append(filtered, m)
 	}
+
 	return filtered, nil
 }
 
-func validateMoveable(m *Moveable, visited map[*Moveable]bool) (bool, error) {
-	if visited[m] {
-		return false, fmt.Errorf("circular reference")
-	}
-	visited[m] = true
-	defer delete(visited, m)
-
+func validateMoveable(m *Moveable) (bool, error) {
 	if m.Share == nil {
 		return false, fmt.Errorf("no share information")
 	}
@@ -48,27 +70,29 @@ func validateMoveable(m *Moveable, visited map[*Moveable]bool) (bool, error) {
 		return false, fmt.Errorf("no destination or destination path")
 	}
 
-	for _, h := range m.Hardlinks {
-		if _, err := validateMoveable(h, visited); err != nil {
-			return false, err
-		}
-		if !h.Hardlink {
-			return false, fmt.Errorf("hardlink bool is false")
-		}
-		if h.HardlinkTo == nil {
+	if m.Hardlink {
+		if m.HardlinkTo == nil {
 			return false, fmt.Errorf("no hardlink target")
+		}
+		if m.Hardlinks != nil {
+			return false, fmt.Errorf("hardlink has sublinks")
+		}
+	} else {
+		if m.HardlinkTo != nil {
+			return false, fmt.Errorf("hardlink false, but has set target")
 		}
 	}
 
-	for _, s := range m.Symlinks {
-		if _, err := validateMoveable(s, visited); err != nil {
-			return false, err
-		}
-		if !s.Symlink {
-			return false, fmt.Errorf("symlink bool is false")
-		}
-		if s.SymlinkTo == nil {
+	if m.Symlink {
+		if m.SymlinkTo == nil {
 			return false, fmt.Errorf("no symlink target")
+		}
+		if m.Symlinks != nil {
+			return false, fmt.Errorf("symlink has sublinks")
+		}
+	} else {
+		if m.SymlinkTo != nil {
+			return false, fmt.Errorf("symlink false, but has set target")
 		}
 	}
 
@@ -118,6 +142,16 @@ func validateMoveable(m *Moveable, visited map[*Moveable]bool) (bool, error) {
 
 	if numDirsA != numDirsB {
 		return false, fmt.Errorf("related dir parent/child mismatch")
+	}
+
+	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.Name)
+	if m.RootDir.SourcePath != shareDirSource {
+		return false, fmt.Errorf("related dir root does not connect to share base (source): %s != %s", shareDirSource, m.RootDir.SourcePath)
+	}
+
+	shareDirDest := filepath.Join(m.Dest.GetFSPath(), m.Share.Name)
+	if m.RootDir.DestPath != shareDirDest {
+		return false, fmt.Errorf("related dir root does not connect to share base (dest): %s != %s", shareDirDest, m.RootDir.DestPath)
 	}
 
 	return true, nil

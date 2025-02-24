@@ -142,7 +142,7 @@ type Metadata struct {
 	Perms      uint32
 	UID        uint32
 	GID        uint32
-	CreatedAt  unix.Timespec
+	AccessedAt unix.Timespec
 	ModifiedAt unix.Timespec
 	Size       int64
 	IsDir      bool

@@ -81,7 +81,7 @@ func getMetadata(path string) (*Metadata, error) {
 		Perms:      (uint32(stat.Mode) & 0777),
 		UID:        stat.Uid,
 		GID:        stat.Gid,
-		CreatedAt:  stat.Ctim,
+		AccessedAt: stat.Atim,
 		ModifiedAt: stat.Mtim,
 		Size:       stat.Size,
 		IsDir:      (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
