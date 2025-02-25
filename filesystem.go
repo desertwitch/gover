@@ -221,7 +221,7 @@ func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool,
 	return false, nil
 }
 
-func existsOnStorage(m *Moveable) (UnraidStoreable, string, error) {
+func existsOnStorage(m *Moveable) (storeable UnraidStoreable, existingAtPath string, err error) {
 	if m.Dest == nil {
 		return nil, "", fmt.Errorf("destination is nil")
 	}
@@ -256,7 +256,7 @@ func existsOnStorage(m *Moveable) (UnraidStoreable, string, error) {
 	return nil, "", fmt.Errorf("impossible storeable type")
 }
 
-func existsOnStorageCandidate(m *Moveable, destCandidate UnraidStoreable) (bool, string, error) {
+func existsOnStorageCandidate(m *Moveable, destCandidate UnraidStoreable) (exists bool, existingAtPath string, err error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to rel path: %w", err)

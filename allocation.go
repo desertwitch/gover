@@ -309,7 +309,6 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
 				if _, err := os.Stat(dirToCheck); err == nil {
-					// OK to follow symlinks here, mkdir also respects them
 					enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
