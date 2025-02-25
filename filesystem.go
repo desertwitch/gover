@@ -89,38 +89,10 @@ func getMetadata(path string) (*Metadata, error) {
 	}
 
 	if metadata.IsSymlink {
-		var symlinkTarget string
-		var symlinkError error
-		var symlinkResolved bool
-
-		if osTarget, err := os.Readlink(path); err == nil {
-			if filepath.IsAbs(osTarget) {
-				symlinkTarget = osTarget
-				symlinkResolved = true
-			} else {
-				if resolvTarget, err := filepath.EvalSymlinks(path); err == nil {
-					symlinkTarget = resolvTarget
-					symlinkResolved = true
-				} else {
-					// Maybe warn could not resolve relative symlink, but keeping relative?
-					symlinkTarget = osTarget
-					symlinkResolved = true
-				}
-			}
-		} else {
-			if resolvTarget, err := filepath.EvalSymlinks(path); err == nil {
-				symlinkTarget = resolvTarget
-				symlinkResolved = true
-			} else {
-				symlinkError = err
-				symlinkResolved = false
-			}
+		symlinkTarget, err := os.Readlink(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read symlink: %w", err)
 		}
-
-		if !symlinkResolved || symlinkError != nil {
-			return nil, fmt.Errorf("failed to read symlink: %w", symlinkError)
-		}
-
 		metadata.SymlinkTo = symlinkTarget
 	}
 

@@ -112,6 +112,12 @@ type UnraidShare struct {
 	CFGFile       string
 }
 
+type FSElement interface {
+	GetMetadata() *Metadata
+	GetSourcePath() string
+	GetDestPath() string
+}
+
 type Moveable struct {
 	Share      *UnraidShare
 	Source     UnraidStoreable
@@ -129,12 +135,36 @@ type Moveable struct {
 	DeepestDir *RelatedDirectory
 }
 
+func (m *Moveable) GetMetadata() *Metadata {
+	return m.Metadata
+}
+
+func (m *Moveable) GetSourcePath() string {
+	return m.SourcePath
+}
+
+func (m *Moveable) GetDestPath() string {
+	return m.DestPath
+}
+
 type RelatedDirectory struct {
 	SourcePath string
 	DestPath   string
 	Metadata   *Metadata
 	Parent     *RelatedDirectory
 	Child      *RelatedDirectory
+}
+
+func (d *RelatedDirectory) GetMetadata() *Metadata {
+	return d.Metadata
+}
+
+func (d *RelatedDirectory) GetSourcePath() string {
+	return d.SourcePath
+}
+
+func (d *RelatedDirectory) GetDestPath() string {
+	return d.DestPath
 }
 
 type Metadata struct {
@@ -153,4 +183,12 @@ type Metadata struct {
 type DiskStats struct {
 	TotalSize int64
 	FreeSpace int64
+}
+
+type BatchProgress struct {
+	AnyProcessed       []FSElement
+	DirsProcessed      []*RelatedDirectory
+	MoveablesProcessed []*Moveable
+	SymlinksProcessed  []*Moveable
+	HardlinksProcessed []*Moveable
 }
