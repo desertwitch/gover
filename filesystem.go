@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -217,4 +219,31 @@ func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool,
 	}
 
 	return false, nil
+}
+
+func existsOnDestination(m *Moveable, destCandidate UnraidStoreable) (bool, error) {
+	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to rel path: %w", err)
+	}
+
+	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
+
+	if m.Symlink || m.Hardlink || m.Metadata.IsSymlink {
+		if _, err := os.Lstat(dstPath); err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return false, nil
+			}
+			return false, fmt.Errorf("failed to check link existence: %w", err)
+		}
+	} else {
+		if _, err := os.Stat(dstPath); err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return false, nil
+			}
+			return false, fmt.Errorf("failed to check file existence: %w", err)
+		}
+	}
+
+	return true, nil
 }
