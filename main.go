@@ -135,4 +135,8 @@ func main() {
 		}
 		fmt.Println()
 	}
+
+	if err := processMoveables(moveables, &BatchProgress{}); err != nil {
+		fmt.Printf("Error: %v", err)
+	}
 }
