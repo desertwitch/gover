@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"strings"
 )
 
 func validateMoveables(moveables []*Moveable) ([]*Moveable, error) {
@@ -66,8 +67,24 @@ func validateMoveable(m *Moveable) (bool, error) {
 		return false, fmt.Errorf("no source or source path")
 	}
 
+	if !filepath.IsAbs(m.SourcePath) {
+		return false, fmt.Errorf("source path is relative")
+	}
+
+	if !strings.HasPrefix(m.SourcePath, m.Source.GetFSPath()) {
+		return false, fmt.Errorf("source path mismatches source fs element")
+	}
+
 	if m.Dest == nil || m.DestPath == "" {
 		return false, fmt.Errorf("no destination or destination path")
+	}
+
+	if !filepath.IsAbs(m.DestPath) {
+		return false, fmt.Errorf("destination path is relative")
+	}
+
+	if !strings.HasPrefix(m.DestPath, m.Dest.GetFSPath()) {
+		return false, fmt.Errorf("destination path mismatches destination fs element")
 	}
 
 	if m.Hardlink {
@@ -111,8 +128,14 @@ func validateMoveable(m *Moveable) (bool, error) {
 		if dirA.SourcePath == "" {
 			return false, fmt.Errorf("no related dir source path")
 		}
+		if !filepath.IsAbs(dirA.SourcePath) {
+			return false, fmt.Errorf("related dir source path is relative")
+		}
 		if dirA.DestPath == "" {
 			return false, fmt.Errorf("no related dir destination path")
+		}
+		if !filepath.IsAbs(dirA.DestPath) {
+			return false, fmt.Errorf("related dir destination path is relative")
 		}
 		dirA = dirA.Child
 		numDirsA++
@@ -133,9 +156,16 @@ func validateMoveable(m *Moveable) (bool, error) {
 		if dirB.SourcePath == "" {
 			return false, fmt.Errorf("no related dir source path")
 		}
+		if !filepath.IsAbs(dirB.SourcePath) {
+			return false, fmt.Errorf("related dir source path is relative")
+		}
 		if dirB.DestPath == "" {
 			return false, fmt.Errorf("no related dir destination path")
 		}
+		if !filepath.IsAbs(dirB.DestPath) {
+			return false, fmt.Errorf("related dir destination path is relative")
+		}
+
 		dirB = dirB.Parent
 		numDirsB++
 	}
