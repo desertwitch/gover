@@ -49,14 +49,6 @@ func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 
-	existsDisk, err := alreadyExistsOnArray(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed checking existence on array: %w", err)
-	}
-	if existsDisk != nil {
-		return existsDisk, nil
-	}
-
 	if m.Share.SplitLevel >= 0 {
 		returnDisks, err := allocateDisksBySplitLevel(m)
 		// TO-DO: Configurable, if not found split level files should proceed anyhow
@@ -119,17 +111,12 @@ func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exc
 	})
 
 	for _, disk := range disks {
-		alreadyExists, err := existsOnDestination(m, disk)
-		if err != nil {
-			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-			continue
-		}
 		enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
-		if !alreadyExists && enoughSpace {
+		if enoughSpace {
 			return disk, nil
 		}
 	}
@@ -161,17 +148,12 @@ func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exclu
 	})
 
 	for _, disk := range disks {
-		alreadyExists, err := existsOnDestination(m, disk)
-		if err != nil {
-			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-			continue
-		}
 		enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
-		if !alreadyExists && enoughSpace && diskStats[disk].FreeSpace > m.Share.SpaceFloor {
+		if enoughSpace && diskStats[disk].FreeSpace > m.Share.SpaceFloor {
 			return disk, nil
 		}
 	}
@@ -215,17 +197,12 @@ func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, ex
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			alreadyExists, err := existsOnDestination(m, disk)
-			if err != nil {
-				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-				continue
-			}
 			enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
-			if stats, found := diskStats[disk]; found && !alreadyExists && enoughSpace && stats.FreeSpace >= highWaterMark {
+			if stats, found := diskStats[disk]; found && enoughSpace && stats.FreeSpace >= highWaterMark {
 				return disk, nil
 			}
 		}
@@ -333,17 +310,12 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
 				if _, err := os.Stat(dirToCheck); err == nil {
 					// OK to follow symlinks here, mkdir also respects them
-					alreadyExists, err := existsOnDestination(m, disk)
-					if err != nil {
-						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-						continue
-					}
 					enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 						continue
 					}
-					if !alreadyExists && enoughSpace {
+					if enoughSpace {
 						foundDisks = append(foundDisks, disk)
 						found = true
 					}
@@ -355,21 +327,4 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 		}
 		return nil, -1, nil
 	}
-}
-
-func alreadyExistsOnArray(m *Moveable) (*UnraidDisk, error) {
-	for name, disk := range m.Share.IncludedDisks {
-		if _, exists := m.Share.ExcludedDisks[name]; exists {
-			continue
-		}
-		alreadyExists, err := existsOnDestination(m, disk)
-		if err != nil {
-			return nil, err
-		}
-		if alreadyExists {
-			return disk, nil
-		}
-	}
-
-	return nil, nil
 }

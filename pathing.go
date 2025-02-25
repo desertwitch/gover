@@ -10,15 +10,36 @@ func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	var filtered []*Moveable
 
 	for _, m := range moveables {
+		existsOn, existsPath, err := existsOnStorage(m)
+		if err != nil {
+			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			continue
+		}
+		if existsOn != nil {
+			slog.Warn("Skipped job: destination path already exists for job", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+			continue
+		}
+
 		if err := establishPath(m); err != nil {
-			slog.Warn("Skipped job: cannot generate destination path for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: cannot set destination path for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
+			existsOn, existsPath, err := existsOnStorage(h)
+			if err != nil {
+				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				hardLinkFailure = true
+				break
+			}
+			if existsOn != nil {
+				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+				hardLinkFailure = true
+				break
+			}
 			if err := establishPath(h); err != nil {
-				slog.Warn("Skipped job: cannot generate destination path for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: cannot set destination path for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
 				break
 			}
@@ -29,8 +50,19 @@ func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
+			existsOn, existsPath, err := existsOnStorage(s)
+			if err != nil {
+				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				symlinkFailure = true
+				break
+			}
+			if existsOn != nil {
+				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+				symlinkFailure = true
+				break
+			}
 			if err := establishPath(s); err != nil {
-				slog.Warn("Skipped job: cannot generate destination path for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: cannot set destination path for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
 				break
 			}

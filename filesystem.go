@@ -31,7 +31,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 			}
 		}
 
-		if !d.IsDir() || (d.IsDir() && isEmptyDir) {
+		if !d.IsDir() || (d.IsDir() && isEmptyDir && path != shareDir) {
 			moveable := &Moveable{
 				Share:      share,
 				Source:     source,
@@ -221,29 +221,55 @@ func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool,
 	return false, nil
 }
 
-func existsOnDestination(m *Moveable, destCandidate UnraidStoreable) (bool, error) {
+func existsOnStorage(m *Moveable) (UnraidStoreable, string, error) {
+	if m.Dest == nil {
+		return nil, "", fmt.Errorf("destination is nil")
+	}
+
+	if _, ok := m.Dest.(*UnraidDisk); ok {
+		for name, disk := range m.Share.IncludedDisks {
+			if _, exists := m.Share.ExcludedDisks[name]; exists {
+				continue
+			}
+			alreadyExists, existsPath, err := existsOnStorageCandidate(m, disk)
+			if err != nil {
+				return nil, "", err
+			}
+			if alreadyExists {
+				return disk, existsPath, nil
+			}
+		}
+		return nil, "", nil
+	}
+
+	if pool, ok := m.Dest.(*UnraidPool); ok {
+		alreadyExists, existsPath, err := existsOnStorageCandidate(m, pool)
+		if err != nil {
+			return nil, "", err
+		}
+		if alreadyExists {
+			return pool, existsPath, nil
+		}
+		return nil, "", nil
+	}
+
+	return nil, "", fmt.Errorf("impossible storeable type")
+}
+
+func existsOnStorageCandidate(m *Moveable, destCandidate UnraidStoreable) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return false, fmt.Errorf("failed to rel path: %w", err)
+		return false, "", fmt.Errorf("failed to rel path: %w", err)
 	}
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
 
-	if m.Symlink || m.Hardlink || m.Metadata.IsSymlink {
-		if _, err := os.Lstat(dstPath); err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				return false, nil
-			}
-			return false, fmt.Errorf("failed to check link existence: %w", err)
+	if _, err := os.Stat(dstPath); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, "", nil
 		}
-	} else {
-		if _, err := os.Stat(dstPath); err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				return false, nil
-			}
-			return false, fmt.Errorf("failed to check file existence: %w", err)
-		}
+		return false, "", fmt.Errorf("failed to check existence: %w", err)
 	}
 
-	return true, nil
+	return true, dstPath, nil
 }
