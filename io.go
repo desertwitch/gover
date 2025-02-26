@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -9,40 +8,61 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"sort"
 
+	"github.com/zeebo/blake3"
 	"golang.org/x/sys/unix"
 )
 
 // TO-DO:
 // Reallocation if not enough space (up to 3x?)
-// Timestamp tracking at the end ranging over processed
-// Rollback, JobProgress, Locking?
+// Rollback, Locking?
 
-func processMoveables(moveables []*Moveable, p *BatchProgress) error {
+func processMoveables(moveables []*Moveable, batch *InternalProgressReport) error {
 	for _, m := range moveables {
-		if err := processMoveable(m, p); err != nil {
+		job := &InternalProgressReport{}
+
+		if err := processMoveable(m, job); err != nil {
 			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
+		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
+
 		for _, h := range m.Hardlinks {
-			if err := processMoveable(h, p); err != nil {
-				slog.Warn("Skipped job: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-				// TO-DO: Rollback?
+			if err := processMoveable(h, job); err != nil {
+				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
+			slog.Info("Processed (hardlink):", "path", h.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 		}
+
 		for _, s := range m.Symlinks {
-			if err := processMoveable(s, p); err != nil {
-				slog.Warn("Skipped job: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-				// TO-DO: Rollback?
+			if err := processMoveable(s, job); err != nil {
+				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
+			slog.Info("Processed (symlink):", "path", s.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 		}
+
+		batch.AnyProcessed = append(batch.AnyProcessed, job.AnyProcessed...)
+		batch.DirsProcessed = append(batch.DirsProcessed, job.DirsProcessed...)
+		batch.HardlinksProcessed = append(batch.HardlinksProcessed, job.HardlinksProcessed...)
+		batch.MoveablesProcessed = append(batch.MoveablesProcessed, job.MoveablesProcessed...)
+		batch.SymlinksProcessed = append(batch.SymlinksProcessed, job.SymlinksProcessed...)
 	}
+
+	if err := ensureTimestamps(batch); err != nil {
+		return fmt.Errorf("failed finalizing timestamps: %w", err)
+	}
+
+	if err := removeEmptyDirs(batch); err != nil {
+		return fmt.Errorf("failed cleaning source directories: %w", err)
+	}
+
 	return nil
 }
 
-func processMoveable(m *Moveable, p *BatchProgress) error {
+func processMoveable(m *Moveable, job *InternalProgressReport) error {
 	used, err := isFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
@@ -52,66 +72,78 @@ func processMoveable(m *Moveable, p *BatchProgress) error {
 	}
 
 	if m.Hardlink {
-		if err := ensureDirectoryStructure(m, p); err != nil {
+		if err := ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for hardlink: %w", err)
 		}
 
 		if err := unix.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create hardlink: %w", err)
 		}
+		if err := os.Remove(m.SourcePath); err != nil {
+			return fmt.Errorf("failed to remove source after move: %w", err)
+		}
 
 		if err := ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.HardlinksProcessed = append(p.HardlinksProcessed, m)
 
+		job.AnyProcessed = append(job.AnyProcessed, m)
+		job.HardlinksProcessed = append(job.HardlinksProcessed, m)
 		return nil
 	}
 
 	if m.Symlink {
-		if err := ensureDirectoryStructure(m, p); err != nil {
+		if err := ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for symlink: %w", err)
 		}
 
 		if err := unix.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create symlink: %w", err)
 		}
+		if err := os.Remove(m.SourcePath); err != nil {
+			return fmt.Errorf("failed to remove source after move: %w", err)
+		}
 
 		if err := ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.SymlinksProcessed = append(p.SymlinksProcessed, m)
 
+		job.AnyProcessed = append(job.AnyProcessed, m)
+		job.SymlinksProcessed = append(job.SymlinksProcessed, m)
 		return nil
 	}
 
 	if m.Metadata.IsSymlink {
-		if err := ensureDirectoryStructure(m, p); err != nil {
+		if err := ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree: %w", err)
 		}
 
 		if err := unix.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create symlink: %w", err)
 		}
+		if err := os.Remove(m.SourcePath); err != nil {
+			return fmt.Errorf("failed to remove source after move: %w", err)
+		}
 
 		if err := ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.MoveablesProcessed = append(p.MoveablesProcessed, m)
 
+		job.AnyProcessed = append(job.AnyProcessed, m)
+		job.MoveablesProcessed = append(job.MoveablesProcessed, m)
 		return nil
 	}
 
-	if err := ensureDirectoryStructure(m, p); err != nil {
+	if err := ensureDirectoryStructure(m, job); err != nil {
 		return fmt.Errorf("failed to ensure dir tree: %w", err)
 	}
 
 	if m.Metadata.IsDir {
 		if err := unix.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
 			return fmt.Errorf("failed to create empty dir: %w", err)
+		}
+		if err := os.Remove(m.SourcePath); err != nil {
+			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 	} else {
 		enoughSpace, err := hasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
@@ -129,14 +161,17 @@ func processMoveable(m *Moveable, p *BatchProgress) error {
 		if err := moveFile(m); err != nil {
 			return fmt.Errorf("failed to move file: %w", err)
 		}
+		if err := os.Remove(m.SourcePath); err != nil {
+			return fmt.Errorf("failed to remove source after move: %w", err)
+		}
 	}
 
 	if err := ensurePermissions(m.DestPath, m.Metadata); err != nil {
 		return fmt.Errorf("failed to ensure permissions: %w", err)
 	}
-	p.AnyProcessed = append(p.AnyProcessed, m)
-	p.MoveablesProcessed = append(p.MoveablesProcessed, m)
 
+	job.AnyProcessed = append(job.AnyProcessed, m)
+	job.MoveablesProcessed = append(job.MoveablesProcessed, m)
 	return nil
 }
 
@@ -160,8 +195,8 @@ func moveFile(m *Moveable) error {
 	}
 	defer dstFile.Close()
 
-	srcHasher := sha256.New()
-	dstHasher := sha256.New()
+	srcHasher := blake3.New()
+	dstHasher := blake3.New()
 
 	teeReader := io.TeeReader(srcFile, srcHasher)
 	multiWriter := io.MultiWriter(dstFile, dstHasher)
@@ -194,8 +229,27 @@ func moveFile(m *Moveable) error {
 	return nil
 }
 
-func ensureDirectoryStructure(m *Moveable, p *BatchProgress) error {
+func ensureTimestamps(batch *InternalProgressReport) error {
+	for _, a := range batch.AnyProcessed {
+		if err := ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
+			slog.Warn("Warning (finalize): failure setting timestamp", "path", a.GetDestPath(), "err", err)
+			continue
+		}
+	}
+	return nil
+}
+
+func ensureTimestamp(path string, metadata *Metadata) error {
+	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
+	if err := unix.UtimesNano(path, ts); err != nil {
+		return fmt.Errorf("failed to set timestamp: %w", err)
+	}
+	return nil
+}
+
+func ensureDirectoryStructure(m *Moveable, job *InternalProgressReport) error {
 	dir := m.RootDir
+
 	for dir != nil {
 		// TO-DO: Handle generic errors here and otherwere for .Stat or .Lstat
 		if _, err := os.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
@@ -207,11 +261,12 @@ func ensureDirectoryStructure(m *Moveable, p *BatchProgress) error {
 				return fmt.Errorf("failed to ensure permissions: %w", err)
 			}
 
-			p.AnyProcessed = append(p.AnyProcessed, dir)
-			p.DirsProcessed = append(p.DirsProcessed, dir)
+			job.AnyProcessed = append(job.AnyProcessed, dir)
+			job.DirsProcessed = append(job.DirsProcessed, dir)
 		}
 		dir = dir.Child
 	}
+
 	return nil
 }
 
@@ -230,6 +285,43 @@ func ensurePermissions(path string, metadata *Metadata) error {
 func ensureLinkPermissions(path string, metadata *Metadata) error {
 	if err := unix.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on link %s: %w", path, err)
+	}
+
+	return nil
+}
+
+func calculateDirectoryDepth(dir *RelatedDirectory) int {
+	depth := 0
+	for dir != nil {
+		dir = dir.Parent
+		depth++
+	}
+	return depth
+}
+
+func removeEmptyDirs(batch *InternalProgressReport) error {
+	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
+		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
+	})
+
+	removed := make(map[string]struct{})
+
+	for _, dir := range batch.DirsProcessed {
+		if _, alreadyRemoved := removed[dir.SourcePath]; alreadyRemoved {
+			continue
+		}
+		isEmpty, err := isEmptyFolder(dir.SourcePath)
+		if err != nil {
+			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)", "path", dir.SourcePath, "err", err)
+			continue
+		}
+		if isEmpty {
+			if err := os.Remove(dir.SourcePath); err != nil {
+				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)", "path", dir.SourcePath, "err", err)
+				continue
+			}
+			removed[dir.SourcePath] = struct{}{}
+		}
 	}
 
 	return nil

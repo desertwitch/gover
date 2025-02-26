@@ -185,7 +185,7 @@ type DiskStats struct {
 	FreeSpace int64
 }
 
-type BatchProgress struct {
+type InternalProgressReport struct {
 	AnyProcessed       []FSElement
 	DirsProcessed      []*RelatedDirectory
 	MoveablesProcessed []*Moveable

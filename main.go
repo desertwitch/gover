@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -27,8 +26,6 @@ func main() {
 
 	shares := system.Shares
 	disks := system.Array.Disks
-
-	var moveables []*Moveable
 
 	// Primary to Secondary
 	for _, share := range shares {
@@ -57,7 +54,10 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			moveables = append(moveables, files...)
+			if err := processMoveables(files, &InternalProgressReport{}); err != nil {
+				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+				continue
+			}
 		} else {
 			// Cache to Cache2
 			files, err := getMoveables(share.CachePool, share, share.CachePool2)
@@ -75,7 +75,10 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			moveables = append(moveables, files...)
+			if err := processMoveables(files, &InternalProgressReport{}); err != nil {
+				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+				continue
+			}
 		}
 	}
 
@@ -102,7 +105,10 @@ func main() {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 					continue
 				}
-				moveables = append(moveables, files...)
+				if err := processMoveables(files, &InternalProgressReport{}); err != nil {
+					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+					continue
+				}
 			}
 		} else {
 			// Cache2 to Cache
@@ -121,22 +127,10 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			moveables = append(moveables, files...)
+			if err := processMoveables(files, &InternalProgressReport{}); err != nil {
+				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+				continue
+			}
 		}
-	}
-
-	for _, m := range moveables {
-		fmt.Printf("%s --> %s\n", m.SourcePath, m.DestPath)
-		for _, h := range m.Hardlinks {
-			fmt.Printf("|- [HL] %s --> %s\n", h.SourcePath, h.DestPath)
-		}
-		for _, s := range m.Symlinks {
-			fmt.Printf("|- [SL] %s --> %s\n", s.SourcePath, s.DestPath)
-		}
-		fmt.Println()
-	}
-
-	if err := processMoveables(moveables, &BatchProgress{}); err != nil {
-		fmt.Printf("Error: %v", err)
 	}
 }
