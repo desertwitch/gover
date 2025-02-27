@@ -1,5 +1,5 @@
-build.sh
+/.VSCodeCounter
+/build.sh
 /gover
-vendor
-gpgstart
-.VSCodeCounter
+/gpgstart
+/vendor
