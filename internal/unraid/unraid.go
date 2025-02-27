@@ -1,172 +1,49 @@
 package unraid
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-
-	"github.com/joho/godotenv"
 )
 
-// establishDisks returns a map of pointers to established Unraid disks
-func establishDisks() (map[string]*UnraidDisk, error) {
-	basePath := BasePathMounts
-	diskPattern := regexp.MustCompile(PatternDisks)
+const (
+	ArrayStateFile = "/var/local/emhttp/var.ini"
 
-	disks := make(map[string]*UnraidDisk)
+	ConfigDirShares = "/boot/config/shares"
+	ConfigDirPools  = "/boot/config/pools"
 
-	entries, err := os.ReadDir(basePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read mounts at %s: %w", basePath, err)
-	}
+	BasePathMounts = "/mnt/"
+	PatternDisks   = `^disk[1-9][0-9]?$`
 
-	for _, entry := range entries {
-		if entry.IsDir() && diskPattern.MatchString(entry.Name()) {
-			disk := &UnraidDisk{
-				Name:           entry.Name(),
-				FSPath:         filepath.Join(basePath, entry.Name()),
-				ActiveTransfer: false,
-			}
-			disks[disk.Name] = disk
-		}
-	}
+	AllocHighWater = "highwater"
+	AllocMostFree  = "mostfree"
+	AllocFillUp    = "fillup"
 
-	return disks, nil
+	SettingShareUseCache   = "shareUseCache"
+	SettingShareAllocator  = "shareAllocator"
+	SettingShareCOW        = "shareCOW"
+	SettingShareSplitLevel = "shareSplitLevel"
+	SettingShareFloor      = "shareFloor"
+
+	SettingShareCachePool    = "shareCachePool"
+	SettingShareCachePool2   = "shareCachePool2"
+	SettingShareIncludeDisks = "shareInclude"
+	SettingShareExcludeDisks = "shareExclude"
+
+	StateArrayStatus    = "mdState"
+	StateTurboSetting   = "md_write_method"
+	StateParityPosition = "mdResyncPos"
+)
+
+type UnraidStoreable interface {
+	GetName() string
+	GetFSPath() string
+	IsActiveTransfer() bool
+	SetActiveTransfer(bool)
 }
 
-// establishPools returns a map of pointers to established Unraid pools
-// TO-DO: Refactor into establishPool() and establishPools()
-func establishPools() (map[string]*UnraidPool, error) {
-	basePath := ConfigDirPools
-
-	if _, err := os.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("pool config dir does not exist: %w", err)
-	}
-
-	pools := make(map[string]*UnraidPool)
-
-	files, err := os.ReadDir(basePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read pool config dir: %w", err)
-	}
-
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".cfg") {
-			cfgPath := filepath.Join(basePath, file.Name())
-			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
-
-			fsPath := filepath.Join("/mnt", nameWithoutExt)
-			if _, err := os.Stat(fsPath); errors.Is(err, fs.ErrNotExist) {
-				return nil, fmt.Errorf("pool mount %s does not exist: %w", fsPath, err)
-			}
-
-			pool := &UnraidPool{
-				Name:           nameWithoutExt,
-				FSPath:         fsPath,
-				CFGFile:        cfgPath,
-				ActiveTransfer: false,
-			}
-
-			pools[pool.Name] = pool
-		}
-	}
-
-	return pools, nil
-}
-
-// establishShares returns a map of pointers to established Unraid shares
-// TO-DO: Refactor into establishShare() and establishShares()
-func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
-	basePath := ConfigDirShares
-
-	if _, err := os.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("share config dir does not exist: %w", err)
-	}
-
-	shares := make(map[string]*UnraidShare)
-
-	files, err := os.ReadDir(basePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read share config dir: %w", err)
-	}
-
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".cfg") {
-			filePath := filepath.Join(basePath, file.Name())
-			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
-
-			configMap, err := godotenv.Read(filePath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read share config %s: %w", filePath, err)
-			}
-
-			share := &UnraidShare{
-				Name:       nameWithoutExt,
-				CFGFile:    filePath,
-				UseCache:   getConfigValue(configMap, SettingShareUseCache),
-				Allocator:  getConfigValue(configMap, SettingShareAllocator),
-				DisableCOW: strings.ToLower(getConfigValue(configMap, SettingShareCOW)) == "no",
-				SplitLevel: parseInt(getConfigValue(configMap, SettingShareSplitLevel)),
-				SpaceFloor: parseInt64(getConfigValue(configMap, SettingShareFloor)),
-			}
-
-			cachepool, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool))
-			if err != nil {
-				return nil, fmt.Errorf("failed to dereference primary cache for share %s: %w", nameWithoutExt, err)
-			}
-			share.CachePool = cachepool
-
-			cachepool2, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool2))
-			if err != nil {
-				return nil, fmt.Errorf("failed to dereference secondary cache for share %s: %w", nameWithoutExt, err)
-			}
-			share.CachePool2 = cachepool2
-
-			includedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareIncludeDisks))
-			if err != nil {
-				return nil, fmt.Errorf("failed to dereference included disks for share %s: %w", nameWithoutExt, err)
-			}
-			if includedDisks != nil {
-				share.IncludedDisks = includedDisks
-			} else {
-				// If nil, assume all disks are included
-				share.IncludedDisks = disks
-			}
-
-			excludedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareExcludeDisks))
-			if err != nil {
-				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
-			}
-			share.ExcludedDisks = excludedDisks
-
-			shares[share.Name] = share
-		}
-	}
-
-	return shares, nil
-}
-
-// establishArray returns a pointer to an established Unraid array
-func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
-	stateFile := ArrayStateFile
-
-	configMap, err := godotenv.Read(stateFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load disk state file %s: %w", stateFile, err)
-	}
-
-	array := &UnraidArray{
-		Disks:         disks,
-		Status:        getConfigValue(configMap, StateArrayStatus),
-		TurboSetting:  getConfigValue(configMap, StateTurboSetting),
-		ParityRunning: parseInt(getConfigValue(configMap, StateParityPosition)) > 0,
-	}
-
-	return array, nil
+type UnraidSystem struct {
+	Array  *UnraidArray
+	Pools  map[string]*UnraidPool
+	Shares map[string]*UnraidShare
 }
 
 // establishSystem returns a pointer to an established Unraid system

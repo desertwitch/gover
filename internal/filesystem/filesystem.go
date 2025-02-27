@@ -1,17 +1,48 @@
 package filesystem
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/desertwitch/gover/internal/unraid"
-	"golang.org/x/sys/unix"
 )
+
+type RelatedElement interface {
+	GetMetadata() *Metadata
+	GetSourcePath() string
+	GetDestPath() string
+}
+
+type Moveable struct {
+	Share      *unraid.UnraidShare
+	Source     unraid.UnraidStoreable
+	SourcePath string
+	Dest       unraid.UnraidStoreable
+	DestPath   string
+	Hardlinks  []*Moveable
+	Hardlink   bool
+	HardlinkTo *Moveable
+	Symlinks   []*Moveable
+	Symlink    bool
+	SymlinkTo  *Moveable
+	Metadata   *Metadata
+	RootDir    *RelatedDirectory
+	DeepestDir *RelatedDirectory
+}
+
+func (m *Moveable) GetMetadata() *Metadata {
+	return m.Metadata
+}
+
+func (m *Moveable) GetSourcePath() string {
+	return m.SourcePath
+}
+
+func (m *Moveable) GetDestPath() string {
+	return m.DestPath
+}
 
 func GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
@@ -72,117 +103,6 @@ func GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, know
 	return moveables, nil
 }
 
-func HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
-	if fileSize < 0 {
-		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
-	}
-
-	path := s.GetFSPath()
-
-	stats, err := GetDiskUsage(path)
-	if err != nil {
-		return false, fmt.Errorf("failed to get usage: %w", err)
-	}
-
-	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
-		return false, fmt.Errorf("invalid stats (TotalSize: %d, FreeSpace: %d)", stats.TotalSize, stats.FreeSpace)
-	}
-
-	requiredFree := minFree
-	if minFree <= fileSize {
-		requiredFree = fileSize
-	}
-
-	if stats.FreeSpace > requiredFree {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
-	if m.Dest == nil {
-		return nil, "", fmt.Errorf("destination is nil")
-	}
-
-	if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
-		for name, disk := range m.Share.IncludedDisks {
-			if _, exists := m.Share.ExcludedDisks[name]; exists {
-				continue
-			}
-			alreadyExists, existsPath, err := existsOnStorageCandidate(m, disk)
-			if err != nil {
-				return nil, "", err
-			}
-			if alreadyExists {
-				return disk, existsPath, nil
-			}
-		}
-		return nil, "", nil
-	}
-
-	if pool, ok := m.Dest.(*unraid.UnraidPool); ok {
-		alreadyExists, existsPath, err := existsOnStorageCandidate(m, pool)
-		if err != nil {
-			return nil, "", err
-		}
-		if alreadyExists {
-			return pool, existsPath, nil
-		}
-		return nil, "", nil
-	}
-
-	return nil, "", fmt.Errorf("impossible storeable type")
-}
-
-func existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {
-	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
-	if err != nil {
-		return false, "", fmt.Errorf("failed to rel path: %w", err)
-	}
-
-	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
-
-	if _, err := os.Stat(dstPath); err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false, "", nil
-		}
-		return false, "", fmt.Errorf("failed to check existence: %w", err)
-	}
-
-	return true, dstPath, nil
-}
-
-func getMetadata(path string) (*Metadata, error) {
-	var stat unix.Stat_t
-
-	if err := unix.Lstat(path, &stat); err != nil {
-		return nil, fmt.Errorf("failed to lstat: %w", err)
-	}
-
-	metadata := &Metadata{
-		Inode:      stat.Ino,
-		Perms:      (uint32(stat.Mode) & 0777),
-		UID:        stat.Uid,
-		GID:        stat.Gid,
-		AccessedAt: stat.Atim,
-		ModifiedAt: stat.Mtim,
-		Size:       stat.Size,
-		IsDir:      (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
-		IsSymlink:  (stat.Mode & unix.S_IFMT) == unix.S_IFLNK,
-	}
-
-	if metadata.IsSymlink {
-		symlinkTarget, err := os.Readlink(path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read symlink: %w", err)
-		}
-		metadata.SymlinkTo = symlinkTarget
-	}
-
-	return metadata, nil
-}
-
 func establishSymlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable) {
 	realFiles := make(map[string]*Moveable)
 
@@ -218,39 +138,4 @@ func establishHardlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreabl
 			inodes[m.Metadata.Inode] = m
 		}
 	}
-}
-
-func walkParentDirs(m *Moveable, basePath string) error {
-	var prevElement *RelatedDirectory
-	path := m.SourcePath
-
-	for path != basePath && path != "/" && path != "." {
-		path = filepath.Dir(path)
-
-		if strings.HasPrefix(path, basePath) {
-			thisElement := &RelatedDirectory{
-				SourcePath: path,
-			}
-
-			metadata, err := getMetadata(path)
-			if err != nil {
-				return fmt.Errorf("failed to get metadata: %w", err)
-			}
-			thisElement.Metadata = metadata
-
-			if prevElement != nil {
-				thisElement.Child = prevElement
-				prevElement.Parent = thisElement
-			} else {
-				m.DeepestDir = thisElement
-			}
-
-			prevElement = thisElement
-		} else {
-			break
-		}
-	}
-	m.RootDir = prevElement
-
-	return nil
 }
