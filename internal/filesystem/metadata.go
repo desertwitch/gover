@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"fmt"
-	"os"
 
 	"golang.org/x/sys/unix"
 )
@@ -20,10 +19,10 @@ type Metadata struct {
 	SymlinkTo  string
 }
 
-func getMetadata(path string) (*Metadata, error) {
+func getMetadata(path string, osa osAdapter, una unixAdapter) (*Metadata, error) {
 	var stat unix.Stat_t
 
-	if err := unix.Lstat(path, &stat); err != nil {
+	if err := una.Lstat(path, &stat); err != nil {
 		return nil, fmt.Errorf("failed to lstat: %w", err)
 	}
 
@@ -40,7 +39,7 @@ func getMetadata(path string) (*Metadata, error) {
 	}
 
 	if metadata.IsSymlink {
-		symlinkTarget, err := os.Readlink(path)
+		symlinkTarget, err := osa.Readlink(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read symlink: %w", err)
 		}

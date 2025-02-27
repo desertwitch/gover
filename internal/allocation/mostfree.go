@@ -8,7 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func allocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
+func allocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk, fs fsAdapter) (*unraid.UnraidDisk, error) {
 	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
 	var disks []*unraid.UnraidDisk
 
@@ -17,7 +17,7 @@ func allocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unra
 			continue
 		}
 
-		stats, err := filesystem.GetDiskUsage(disk.FSPath)
+		stats, err := fs.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -32,7 +32,7 @@ func allocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unra
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := filesystem.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := fs.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue

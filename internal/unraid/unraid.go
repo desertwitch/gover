@@ -2,6 +2,7 @@ package unraid
 
 import (
 	"fmt"
+	"os"
 )
 
 const (
@@ -33,6 +34,11 @@ const (
 	StateParityPosition = "mdResyncPos"
 )
 
+type osAdapter interface {
+	Stat(name string) (os.FileInfo, error)
+	ReadDir(name string) ([]os.DirEntry, error)
+}
+
 type UnraidStoreable interface {
 	GetName() string
 	GetFSPath() string
@@ -47,18 +53,18 @@ type UnraidSystem struct {
 }
 
 // establishSystem returns a pointer to an established Unraid system
-func EstablishSystem() (*UnraidSystem, error) {
-	disks, err := establishDisks()
+func EstablishSystem(osa osAdapter) (*UnraidSystem, error) {
+	disks, err := establishDisks(osa)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)
 	}
 
-	pools, err := establishPools()
+	pools, err := establishPools(osa)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing pools: %w", err)
 	}
 
-	shares, err := establishShares(disks, pools)
+	shares, err := establishShares(disks, pools, osa)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing shares: %w", err)
 	}

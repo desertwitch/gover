@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -27,16 +26,16 @@ type UnraidShare struct {
 
 // establishShares returns a map of pointers to established Unraid shares
 // TO-DO: Refactor into establishShare() and establishShares()
-func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
+func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool, osa osAdapter) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 
-	if _, err := os.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
+	if _, err := osa.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("share config dir does not exist: %w", err)
 	}
 
 	shares := make(map[string]*UnraidShare)
 
-	files, err := os.ReadDir(basePath)
+	files, err := osa.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read share config dir: %w", err)
 	}

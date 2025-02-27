@@ -6,13 +6,18 @@ import (
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func EstablishPaths(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+type fsAdapter interface {
+	ExistsOnStorage(m *filesystem.Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error)
+}
+
+func EstablishPaths(moveables []*filesystem.Moveable, fs fsAdapter) ([]*filesystem.Moveable, error) {
 	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
-		existsOn, existsPath, err := filesystem.ExistsOnStorage(m)
+		existsOn, existsPath, err := fs.ExistsOnStorage(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -29,7 +34,7 @@ func EstablishPaths(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, e
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
-			existsOn, existsPath, err := filesystem.ExistsOnStorage(h)
+			existsOn, existsPath, err := fs.ExistsOnStorage(h)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
@@ -52,7 +57,7 @@ func EstablishPaths(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, e
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			existsOn, existsPath, err := filesystem.ExistsOnStorage(s)
+			existsOn, existsPath, err := fs.ExistsOnStorage(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true

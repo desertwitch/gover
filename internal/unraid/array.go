@@ -2,7 +2,6 @@ package unraid
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 
@@ -58,13 +57,13 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 }
 
 // establishDisks returns a map of pointers to established Unraid disks
-func establishDisks() (map[string]*UnraidDisk, error) {
+func establishDisks(osa osAdapter) (map[string]*UnraidDisk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 
 	disks := make(map[string]*UnraidDisk)
 
-	entries, err := os.ReadDir(basePath)
+	entries, err := osa.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read mounts at %s: %w", basePath, err)
 	}
