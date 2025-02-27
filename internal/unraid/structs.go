@@ -1,8 +1,4 @@
-package main
-
-import (
-	"golang.org/x/sys/unix"
-)
+package unraid
 
 const (
 	ArrayStateFile = "/var/local/emhttp/var.ini"
@@ -110,85 +106,4 @@ type UnraidShare struct {
 	IncludedDisks map[string]*UnraidDisk
 	ExcludedDisks map[string]*UnraidDisk
 	CFGFile       string
-}
-
-type FSElement interface {
-	GetMetadata() *Metadata
-	GetSourcePath() string
-	GetDestPath() string
-}
-
-type Moveable struct {
-	Share      *UnraidShare
-	Source     UnraidStoreable
-	SourcePath string
-	Dest       UnraidStoreable
-	DestPath   string
-	Hardlinks  []*Moveable
-	Hardlink   bool
-	HardlinkTo *Moveable
-	Symlinks   []*Moveable
-	Symlink    bool
-	SymlinkTo  *Moveable
-	Metadata   *Metadata
-	RootDir    *RelatedDirectory
-	DeepestDir *RelatedDirectory
-}
-
-func (m *Moveable) GetMetadata() *Metadata {
-	return m.Metadata
-}
-
-func (m *Moveable) GetSourcePath() string {
-	return m.SourcePath
-}
-
-func (m *Moveable) GetDestPath() string {
-	return m.DestPath
-}
-
-type RelatedDirectory struct {
-	SourcePath string
-	DestPath   string
-	Metadata   *Metadata
-	Parent     *RelatedDirectory
-	Child      *RelatedDirectory
-}
-
-func (d *RelatedDirectory) GetMetadata() *Metadata {
-	return d.Metadata
-}
-
-func (d *RelatedDirectory) GetSourcePath() string {
-	return d.SourcePath
-}
-
-func (d *RelatedDirectory) GetDestPath() string {
-	return d.DestPath
-}
-
-type Metadata struct {
-	Inode      uint64
-	Perms      uint32
-	UID        uint32
-	GID        uint32
-	AccessedAt unix.Timespec
-	ModifiedAt unix.Timespec
-	Size       int64
-	IsDir      bool
-	IsSymlink  bool
-	SymlinkTo  string
-}
-
-type DiskStats struct {
-	TotalSize int64
-	FreeSpace int64
-}
-
-type InternalProgressReport struct {
-	AnyProcessed       []FSElement
-	DirsProcessed      []*RelatedDirectory
-	MoveablesProcessed []*Moveable
-	SymlinksProcessed  []*Moveable
-	HardlinksProcessed []*Moveable
 }

@@ -1,4 +1,4 @@
-package main
+package allocation
 
 import (
 	"errors"
@@ -8,10 +8,13 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
-	var filtered []*Moveable
+func AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
 		dest, err := allocateArrayDestination(m)
@@ -45,7 +48,7 @@ func allocateArrayDestinations(moveables []*Moveable) ([]*Moveable, error) {
 	return filtered, nil
 }
 
-func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
+func allocateArrayDestination(m *filesystem.Moveable) (*unraid.UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 
@@ -61,21 +64,21 @@ func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	}
 
 	switch allocationMethod := m.Share.Allocator; allocationMethod {
-	case AllocHighWater:
+	case unraid.AllocHighWater:
 		ret, err := allocateHighWaterDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
 		return ret, nil
 
-	case AllocFillUp:
+	case unraid.AllocFillUp:
 		ret, err := allocateFillUpDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
 		return ret, nil
 
-	case AllocMostFree:
+	case unraid.AllocMostFree:
 		ret, err := allocateMostFreeDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)
@@ -87,16 +90,16 @@ func allocateArrayDestination(m *Moveable) (*UnraidDisk, error) {
 	}
 }
 
-func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]DiskStats)
-	var disks []*UnraidDisk
+func allocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
+	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
+	var disks []*unraid.UnraidDisk
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
 			continue
 		}
 
-		stats, err := getDiskUsage(disk.FSPath)
+		stats, err := filesystem.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -111,7 +114,7 @@ func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exc
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := filesystem.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -124,16 +127,16 @@ func allocateMostFreeDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exc
 	return nil, ErrNotAllocatable
 }
 
-func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]DiskStats)
-	var disks []*UnraidDisk
+func allocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
+	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
+	var disks []*unraid.UnraidDisk
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
 			continue
 		}
 
-		stats, err := getDiskUsage(disk.FSPath)
+		stats, err := filesystem.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -148,7 +151,7 @@ func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exclu
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := filesystem.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -161,9 +164,9 @@ func allocateFillUpDisk(m *Moveable, includedDisks map[string]*UnraidDisk, exclu
 	return nil, ErrNotAllocatable
 }
 
-func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, excludedDisks map[string]*UnraidDisk) (*UnraidDisk, error) {
-	diskStats := make(map[*UnraidDisk]DiskStats)
-	var disks []*UnraidDisk
+func allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
+	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
+	var disks []*unraid.UnraidDisk
 
 	var maxDiskSize int64
 
@@ -172,7 +175,7 @@ func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, ex
 			continue
 		}
 
-		stats, err := getDiskUsage(disk.FSPath)
+		stats, err := filesystem.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -197,7 +200,7 @@ func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, ex
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+			enoughSpace, err := filesystem.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
@@ -212,8 +215,8 @@ func allocateHighWaterDisk(m *Moveable, includedDisks map[string]*UnraidDisk, ex
 	return nil, ErrNotAllocatable
 }
 
-func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
-	matches := make(map[int]map[string]*UnraidDisk)
+func allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.UnraidDisk, error) {
+	matches := make(map[int]map[string]*unraid.UnraidDisk)
 	splitDoesNotExceedLvl := true
 
 	mainMatches, mainLevel, err := findDisksBySplitLevel(m)
@@ -226,7 +229,7 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 	}
 
 	if err != nil || len(mainMatches) > 0 {
-		matches[mainLevel] = make(map[string]*UnraidDisk)
+		matches[mainLevel] = make(map[string]*unraid.UnraidDisk)
 		for _, disk := range mainMatches {
 			matches[mainLevel][disk.Name] = disk
 		}
@@ -246,7 +249,7 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 
 			if len(subMatches) > 0 {
 				if matches[subLevel] == nil {
-					matches[subLevel] = make(map[string]*UnraidDisk)
+					matches[subLevel] = make(map[string]*unraid.UnraidDisk)
 				}
 				for _, disk := range subMatches {
 					matches[subLevel][disk.Name] = disk
@@ -279,8 +282,8 @@ func allocateDisksBySplitLevel(m *Moveable) (map[string]*UnraidDisk, error) {
 	return nil, ErrNotAllocatable
 }
 
-func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
-	var foundDisks []*UnraidDisk
+func findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.UnraidDisk, int, error) {
+	var foundDisks []*unraid.UnraidDisk
 	path := filepath.Dir(m.SourcePath)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)
@@ -309,7 +312,7 @@ func findDisksBySplitLevel(m *Moveable) ([]*UnraidDisk, int, error) {
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
 				if _, err := os.Stat(dirToCheck); err == nil {
-					enoughSpace, err := hasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+					enoughSpace, err := filesystem.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 						continue

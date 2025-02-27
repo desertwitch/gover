@@ -1,14 +1,16 @@
-package main
+package validation
 
 import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strings"
+
+	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func validateMoveables(moveables []*Moveable) ([]*Moveable, error) {
-	var filtered []*Moveable
+func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
 		if _, err := validateMoveable(m); err != nil {
@@ -46,7 +48,7 @@ func validateMoveables(moveables []*Moveable) ([]*Moveable, error) {
 	return filtered, nil
 }
 
-func validateMoveable(m *Moveable) (bool, error) {
+func validateMoveable(m *filesystem.Moveable) (bool, error) {
 	if m.Share == nil {
 		return false, fmt.Errorf("no share information")
 	}

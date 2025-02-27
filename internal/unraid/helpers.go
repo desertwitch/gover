@@ -1,4 +1,4 @@
-package main
+package unraid
 
 import (
 	"fmt"
@@ -67,17 +67,4 @@ func parseInt64(value string) int64 {
 		return -1
 	}
 	return intValue
-}
-
-// removeInternalLinks removes symbolic and hardlink moveable pointers from a slice of moveable pointers
-func removeInternalLinks(moveables []*Moveable) []*Moveable {
-	var ms []*Moveable
-
-	for _, m := range moveables {
-		if !m.Symlink && !m.Hardlink {
-			ms = append(ms, m)
-		}
-	}
-
-	return ms
 }

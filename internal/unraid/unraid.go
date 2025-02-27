@@ -1,4 +1,4 @@
-package main
+package unraid
 
 import (
 	"errors"
@@ -170,7 +170,7 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 }
 
 // establishSystem returns a pointer to an established Unraid system
-func establishSystem() (*UnraidSystem, error) {
+func EstablishSystem() (*UnraidSystem, error) {
 	disks, err := establishDisks()
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)

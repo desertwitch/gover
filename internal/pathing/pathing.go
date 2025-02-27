@@ -1,16 +1,18 @@
-package main
+package pathing
 
 import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+
+	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
-	var filtered []*Moveable
+func EstablishPaths(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
-		existsOn, existsPath, err := existsOnStorage(m)
+		existsOn, existsPath, err := filesystem.ExistsOnStorage(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -27,7 +29,7 @@ func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
-			existsOn, existsPath, err := existsOnStorage(h)
+			existsOn, existsPath, err := filesystem.ExistsOnStorage(h)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
@@ -50,7 +52,7 @@ func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			existsOn, existsPath, err := existsOnStorage(s)
+			existsOn, existsPath, err := filesystem.ExistsOnStorage(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
@@ -77,7 +79,7 @@ func establishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	return filtered, nil
 }
 
-func establishPath(m *Moveable) error {
+func establishPath(m *filesystem.Moveable) error {
 	if m.Dest == nil {
 		return fmt.Errorf("destination for job is nil")
 	}
@@ -95,7 +97,7 @@ func establishPath(m *Moveable) error {
 	return nil
 }
 
-func establishRelatedDirPaths(m *Moveable) error {
+func establishRelatedDirPaths(m *filesystem.Moveable) error {
 	if m.RootDir == nil {
 		return fmt.Errorf("dir root is nil")
 	}

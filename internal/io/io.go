@@ -1,4 +1,4 @@
-package main
+package io
 
 import (
 	"errors"
@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"sort"
 
+	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/zeebo/blake3"
 	"golang.org/x/sys/unix"
 )
@@ -18,7 +20,7 @@ import (
 // Reallocation if not enough space (up to 3x?)
 // Rollback, Locking?
 
-func processMoveables(moveables []*Moveable, batch *InternalProgressReport) error {
+func ProcessMoveables(moveables []*filesystem.Moveable, batch *InternalProgressReport) error {
 	for _, m := range moveables {
 		job := &InternalProgressReport{}
 
@@ -62,7 +64,7 @@ func processMoveables(moveables []*Moveable, batch *InternalProgressReport) erro
 	return nil
 }
 
-func processMoveable(m *Moveable, job *InternalProgressReport) error {
+func processMoveable(m *filesystem.Moveable, job *InternalProgressReport) error {
 	used, err := isFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
@@ -146,12 +148,12 @@ func processMoveable(m *Moveable, job *InternalProgressReport) error {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 	} else {
-		enoughSpace, err := hasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := filesystem.HasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			return fmt.Errorf("failed to check for enough space: %w", err)
 		}
 		if !enoughSpace {
-			if _, ok := m.Dest.(*UnraidDisk); ok {
+			if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
 				// TO-DO: Reallocate with hardlinks
 			} else {
 				return fmt.Errorf("not enough free space on destination pool")
@@ -175,7 +177,7 @@ func processMoveable(m *Moveable, job *InternalProgressReport) error {
 	return nil
 }
 
-func moveFile(m *Moveable) error {
+func moveFile(m *filesystem.Moveable) error {
 	srcFile, err := os.Open(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
@@ -239,7 +241,7 @@ func ensureTimestamps(batch *InternalProgressReport) error {
 	return nil
 }
 
-func ensureTimestamp(path string, metadata *Metadata) error {
+func ensureTimestamp(path string, metadata *filesystem.Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
 	if err := unix.UtimesNano(path, ts); err != nil {
 		return fmt.Errorf("failed to set timestamp: %w", err)
@@ -247,7 +249,7 @@ func ensureTimestamp(path string, metadata *Metadata) error {
 	return nil
 }
 
-func ensureDirectoryStructure(m *Moveable, job *InternalProgressReport) error {
+func ensureDirectoryStructure(m *filesystem.Moveable, job *InternalProgressReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -270,7 +272,7 @@ func ensureDirectoryStructure(m *Moveable, job *InternalProgressReport) error {
 	return nil
 }
 
-func ensurePermissions(path string, metadata *Metadata) error {
+func ensurePermissions(path string, metadata *filesystem.Metadata) error {
 	if err := unix.Chown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on %s: %w", path, err)
 	}
@@ -282,7 +284,7 @@ func ensurePermissions(path string, metadata *Metadata) error {
 	return nil
 }
 
-func ensureLinkPermissions(path string, metadata *Metadata) error {
+func ensureLinkPermissions(path string, metadata *filesystem.Metadata) error {
 	if err := unix.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on link %s: %w", path, err)
 	}
@@ -290,7 +292,7 @@ func ensureLinkPermissions(path string, metadata *Metadata) error {
 	return nil
 }
 
-func calculateDirectoryDepth(dir *RelatedDirectory) int {
+func calculateDirectoryDepth(dir *filesystem.RelatedDirectory) int {
 	depth := 0
 	for dir != nil {
 		dir = dir.Parent
@@ -310,7 +312,7 @@ func removeEmptyDirs(batch *InternalProgressReport) error {
 		if _, alreadyRemoved := removed[dir.SourcePath]; alreadyRemoved {
 			continue
 		}
-		isEmpty, err := isEmptyFolder(dir.SourcePath)
+		isEmpty, err := filesystem.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
 			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)", "path", dir.SourcePath, "err", err)
 			continue

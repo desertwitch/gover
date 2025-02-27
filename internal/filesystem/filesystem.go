@@ -1,4 +1,4 @@
-package main
+package filesystem
 
 import (
 	"errors"
@@ -9,10 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/desertwitch/gover/internal/unraid"
 	"golang.org/x/sys/unix"
 )
 
-func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget UnraidStoreable) ([]*Moveable, error) {
+func GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
 	var preSelection []*Moveable
 
@@ -25,7 +26,7 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 
 		isEmptyDir := false
 		if d.IsDir() {
-			isEmptyDir, err = isEmptyFolder(path)
+			isEmptyDir, err = IsEmptyFolder(path)
 			if err != nil {
 				return nil
 			}
@@ -71,6 +72,87 @@ func getMoveables(source UnraidStoreable, share *UnraidShare, knownTarget Unraid
 	return moveables, nil
 }
 
+func HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
+	if fileSize < 0 {
+		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
+	}
+
+	path := s.GetFSPath()
+
+	stats, err := GetDiskUsage(path)
+	if err != nil {
+		return false, fmt.Errorf("failed to get usage: %w", err)
+	}
+
+	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
+		return false, fmt.Errorf("invalid stats (TotalSize: %d, FreeSpace: %d)", stats.TotalSize, stats.FreeSpace)
+	}
+
+	requiredFree := minFree
+	if minFree <= fileSize {
+		requiredFree = fileSize
+	}
+
+	if stats.FreeSpace > requiredFree {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
+	if m.Dest == nil {
+		return nil, "", fmt.Errorf("destination is nil")
+	}
+
+	if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
+		for name, disk := range m.Share.IncludedDisks {
+			if _, exists := m.Share.ExcludedDisks[name]; exists {
+				continue
+			}
+			alreadyExists, existsPath, err := existsOnStorageCandidate(m, disk)
+			if err != nil {
+				return nil, "", err
+			}
+			if alreadyExists {
+				return disk, existsPath, nil
+			}
+		}
+		return nil, "", nil
+	}
+
+	if pool, ok := m.Dest.(*unraid.UnraidPool); ok {
+		alreadyExists, existsPath, err := existsOnStorageCandidate(m, pool)
+		if err != nil {
+			return nil, "", err
+		}
+		if alreadyExists {
+			return pool, existsPath, nil
+		}
+		return nil, "", nil
+	}
+
+	return nil, "", fmt.Errorf("impossible storeable type")
+}
+
+func existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {
+	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
+	if err != nil {
+		return false, "", fmt.Errorf("failed to rel path: %w", err)
+	}
+
+	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
+
+	if _, err := os.Stat(dstPath); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, "", nil
+		}
+		return false, "", fmt.Errorf("failed to check existence: %w", err)
+	}
+
+	return true, dstPath, nil
+}
+
 func getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
 
@@ -101,7 +183,7 @@ func getMetadata(path string) (*Metadata, error) {
 	return metadata, nil
 }
 
-func establishSymlinks(moveables []*Moveable, knownTarget UnraidStoreable) {
+func establishSymlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
@@ -123,7 +205,7 @@ func establishSymlinks(moveables []*Moveable, knownTarget UnraidStoreable) {
 	}
 }
 
-func establishHardlinks(moveables []*Moveable, knownTarget UnraidStoreable) {
+func establishHardlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
@@ -171,105 +253,4 @@ func walkParentDirs(m *Moveable, basePath string) error {
 	m.RootDir = prevElement
 
 	return nil
-}
-
-func isEmptyFolder(path string) (bool, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return false, fmt.Errorf("failed to readdir: %w", err)
-	}
-	return len(entries) == 0, nil
-}
-
-func getDiskUsage(path string) (DiskStats, error) {
-	var stat unix.Statfs_t
-	if err := unix.Statfs(path, &stat); err != nil {
-		return DiskStats{}, fmt.Errorf("failed to statfs: %w", err)
-	}
-	stats := DiskStats{
-		TotalSize: int64(stat.Blocks) * int64(stat.Bsize),
-		FreeSpace: int64(stat.Bavail) * int64(stat.Bsize),
-	}
-	return stats, nil
-}
-
-func hasEnoughFreeSpace(s UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
-	if fileSize < 0 {
-		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
-	}
-
-	path := s.GetFSPath()
-
-	stats, err := getDiskUsage(path)
-	if err != nil {
-		return false, fmt.Errorf("failed to get usage: %w", err)
-	}
-
-	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
-		return false, fmt.Errorf("invalid stats (TotalSize: %d, FreeSpace: %d)", stats.TotalSize, stats.FreeSpace)
-	}
-
-	requiredFree := minFree
-	if minFree <= fileSize {
-		requiredFree = fileSize
-	}
-
-	if stats.FreeSpace > requiredFree {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func existsOnStorage(m *Moveable) (storeable UnraidStoreable, existingAtPath string, err error) {
-	if m.Dest == nil {
-		return nil, "", fmt.Errorf("destination is nil")
-	}
-
-	if _, ok := m.Dest.(*UnraidDisk); ok {
-		for name, disk := range m.Share.IncludedDisks {
-			if _, exists := m.Share.ExcludedDisks[name]; exists {
-				continue
-			}
-			alreadyExists, existsPath, err := existsOnStorageCandidate(m, disk)
-			if err != nil {
-				return nil, "", err
-			}
-			if alreadyExists {
-				return disk, existsPath, nil
-			}
-		}
-		return nil, "", nil
-	}
-
-	if pool, ok := m.Dest.(*UnraidPool); ok {
-		alreadyExists, existsPath, err := existsOnStorageCandidate(m, pool)
-		if err != nil {
-			return nil, "", err
-		}
-		if alreadyExists {
-			return pool, existsPath, nil
-		}
-		return nil, "", nil
-	}
-
-	return nil, "", fmt.Errorf("impossible storeable type")
-}
-
-func existsOnStorageCandidate(m *Moveable, destCandidate UnraidStoreable) (exists bool, existingAtPath string, err error) {
-	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
-	if err != nil {
-		return false, "", fmt.Errorf("failed to rel path: %w", err)
-	}
-
-	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
-
-	if _, err := os.Stat(dstPath); err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false, "", nil
-		}
-		return false, "", fmt.Errorf("failed to check existence: %w", err)
-	}
-
-	return true, dstPath, nil
 }
