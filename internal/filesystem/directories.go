@@ -26,7 +26,7 @@ func (d *RelatedDirectory) GetDestPath() string {
 	return d.DestPath
 }
 
-func walkParentDirs(m *Moveable, basePath string, osa osAdapter, una unixAdapter) error {
+func walkParentDirs(m *Moveable, basePath string, osOps osProvider, unixOps unixProvider) error {
 	var prevElement *RelatedDirectory
 	path := m.SourcePath
 
@@ -38,7 +38,7 @@ func walkParentDirs(m *Moveable, basePath string, osa osAdapter, una unixAdapter
 				SourcePath: path,
 			}
 
-			metadata, err := getMetadata(path, osa, una)
+			metadata, err := getMetadata(path, osOps, unixOps)
 			if err != nil {
 				return fmt.Errorf("failed to get metadata: %w", err)
 			}

@@ -1,4 +1,4 @@
-package syscalls
+package filesystem
 
 import (
 	"os"

@@ -9,20 +9,20 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/io"
 	"github.com/desertwitch/gover/internal/pathing"
-	"github.com/desertwitch/gover/internal/syscalls"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/desertwitch/gover/internal/validation"
 	"github.com/lmittmann/tint"
 )
 
 func main() {
-	osCalls := syscalls.RealOS{}
-	unixCalls := syscalls.RealUnix{}
+	osProvider := filesystem.RealOS{}
+	unixProvider := filesystem.RealUnix{}
 
-	fsCalls := filesystem.FilesystemImpl{
-		OSCalls:   osCalls,
-		UnixCalls: unixCalls,
-	}
+	fsOps := filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
+	allocOps := allocation.AllocationImpl{FSOps: fsOps, OSOps: osProvider}
+	unraidOps := unraid.UnraidImpl{OSOps: osProvider}
+	pathingOps := pathing.PathingImpl{FSOps: fsOps}
+	ioOps := io.IOImpl{FSOps: fsOps, OSOps: osProvider, UnixOps: unixProvider}
 
 	w := os.Stderr
 
@@ -33,7 +33,7 @@ func main() {
 		}),
 	))
 
-	system, err := unraid.EstablishSystem(osCalls)
+	system, err := unraidOps.EstablishSystem()
 	if err != nil {
 		slog.Error("failed to establish unraid system", "err", err)
 		os.Exit(1)
@@ -49,17 +49,17 @@ func main() {
 		}
 		if share.CachePool2 == nil {
 			// Cache to Array
-			files, err := filesystem.GetMoveables(share.CachePool, share, nil, osCalls, unixCalls)
+			files, err := fsOps.GetMoveables(share.CachePool, share, nil)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = allocation.AllocateArrayDestinations(files, fsCalls, osCalls)
+			files, err = allocOps.AllocateArrayDestinations(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to allocate jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathing.EstablishPaths(files, fsCalls)
+			files, err = pathingOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
@@ -69,18 +69,18 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := io.ProcessMoveables(files, &io.InternalProgressReport{}, fsCalls, osCalls, unixCalls); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
 		} else {
 			// Cache to Cache2
-			files, err := filesystem.GetMoveables(share.CachePool, share, share.CachePool2, osCalls, unixCalls)
+			files, err := fsOps.GetMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathing.EstablishPaths(files, fsCalls)
+			files, err = pathingOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
@@ -90,7 +90,7 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := io.ProcessMoveables(files, &io.InternalProgressReport{}, fsCalls, osCalls, unixCalls); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
@@ -105,12 +105,12 @@ func main() {
 		if share.CachePool2 == nil {
 			// Array to Cache
 			for _, disk := range disks {
-				files, err := filesystem.GetMoveables(disk, share, share.CachePool, osCalls, unixCalls)
+				files, err := fsOps.GetMoveables(disk, share, share.CachePool)
 				if err != nil {
 					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 					continue
 				}
-				files, err = pathing.EstablishPaths(files, fsCalls)
+				files, err = pathingOps.EstablishPaths(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 					continue
@@ -120,19 +120,19 @@ func main() {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 					continue
 				}
-				if err := io.ProcessMoveables(files, &io.InternalProgressReport{}, fsCalls, osCalls, unixCalls); err != nil {
+				if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 					continue
 				}
 			}
 		} else {
 			// Cache2 to Cache
-			files, err := filesystem.GetMoveables(share.CachePool2, share, share.CachePool, osCalls, unixCalls)
+			files, err := fsOps.GetMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathing.EstablishPaths(files, fsCalls)
+			files, err = pathingOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
@@ -142,7 +142,7 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := io.ProcessMoveables(files, &io.InternalProgressReport{}, fsCalls, osCalls, unixCalls); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}

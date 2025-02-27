@@ -9,7 +9,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk, fs fsAdapter) (*unraid.UnraidDisk, error) {
+func allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk, fsOps fsProvider) (*unraid.UnraidDisk, error) {
 	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
 	var disks []*unraid.UnraidDisk
 
@@ -20,7 +20,7 @@ func allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unr
 			continue
 		}
 
-		stats, err := fs.GetDiskUsage(disk.FSPath)
+		stats, err := fsOps.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -45,7 +45,7 @@ func allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unr
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			enoughSpace, err := fs.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+			enoughSpace, err := fsOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue

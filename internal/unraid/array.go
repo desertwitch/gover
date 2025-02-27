@@ -57,13 +57,13 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 }
 
 // establishDisks returns a map of pointers to established Unraid disks
-func establishDisks(osa osAdapter) (map[string]*UnraidDisk, error) {
+func establishDisks(osOps osProvider) (map[string]*UnraidDisk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 
 	disks := make(map[string]*UnraidDisk)
 
-	entries, err := osa.ReadDir(basePath)
+	entries, err := osOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read mounts at %s: %w", basePath, err)
 	}

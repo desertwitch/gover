@@ -34,7 +34,7 @@ const (
 	StateParityPosition = "mdResyncPos"
 )
 
-type osAdapter interface {
+type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 	ReadDir(name string) ([]os.DirEntry, error)
 }
@@ -52,19 +52,23 @@ type UnraidSystem struct {
 	Shares map[string]*UnraidShare
 }
 
+type UnraidImpl struct {
+	OSOps osProvider
+}
+
 // establishSystem returns a pointer to an established Unraid system
-func EstablishSystem(osa osAdapter) (*UnraidSystem, error) {
-	disks, err := establishDisks(osa)
+func (u UnraidImpl) EstablishSystem() (*UnraidSystem, error) {
+	disks, err := establishDisks(u.OSOps)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)
 	}
 
-	pools, err := establishPools(osa)
+	pools, err := establishPools(u.OSOps)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing pools: %w", err)
 	}
 
-	shares, err := establishShares(disks, pools, osa)
+	shares, err := establishShares(disks, pools, u.OSOps)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing shares: %w", err)
 	}

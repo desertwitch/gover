@@ -12,11 +12,11 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func allocateDisksBySplitLevel(m *filesystem.Moveable, fsa fsAdapter, osa osAdapter) (map[string]*unraid.UnraidDisk, error) {
+func allocateDisksBySplitLevel(m *filesystem.Moveable, fsOps fsProvider, osOps osProvider) (map[string]*unraid.UnraidDisk, error) {
 	matches := make(map[int]map[string]*unraid.UnraidDisk)
 	splitDoesNotExceedLvl := true
 
-	mainMatches, mainLevel, err := findDisksBySplitLevel(m, fsa, osa)
+	mainMatches, mainLevel, err := findDisksBySplitLevel(m, fsOps, osOps)
 	if err != nil {
 		if !errors.Is(err, ErrSplitDoesNotExceedLvl) {
 			slog.Warn("Skipped job path for split-level consideration", "path", m.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
@@ -34,7 +34,7 @@ func allocateDisksBySplitLevel(m *filesystem.Moveable, fsa fsAdapter, osa osAdap
 
 	if len(m.Hardlinks) > 0 {
 		for _, s := range m.Hardlinks {
-			subMatches, subLevel, err := findDisksBySplitLevel(s, fsa, osa)
+			subMatches, subLevel, err := findDisksBySplitLevel(s, fsOps, osOps)
 			if err != nil {
 				if !errors.Is(err, ErrSplitDoesNotExceedLvl) {
 					slog.Warn("Skipped hardlink for split-level consideration", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
@@ -79,7 +79,7 @@ func allocateDisksBySplitLevel(m *filesystem.Moveable, fsa fsAdapter, osa osAdap
 	return nil, ErrNotAllocatable
 }
 
-func findDisksBySplitLevel(m *filesystem.Moveable, fsa fsAdapter, osa osAdapter) ([]*unraid.UnraidDisk, int, error) {
+func findDisksBySplitLevel(m *filesystem.Moveable, fsOps fsProvider, osOps osProvider) ([]*unraid.UnraidDisk, int, error) {
 	var foundDisks []*unraid.UnraidDisk
 	path := filepath.Dir(m.SourcePath)
 
@@ -108,8 +108,8 @@ func findDisksBySplitLevel(m *filesystem.Moveable, fsa fsAdapter, osa osAdapter)
 					continue
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
-				if _, err := osa.Stat(dirToCheck); err == nil {
-					enoughSpace, err := fsa.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+				if _, err := osOps.Stat(dirToCheck); err == nil {
+					enoughSpace, err := fsOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 						continue

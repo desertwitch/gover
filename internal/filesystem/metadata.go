@@ -19,10 +19,10 @@ type Metadata struct {
 	SymlinkTo  string
 }
 
-func getMetadata(path string, osa osAdapter, una unixAdapter) (*Metadata, error) {
+func getMetadata(path string, osOps osProvider, unixOps unixProvider) (*Metadata, error) {
 	var stat unix.Stat_t
 
-	if err := una.Lstat(path, &stat); err != nil {
+	if err := unixOps.Lstat(path, &stat); err != nil {
 		return nil, fmt.Errorf("failed to lstat: %w", err)
 	}
 
@@ -39,7 +39,7 @@ func getMetadata(path string, osa osAdapter, una unixAdapter) (*Metadata, error)
 	}
 
 	if metadata.IsSymlink {
-		symlinkTarget, err := osa.Readlink(path)
+		symlinkTarget, err := osOps.Readlink(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read symlink: %w", err)
 		}
