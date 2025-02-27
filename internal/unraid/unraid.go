@@ -33,13 +33,6 @@ const (
 	StateParityPosition = "mdResyncPos"
 )
 
-type UnraidStoreable interface {
-	GetName() string
-	GetFSPath() string
-	IsActiveTransfer() bool
-	SetActiveTransfer(bool)
-}
-
 type UnraidSystem struct {
 	Array  *UnraidArray
 	Pools  map[string]*UnraidPool

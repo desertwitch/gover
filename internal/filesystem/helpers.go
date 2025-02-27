@@ -28,7 +28,7 @@ func GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
+func HasEnoughFreeSpace(s unraidStoreable, minFree int64, fileSize int64) (bool, error) {
 	if fileSize < 0 {
 		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
 	}
@@ -64,7 +64,7 @@ func IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
+func ExistsOnStorage(m *Moveable) (storeable unraidStoreable, existingAtPath string, err error) {
 	if m.Dest == nil {
 		return nil, "", fmt.Errorf("destination is nil")
 	}
@@ -99,7 +99,7 @@ func ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtP
 	return nil, "", fmt.Errorf("impossible storeable type")
 }
 
-func existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {
+func existsOnStorageCandidate(m *Moveable, destCandidate unraidStoreable) (exists bool, existingAtPath string, err error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to rel path: %w", err)
