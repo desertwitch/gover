@@ -37,14 +37,14 @@ type unixProvider interface {
 	UtimesNano(path string, times []unix.Timespec) error
 }
 
-type RelatedElement interface {
+type relatedElement interface {
 	GetMetadata() *filesystem.Metadata
 	GetSourcePath() string
 	GetDestPath() string
 }
 
 type InternalProgressReport struct {
-	AnyProcessed       []RelatedElement
+	AnyProcessed       []relatedElement
 	DirsProcessed      []*filesystem.RelatedDirectory
 	MoveablesProcessed []*filesystem.Moveable
 	SymlinksProcessed  []*filesystem.Moveable
