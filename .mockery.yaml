@@ -7,6 +7,9 @@ outpkg: "mocks"
 recursive: true
 all: true
 exported: true
+resolve-type-alias: false
+disable-version-string: true
+issue-845-fix: True
 packages:
   github.com/desertwitch/gover/internal:
 

@@ -8,22 +8,22 @@ type genericConfigProvider interface {
 	Read(filenames ...string) (envMap map[string]string, err error)
 }
 
-type ConfigProviderImpl struct {
-	GenericConfigReader genericConfigProvider
+type ConfigHandler struct {
+	GenericConfigHandler genericConfigProvider
 }
 
-func (c *ConfigProviderImpl) ReadGeneric(filenames ...string) (envMap map[string]string, err error) {
-	return c.GenericConfigReader.Read(filenames...)
+func (c *ConfigHandler) ReadGeneric(filenames ...string) (envMap map[string]string, err error) {
+	return c.GenericConfigHandler.Read(filenames...)
 }
 
-func (c *ConfigProviderImpl) MapKeyToString(envMap map[string]string, key string) string {
+func (c *ConfigHandler) MapKeyToString(envMap map[string]string, key string) string {
 	if value, exists := envMap[key]; exists {
 		return value
 	}
 	return ""
 }
 
-func (c *ConfigProviderImpl) MapKeyToInt(envMap map[string]string, key string) int {
+func (c *ConfigHandler) MapKeyToInt(envMap map[string]string, key string) int {
 	value := c.MapKeyToString(envMap, key)
 	if value == "" {
 		return -1
@@ -35,7 +35,7 @@ func (c *ConfigProviderImpl) MapKeyToInt(envMap map[string]string, key string) i
 	return intValue
 }
 
-func (c *ConfigProviderImpl) MapKeyToInt64(envMap map[string]string, key string) int64 {
+func (c *ConfigHandler) MapKeyToInt64(envMap map[string]string, key string) int64 {
 	value := c.MapKeyToString(envMap, key)
 	if value == "" {
 		return -1

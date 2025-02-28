@@ -39,7 +39,7 @@ func (d *UnraidDisk) SetActiveTransfer(active bool) {
 
 // TO-DO: establishArray should call establishDisks
 // establishArray returns a pointer to an established Unraid array
-func (u *UnraidImpl) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
+func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 	stateFile := ArrayStateFile
 
 	configMap, err := godotenv.Read(stateFile)
@@ -58,7 +58,7 @@ func (u *UnraidImpl) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray,
 }
 
 // establishDisks returns a map of pointers to established Unraid disks
-func (u *UnraidImpl) EstablishDisks() (map[string]*UnraidDisk, error) {
+func (u *UnraidHandler) EstablishDisks() (map[string]*UnraidDisk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 

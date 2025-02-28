@@ -18,12 +18,12 @@ type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
-type AllocationImpl struct {
+type Allocator struct {
 	FSOps fsProvider
 	OSOps osProvider
 }
 
-func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
@@ -58,7 +58,7 @@ func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Movea
 	return filtered, nil
 }
 
-func (a *AllocationImpl) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.UnraidDisk, error) {
+func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 

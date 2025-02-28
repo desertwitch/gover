@@ -24,7 +24,7 @@ type UnraidShare struct {
 
 // establishShares returns a map of pointers to established Unraid shares
 // TO-DO: Refactor into establishShare() and establishShares()
-func (u *UnraidImpl) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
+func (u *UnraidHandler) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 
 	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {

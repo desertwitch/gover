@@ -30,7 +30,7 @@ type InternalProgressReport struct {
 // Reallocation if not enough space (up to 3x?)
 // Rollback, Locking?
 
-func (f *FilesystemImpl) ProcessMoveables(moveables []*Moveable, batch *InternalProgressReport) error {
+func (f *FileHandler) ProcessMoveables(moveables []*Moveable, batch *InternalProgressReport) error {
 	for _, m := range moveables {
 		job := &InternalProgressReport{}
 

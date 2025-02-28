@@ -33,7 +33,7 @@ func (p *UnraidPool) SetActiveTransfer(active bool) {
 
 // establishPools returns a map of pointers to established Unraid pools
 // TO-DO: Refactor into establishPool() and establishPools()
-func (u *UnraidImpl) EstablishPools() (map[string]*UnraidPool, error) {
+func (u *UnraidHandler) EstablishPools() (map[string]*UnraidPool, error) {
 	basePath := ConfigDirPools
 
 	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {

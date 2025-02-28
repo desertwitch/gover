@@ -12,7 +12,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *AllocationImpl) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.UnraidDisk, error) {
+func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.UnraidDisk, error) {
 	matches := make(map[int]map[string]*unraid.UnraidDisk)
 	splitDoesNotExceedLvl := true
 
@@ -79,7 +79,7 @@ func (a *AllocationImpl) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[
 	return nil, ErrNotAllocatable
 }
 
-func (a *AllocationImpl) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.UnraidDisk, int, error) {
+func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.UnraidDisk, int, error) {
 	var foundDisks []*unraid.UnraidDisk
 	path := filepath.Dir(m.SourcePath)
 

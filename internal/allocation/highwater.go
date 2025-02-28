@@ -9,7 +9,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *AllocationImpl) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
+func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
 	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
 	var disks []*unraid.UnraidDisk
 

@@ -68,12 +68,12 @@ func (m *Moveable) GetDestPath() string {
 	return m.DestPath
 }
 
-type FilesystemImpl struct {
+type FileHandler struct {
 	OSOps   osProvider
 	UnixOps unixProvider
 }
 
-func (f *FilesystemImpl) GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
+func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
 	var preSelection []*Moveable
 

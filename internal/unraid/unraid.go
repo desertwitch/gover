@@ -59,13 +59,13 @@ type UnraidSystem struct {
 	Shares map[string]*UnraidShare
 }
 
-type UnraidImpl struct {
+type UnraidHandler struct {
 	OSOps     osProvider
 	ConfigOps configProvider
 }
 
 // establishSystem returns a pointer to an established Unraid system
-func (u *UnraidImpl) EstablishSystem() (*UnraidSystem, error) {
+func (u *UnraidHandler) EstablishSystem() (*UnraidSystem, error) {
 	disks, err := u.EstablishDisks()
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)

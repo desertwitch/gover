@@ -14,14 +14,13 @@ import (
 )
 
 func main() {
-	osProvider := &filesystem.RealOS{}
-	unixProvider := &filesystem.RealUnix{}
-	configProvider := &configuration.ConfigProviderImpl{GenericConfigReader: &configuration.GodotenvProvider{}}
+	osOps := &filesystem.OS{}
+	unixOps := &filesystem.Unix{}
+	configOps := &configuration.ConfigHandler{GenericConfigHandler: &configuration.GodotenvProvider{}}
 
-	fsOps := &filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
-	unraidOps := &unraid.UnraidImpl{OSOps: osProvider, ConfigOps: configProvider}
-	allocOps := &allocation.AllocationImpl{FSOps: fsOps, OSOps: osProvider}
-	validationOps := &validation.ValidationImpl{}
+	fsOps := &filesystem.FileHandler{OSOps: osOps, UnixOps: unixOps}
+	unraidOps := &unraid.UnraidHandler{OSOps: osOps, ConfigOps: configOps}
+	allocOps := &allocation.Allocator{FSOps: fsOps, OSOps: osOps}
 
 	w := os.Stderr
 
@@ -63,7 +62,7 @@ func main() {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validationOps.ValidateMoveables(files)
+			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
@@ -84,7 +83,7 @@ func main() {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validationOps.ValidateMoveables(files)
+			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
@@ -114,7 +113,7 @@ func main() {
 					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 					continue
 				}
-				files, err = validationOps.ValidateMoveables(files)
+				files, err = validation.ValidateMoveables(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 					continue
@@ -136,7 +135,7 @@ func main() {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validationOps.ValidateMoveables(files)
+			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue

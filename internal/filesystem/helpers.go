@@ -16,7 +16,7 @@ type DiskStats struct {
 	FreeSpace int64
 }
 
-func (f *FilesystemImpl) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
+func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
 	if m.Dest == nil {
 		return nil, "", fmt.Errorf("destination is nil")
 	}
@@ -51,7 +51,7 @@ func (f *FilesystemImpl) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidSt
 	return nil, "", fmt.Errorf("impossible storeable type")
 }
 
-func (f *FilesystemImpl) GetDiskUsage(path string) (DiskStats, error) {
+func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
 	if err := f.UnixOps.Statfs(path, &stat); err != nil {
 		return DiskStats{}, fmt.Errorf("failed to statfs: %w", err)
@@ -63,7 +63,7 @@ func (f *FilesystemImpl) GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func (f *FilesystemImpl) HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
+func (f *FileHandler) HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
 	if fileSize < 0 {
 		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
 	}
@@ -91,7 +91,7 @@ func (f *FilesystemImpl) HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree in
 	return false, nil
 }
 
-func (f *FilesystemImpl) IsEmptyFolder(path string) (bool, error) {
+func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
 	entries, err := f.OSOps.ReadDir(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to readdir: %w", err)
@@ -99,7 +99,7 @@ func (f *FilesystemImpl) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *FilesystemImpl) IsFileInUse(path string) (bool, error) {
+func (f *FileHandler) IsFileInUse(path string) (bool, error) {
 	cmd := exec.Command("lsof", path)
 
 	err := cmd.Run()
