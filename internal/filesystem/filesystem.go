@@ -11,32 +11,32 @@ import (
 )
 
 type fsProvider interface {
-	IsEmptyFolder(path string) (bool, error)
 	ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error)
 	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
+	IsEmptyFolder(path string) (bool, error)
 	IsFileInUse(path string) (bool, error)
 }
 
 type osProvider interface {
-	Remove(name string) error
 	Open(name string) (*os.File, error)
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
-	Stat(name string) (os.FileInfo, error)
-	Rename(oldpath, newpath string) error
-	Readlink(name string) (string, error)
 	ReadDir(name string) ([]os.DirEntry, error)
+	Readlink(name string) (string, error)
+	Remove(name string) error
+	Rename(oldpath, newpath string) error
+	Stat(name string) (os.FileInfo, error)
 }
 
 type unixProvider interface {
-	Link(oldpath, newpath string) error
-	Symlink(oldpath, newpath string) error
-	Mkdir(path string, mode uint32) error
-	Chown(path string, uid, gid int) error
 	Chmod(path string, mode uint32) error
+	Chown(path string, uid, gid int) error
 	Lchown(path string, uid, gid int) error
-	UtimesNano(path string, times []unix.Timespec) error
-	Statfs(path string, buf *unix.Statfs_t) error
+	Link(oldpath, newpath string) error
 	Lstat(path string, stat *unix.Stat_t) error
+	Mkdir(path string, mode uint32) error
+	Statfs(path string, buf *unix.Statfs_t) error
+	Symlink(oldpath, newpath string) error
+	UtimesNano(path string, times []unix.Timespec) error
 }
 
 type Moveable struct {

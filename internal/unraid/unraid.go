@@ -35,8 +35,8 @@ const (
 )
 
 type osProvider interface {
-	Stat(name string) (os.FileInfo, error)
 	ReadDir(name string) ([]os.DirEntry, error)
+	Stat(name string) (os.FileInfo, error)
 }
 
 type UnraidStoreable interface {
