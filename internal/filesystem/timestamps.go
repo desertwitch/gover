@@ -1,10 +1,9 @@
-package io
+package filesystem
 
 import (
 	"fmt"
 	"log/slog"
 
-	"github.com/desertwitch/gover/internal/filesystem"
 	"golang.org/x/sys/unix"
 )
 
@@ -18,7 +17,7 @@ func ensureTimestamps(batch *InternalProgressReport, unixOps unixProvider) error
 	return nil
 }
 
-func ensureTimestamp(path string, metadata *filesystem.Metadata, unixOps unixProvider) error {
+func ensureTimestamp(path string, metadata *Metadata, unixOps unixProvider) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
 	if err := unixOps.UtimesNano(path, ts); err != nil {
 		return fmt.Errorf("failed to set timestamp: %w", err)

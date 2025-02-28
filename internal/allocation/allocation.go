@@ -23,7 +23,7 @@ type AllocationImpl struct {
 	OSOps osProvider
 }
 
-func (a AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {

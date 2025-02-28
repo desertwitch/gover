@@ -1,12 +1,10 @@
-package io
+package filesystem
 
 import (
 	"fmt"
-
-	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func ensurePermissions(path string, metadata *filesystem.Metadata, unixOps unixProvider) error {
+func ensurePermissions(path string, metadata *Metadata, unixOps unixProvider) error {
 	if err := unixOps.Chown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on %s: %w", path, err)
 	}
@@ -18,7 +16,7 @@ func ensurePermissions(path string, metadata *filesystem.Metadata, unixOps unixP
 	return nil
 }
 
-func ensureLinkPermissions(path string, metadata *filesystem.Metadata, unixOps unixProvider) error {
+func ensureLinkPermissions(path string, metadata *Metadata, unixOps unixProvider) error {
 	if err := unixOps.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on link %s: %w", path, err)
 	}

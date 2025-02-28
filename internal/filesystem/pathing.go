@@ -1,27 +1,16 @@
-package pathing
+package filesystem
 
 import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
-
-	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
-type fsProvider interface {
-	ExistsOnStorage(m *filesystem.Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error)
-}
-
-type PathingImpl struct {
-	FSOps fsProvider
-}
-
-func (p PathingImpl) EstablishPaths(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	var filtered []*filesystem.Moveable
+func (f *FilesystemImpl) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
+	var filtered []*Moveable
 
 	for _, m := range moveables {
-		existsOn, existsPath, err := p.FSOps.ExistsOnStorage(m)
+		existsOn, existsPath, err := f.ExistsOnStorage(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -38,7 +27,7 @@ func (p PathingImpl) EstablishPaths(moveables []*filesystem.Moveable) ([]*filesy
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
-			existsOn, existsPath, err := p.FSOps.ExistsOnStorage(h)
+			existsOn, existsPath, err := f.ExistsOnStorage(h)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
@@ -61,7 +50,7 @@ func (p PathingImpl) EstablishPaths(moveables []*filesystem.Moveable) ([]*filesy
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			existsOn, existsPath, err := p.FSOps.ExistsOnStorage(s)
+			existsOn, existsPath, err := f.ExistsOnStorage(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
@@ -88,7 +77,7 @@ func (p PathingImpl) EstablishPaths(moveables []*filesystem.Moveable) ([]*filesy
 	return filtered, nil
 }
 
-func establishPath(m *filesystem.Moveable) error {
+func establishPath(m *Moveable) error {
 	if m.Dest == nil {
 		return fmt.Errorf("destination for job is nil")
 	}
@@ -106,7 +95,7 @@ func establishPath(m *filesystem.Moveable) error {
 	return nil
 }
 
-func establishRelatedDirPaths(m *filesystem.Moveable) error {
+func establishRelatedDirPaths(m *Moveable) error {
 	if m.RootDir == nil {
 		return fmt.Errorf("dir root is nil")
 	}

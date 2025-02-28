@@ -9,7 +9,9 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+type ValidationImpl struct{}
+
+func (v *ValidationImpl) ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {

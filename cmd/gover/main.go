@@ -7,22 +7,19 @@ import (
 
 	"github.com/desertwitch/gover/internal/allocation"
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/io"
-	"github.com/desertwitch/gover/internal/pathing"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/desertwitch/gover/internal/validation"
 	"github.com/lmittmann/tint"
 )
 
 func main() {
-	osProvider := filesystem.RealOS{}
-	unixProvider := filesystem.RealUnix{}
+	osProvider := &filesystem.RealOS{}
+	unixProvider := &filesystem.RealUnix{}
+	fsOps := &filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
 
-	fsOps := filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
-	allocOps := allocation.AllocationImpl{FSOps: fsOps, OSOps: osProvider}
-	unraidOps := unraid.UnraidImpl{OSOps: osProvider}
-	pathingOps := pathing.PathingImpl{FSOps: fsOps}
-	ioOps := io.IOImpl{FSOps: fsOps, OSOps: osProvider, UnixOps: unixProvider}
+	unraidOps := &unraid.UnraidImpl{OSOps: osProvider}
+	allocOps := &allocation.AllocationImpl{FSOps: fsOps, OSOps: osProvider}
+	validationOps := &validation.ValidationImpl{}
 
 	w := os.Stderr
 
@@ -59,17 +56,17 @@ func main() {
 				slog.Warn("Skipped share: failed to allocate jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathingOps.EstablishPaths(files)
+			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validation.ValidateMoveables(files)
+			files, err = validationOps.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
+			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
@@ -80,17 +77,17 @@ func main() {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathingOps.EstablishPaths(files)
+			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validation.ValidateMoveables(files)
+			files, err = validationOps.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
+			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
@@ -110,17 +107,17 @@ func main() {
 					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 					continue
 				}
-				files, err = pathingOps.EstablishPaths(files)
+				files, err = fsOps.EstablishPaths(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 					continue
 				}
-				files, err = validation.ValidateMoveables(files)
+				files, err = validationOps.ValidateMoveables(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 					continue
 				}
-				if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
+				if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
 					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 					continue
 				}
@@ -132,17 +129,17 @@ func main() {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = pathingOps.EstablishPaths(files)
+			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 				continue
 			}
-			files, err = validation.ValidateMoveables(files)
+			files, err = validationOps.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
+			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}

@@ -1,4 +1,4 @@
-package io
+package filesystem
 
 import (
 	"errors"
@@ -8,71 +8,40 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/zeebo/blake3"
-	"golang.org/x/sys/unix"
 )
 
-type fsProvider interface {
-	IsEmptyFolder(path string) (bool, error)
-	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
-}
-
-type osProvider interface {
-	Remove(name string) error
-	Open(name string) (*os.File, error)
-	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
-	Stat(name string) (os.FileInfo, error)
-	Rename(oldpath, newpath string) error
-}
-
-type unixProvider interface {
-	Link(oldpath, newpath string) error
-	Symlink(oldpath, newpath string) error
-	Mkdir(path string, mode uint32) error
-	Chown(path string, uid, gid int) error
-	Chmod(path string, mode uint32) error
-	Lchown(path string, uid, gid int) error
-	UtimesNano(path string, times []unix.Timespec) error
-}
-
 type relatedElement interface {
-	GetMetadata() *filesystem.Metadata
+	GetMetadata() *Metadata
 	GetSourcePath() string
 	GetDestPath() string
 }
 
 type InternalProgressReport struct {
 	AnyProcessed       []relatedElement
-	DirsProcessed      []*filesystem.RelatedDirectory
-	MoveablesProcessed []*filesystem.Moveable
-	SymlinksProcessed  []*filesystem.Moveable
-	HardlinksProcessed []*filesystem.Moveable
-}
-
-type IOImpl struct {
-	FSOps   fsProvider
-	OSOps   osProvider
-	UnixOps unixProvider
+	DirsProcessed      []*RelatedDirectory
+	MoveablesProcessed []*Moveable
+	SymlinksProcessed  []*Moveable
+	HardlinksProcessed []*Moveable
 }
 
 // TO-DO:
 // Reallocation if not enough space (up to 3x?)
 // Rollback, Locking?
 
-func (i IOImpl) ProcessMoveables(moveables []*filesystem.Moveable, batch *InternalProgressReport) error {
+func (f *FilesystemImpl) ProcessMoveables(moveables []*Moveable, batch *InternalProgressReport) error {
 	for _, m := range moveables {
 		job := &InternalProgressReport{}
 
-		if err := processMoveable(m, job, i.FSOps, i.OSOps, i.UnixOps); err != nil {
+		if err := processMoveable(m, job, f, f.OSOps, f.UnixOps); err != nil {
 			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
 		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
-			if err := processMoveable(h, job, i.FSOps, i.OSOps, i.UnixOps); err != nil {
+			if err := processMoveable(h, job, f, f.OSOps, f.UnixOps); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
@@ -80,7 +49,7 @@ func (i IOImpl) ProcessMoveables(moveables []*filesystem.Moveable, batch *Intern
 		}
 
 		for _, s := range m.Symlinks {
-			if err := processMoveable(s, job, i.FSOps, i.OSOps, i.UnixOps); err != nil {
+			if err := processMoveable(s, job, f, f.OSOps, f.UnixOps); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
@@ -94,19 +63,19 @@ func (i IOImpl) ProcessMoveables(moveables []*filesystem.Moveable, batch *Intern
 		batch.SymlinksProcessed = append(batch.SymlinksProcessed, job.SymlinksProcessed...)
 	}
 
-	if err := ensureTimestamps(batch, i.UnixOps); err != nil {
+	if err := ensureTimestamps(batch, f.UnixOps); err != nil {
 		return fmt.Errorf("failed finalizing timestamps: %w", err)
 	}
 
-	if err := removeEmptyDirs(batch, i.FSOps, i.OSOps); err != nil {
+	if err := removeEmptyDirs(batch, f, f.OSOps); err != nil {
 		return fmt.Errorf("failed cleaning source directories: %w", err)
 	}
 
 	return nil
 }
 
-func processMoveable(m *filesystem.Moveable, job *InternalProgressReport, fsOps fsProvider, osOps osProvider, unixOps unixProvider) error {
-	used, err := isFileInUse(m.SourcePath)
+func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider, osOps osProvider, unixOps unixProvider) error {
+	used, err := fsOps.IsFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
@@ -218,7 +187,7 @@ func processMoveable(m *filesystem.Moveable, job *InternalProgressReport, fsOps 
 	return nil
 }
 
-func moveFile(m *filesystem.Moveable, osOps osProvider) error {
+func moveFile(m *Moveable, osOps osProvider) error {
 	srcFile, err := osOps.Open(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
