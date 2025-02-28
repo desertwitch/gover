@@ -17,7 +17,7 @@ info:
 	@file $(BINARY)
 
 generate-mocks:
-	@mockery --config .mockery.yaml
+	@export PATH=$$PATH:$$GOPATH/bin && mockery --config .mockery.yaml
 
 clean:
 	@rm -f $(BINARY) || true

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/desertwitch/gover/internal/allocation"
+	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/desertwitch/gover/internal/validation"
@@ -15,9 +16,10 @@ import (
 func main() {
 	osProvider := &filesystem.RealOS{}
 	unixProvider := &filesystem.RealUnix{}
-	fsOps := &filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
+	configProvider := &configuration.ConfigProviderImpl{GenericConfigReader: &configuration.GodotenvProvider{}}
 
-	unraidOps := &unraid.UnraidImpl{OSOps: osProvider}
+	fsOps := &filesystem.FilesystemImpl{OSOps: osProvider, UnixOps: unixProvider}
+	unraidOps := &unraid.UnraidImpl{OSOps: osProvider, ConfigOps: configProvider}
 	allocOps := &allocation.AllocationImpl{FSOps: fsOps, OSOps: osProvider}
 	validationOps := &validation.ValidationImpl{}
 

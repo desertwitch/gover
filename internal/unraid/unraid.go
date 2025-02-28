@@ -39,6 +39,13 @@ type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
+type configProvider interface {
+	ReadGeneric(filenames ...string) (envMap map[string]string, err error)
+	MapKeyToString(envMap map[string]string, key string) string
+	MapKeyToInt(envMap map[string]string, key string) int
+	MapKeyToInt64(envMap map[string]string, key string) int64
+}
+
 type UnraidStoreable interface {
 	GetName() string
 	GetFSPath() string
@@ -53,27 +60,28 @@ type UnraidSystem struct {
 }
 
 type UnraidImpl struct {
-	OSOps osProvider
+	OSOps     osProvider
+	ConfigOps configProvider
 }
 
 // establishSystem returns a pointer to an established Unraid system
 func (u *UnraidImpl) EstablishSystem() (*UnraidSystem, error) {
-	disks, err := establishDisks(u.OSOps)
+	disks, err := u.EstablishDisks()
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)
 	}
 
-	pools, err := establishPools(u.OSOps)
+	pools, err := u.EstablishPools()
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing pools: %w", err)
 	}
 
-	shares, err := establishShares(disks, pools, u.OSOps)
+	shares, err := u.EstablishShares(disks, pools)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing shares: %w", err)
 	}
 
-	array, err := establishArray(disks)
+	array, err := u.EstablishArray(disks)
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing array: %w", err)
 	}

@@ -37,8 +37,9 @@ func (d *UnraidDisk) SetActiveTransfer(active bool) {
 	d.ActiveTransfer = active
 }
 
+// TO-DO: establishArray should call establishDisks
 // establishArray returns a pointer to an established Unraid array
-func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
+func (u *UnraidImpl) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 	stateFile := ArrayStateFile
 
 	configMap, err := godotenv.Read(stateFile)
@@ -48,22 +49,22 @@ func establishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 
 	array := &UnraidArray{
 		Disks:         disks,
-		Status:        getConfigValue(configMap, StateArrayStatus),
-		TurboSetting:  getConfigValue(configMap, StateTurboSetting),
-		ParityRunning: parseInt(getConfigValue(configMap, StateParityPosition)) > 0,
+		Status:        u.ConfigOps.MapKeyToString(configMap, StateArrayStatus),
+		TurboSetting:  u.ConfigOps.MapKeyToString(configMap, StateTurboSetting),
+		ParityRunning: u.ConfigOps.MapKeyToInt(configMap, StateParityPosition) > 0,
 	}
 
 	return array, nil
 }
 
 // establishDisks returns a map of pointers to established Unraid disks
-func establishDisks(osOps osProvider) (map[string]*UnraidDisk, error) {
+func (u *UnraidImpl) EstablishDisks() (map[string]*UnraidDisk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 
 	disks := make(map[string]*UnraidDisk)
 
-	entries, err := osOps.ReadDir(basePath)
+	entries, err := u.OSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read mounts at %s: %w", basePath, err)
 	}

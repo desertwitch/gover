@@ -33,16 +33,16 @@ func (p *UnraidPool) SetActiveTransfer(active bool) {
 
 // establishPools returns a map of pointers to established Unraid pools
 // TO-DO: Refactor into establishPool() and establishPools()
-func establishPools(osOps osProvider) (map[string]*UnraidPool, error) {
+func (u *UnraidImpl) EstablishPools() (map[string]*UnraidPool, error) {
 	basePath := ConfigDirPools
 
-	if _, err := osOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
+	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("pool config dir does not exist: %w", err)
 	}
 
 	pools := make(map[string]*UnraidPool)
 
-	files, err := osOps.ReadDir(basePath)
+	files, err := u.OSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pool config dir: %w", err)
 	}
@@ -53,7 +53,7 @@ func establishPools(osOps osProvider) (map[string]*UnraidPool, error) {
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
-			if _, err := osOps.Stat(fsPath); errors.Is(err, fs.ErrNotExist) {
+			if _, err := u.OSOps.Stat(fsPath); errors.Is(err, fs.ErrNotExist) {
 				return nil, fmt.Errorf("pool mount %s does not exist: %w", fsPath, err)
 			}
 

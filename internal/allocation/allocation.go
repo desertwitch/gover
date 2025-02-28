@@ -27,7 +27,7 @@ func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Movea
 	var filtered []*filesystem.Moveable
 
 	for _, m := range moveables {
-		dest, err := allocateArrayDestination(m, a.FSOps, a.OSOps)
+		dest, err := a.AllocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -40,7 +40,7 @@ func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Movea
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			dest, err := allocateArrayDestination(s, a.FSOps, a.OSOps)
+			dest, err := a.AllocateArrayDestination(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed to allocate array destination for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", s.Share.Name)
 				symlinkFailure = true
@@ -58,12 +58,12 @@ func (a *AllocationImpl) AllocateArrayDestinations(moveables []*filesystem.Movea
 	return filtered, nil
 }
 
-func allocateArrayDestination(m *filesystem.Moveable, fsOps fsProvider, osOps osProvider) (*unraid.UnraidDisk, error) {
+func (a *AllocationImpl) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.UnraidDisk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 
 	if m.Share.SplitLevel >= 0 {
-		returnDisks, err := allocateDisksBySplitLevel(m, fsOps, osOps)
+		returnDisks, err := a.AllocateDisksBySplitLevel(m)
 		// TO-DO: Configurable, if not found split level files should proceed anyhow
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by split level: %w", err)
@@ -75,21 +75,21 @@ func allocateArrayDestination(m *filesystem.Moveable, fsOps fsProvider, osOps os
 
 	switch allocationMethod := m.Share.Allocator; allocationMethod {
 	case unraid.AllocHighWater:
-		ret, err := allocateHighWaterDisk(m, includedDisks, excludedDisks, fsOps)
+		ret, err := a.AllocateHighWaterDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
 		return ret, nil
 
 	case unraid.AllocFillUp:
-		ret, err := allocateFillUpDisk(m, includedDisks, excludedDisks, fsOps)
+		ret, err := a.AllocateFillUpDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
 		return ret, nil
 
 	case unraid.AllocMostFree:
-		ret, err := allocateMostFreeDisk(m, includedDisks, excludedDisks, fsOps)
+		ret, err := a.AllocateMostFreeDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)
 		}

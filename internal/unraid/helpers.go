@@ -2,17 +2,8 @@ package unraid
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
-
-// getConfigValue returns an string element of a string map or "" if not existing
-func getConfigValue(envMap map[string]string, key string) string {
-	if value, exists := envMap[key]; exists {
-		return value
-	}
-	return ""
-}
 
 // findPool dereferences a textual pool name into a pool pointer
 func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error) {
@@ -43,28 +34,4 @@ func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*Unra
 	}
 
 	return foundDisks, nil
-}
-
-// parseInt safely converts a string to an integer (returns -1 if empty or invalid)
-func parseInt(value string) int {
-	if value == "" {
-		return -1
-	}
-	intValue, err := strconv.Atoi(value)
-	if err != nil {
-		return -1
-	}
-	return intValue
-}
-
-// parseInt64 safely converts a string to a 64-bit integer (returns -1 if empty or invalid)
-func parseInt64(value string) int64 {
-	if value == "" {
-		return -1
-	}
-	intValue, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return -1
-	}
-	return intValue
 }

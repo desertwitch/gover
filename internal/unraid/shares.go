@@ -6,8 +6,6 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
-
-	"github.com/joho/godotenv"
 )
 
 type UnraidShare struct {
@@ -26,16 +24,16 @@ type UnraidShare struct {
 
 // establishShares returns a map of pointers to established Unraid shares
 // TO-DO: Refactor into establishShare() and establishShares()
-func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool, osOps osProvider) (map[string]*UnraidShare, error) {
+func (u *UnraidImpl) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 
-	if _, err := osOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
+	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("share config dir does not exist: %w", err)
 	}
 
 	shares := make(map[string]*UnraidShare)
 
-	files, err := osOps.ReadDir(basePath)
+	files, err := u.OSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read share config dir: %w", err)
 	}
@@ -45,7 +43,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool,
 			filePath := filepath.Join(basePath, file.Name())
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
-			configMap, err := godotenv.Read(filePath)
+			configMap, err := u.ConfigOps.ReadGeneric(filePath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read share config %s: %w", filePath, err)
 			}
@@ -53,26 +51,26 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool,
 			share := &UnraidShare{
 				Name:       nameWithoutExt,
 				CFGFile:    filePath,
-				UseCache:   getConfigValue(configMap, SettingShareUseCache),
-				Allocator:  getConfigValue(configMap, SettingShareAllocator),
-				DisableCOW: strings.ToLower(getConfigValue(configMap, SettingShareCOW)) == "no",
-				SplitLevel: parseInt(getConfigValue(configMap, SettingShareSplitLevel)),
-				SpaceFloor: parseInt64(getConfigValue(configMap, SettingShareFloor)),
+				UseCache:   u.ConfigOps.MapKeyToString(configMap, SettingShareUseCache),
+				Allocator:  u.ConfigOps.MapKeyToString(configMap, SettingShareAllocator),
+				DisableCOW: strings.ToLower(u.ConfigOps.MapKeyToString(configMap, SettingShareCOW)) == "no",
+				SplitLevel: u.ConfigOps.MapKeyToInt(configMap, SettingShareSplitLevel),
+				SpaceFloor: u.ConfigOps.MapKeyToInt64(configMap, SettingShareFloor),
 			}
 
-			cachepool, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool))
+			cachepool, err := findPool(pools, u.ConfigOps.MapKeyToString(configMap, SettingShareCachePool))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference primary cache for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool = cachepool
 
-			cachepool2, err := findPool(pools, getConfigValue(configMap, SettingShareCachePool2))
+			cachepool2, err := findPool(pools, u.ConfigOps.MapKeyToString(configMap, SettingShareCachePool2))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference secondary cache for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool2 = cachepool2
 
-			includedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareIncludeDisks))
+			includedDisks, err := findDisks(disks, u.ConfigOps.MapKeyToString(configMap, SettingShareIncludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference included disks for share %s: %w", nameWithoutExt, err)
 			}
@@ -83,7 +81,7 @@ func establishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool,
 				share.IncludedDisks = disks
 			}
 
-			excludedDisks, err := findDisks(disks, getConfigValue(configMap, SettingShareExcludeDisks))
+			excludedDisks, err := findDisks(disks, u.ConfigOps.MapKeyToString(configMap, SettingShareExcludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
 			}

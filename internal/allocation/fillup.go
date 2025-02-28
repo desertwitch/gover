@@ -8,7 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func allocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk, fsOps fsProvider) (*unraid.UnraidDisk, error) {
+func (a *AllocationImpl) AllocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
 	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
 	var disks []*unraid.UnraidDisk
 
@@ -17,7 +17,7 @@ func allocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid
 			continue
 		}
 
-		stats, err := fsOps.GetDiskUsage(disk.FSPath)
+		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
@@ -32,7 +32,7 @@ func allocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := fsOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
