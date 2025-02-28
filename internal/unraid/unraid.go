@@ -64,6 +64,13 @@ type UnraidHandler struct {
 	ConfigOps configProvider
 }
 
+func NewUnraidHandler(osOps osProvider, configOps configProvider) *UnraidHandler {
+	return &UnraidHandler{
+		OSOps:     osOps,
+		ConfigOps: configOps,
+	}
+}
+
 // establishSystem returns a pointer to an established Unraid system
 func (u *UnraidHandler) EstablishSystem() (*UnraidSystem, error) {
 	disks, err := u.EstablishDisks()

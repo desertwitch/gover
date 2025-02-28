@@ -12,6 +12,12 @@ type ConfigHandler struct {
 	GenericConfigHandler genericConfigProvider
 }
 
+func NewConfigHandler(genericHandler genericConfigProvider) *ConfigHandler {
+	return &ConfigHandler{
+		GenericConfigHandler: genericHandler,
+	}
+}
+
 func (c *ConfigHandler) ReadGeneric(filenames ...string) (envMap map[string]string, err error) {
 	return c.GenericConfigHandler.Read(filenames...)
 }

@@ -23,6 +23,13 @@ type Allocator struct {
 	OSOps osProvider
 }
 
+func NewAllocator(fsOps fsProvider, osOps osProvider) *Allocator {
+	return &Allocator{
+		FSOps: fsOps,
+		OSOps: osOps,
+	}
+}
+
 func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	var filtered []*filesystem.Moveable
 

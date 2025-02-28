@@ -14,13 +14,13 @@ import (
 )
 
 func main() {
-	osOps := &filesystem.OS{}
-	unixOps := &filesystem.Unix{}
-	configOps := &configuration.ConfigHandler{GenericConfigHandler: &configuration.GodotenvProvider{}}
+	osProvider := &filesystem.OS{}
+	unixProvider := &filesystem.Unix{}
 
-	fsOps := &filesystem.FileHandler{OSOps: osOps, UnixOps: unixOps}
-	unraidOps := &unraid.UnraidHandler{OSOps: osOps, ConfigOps: configOps}
-	allocOps := &allocation.Allocator{FSOps: fsOps, OSOps: osOps}
+	configOps := configuration.NewConfigHandler(&configuration.GodotenvProvider{})
+	unraidOps := unraid.NewUnraidHandler(osProvider, configOps)
+	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
+	allocOps := allocation.NewAllocator(fsOps, osProvider)
 
 	w := os.Stderr
 

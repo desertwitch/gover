@@ -73,6 +73,13 @@ type FileHandler struct {
 	UnixOps unixProvider
 }
 
+func NewFileHandler(osOps osProvider, unixOps unixProvider) *FileHandler {
+	return &FileHandler{
+		OSOps:   osOps,
+		UnixOps: unixOps,
+	}
+}
+
 func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
 	var moveables []*Moveable
 	var preSelection []*Moveable
