@@ -1,0 +1,12 @@
+with-expecter: true
+dry-run: false
+mockname: "{{.InterfaceName | firstUpper | camelcase}}"
+filename: "{{.InterfaceName}}.go"
+dir: "{{.InterfaceDirRelative}}/mocks"
+outpkg: "mocks"
+recursive: true
+all: true
+exported: true
+packages:
+  github.com/desertwitch/gover/internal:
+
