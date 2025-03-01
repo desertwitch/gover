@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -10,21 +9,33 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-type fsProvider interface {
-	ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error)
-	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
-	IsEmptyFolder(path string) (bool, error)
-	IsFileInUse(path string) (bool, error)
+type Moveable struct {
+	Share      *unraid.UnraidShare
+	Source     unraid.UnraidStoreable
+	SourcePath string
+	Dest       unraid.UnraidStoreable
+	DestPath   string
+	Hardlinks  []*Moveable
+	Hardlink   bool
+	HardlinkTo *Moveable
+	Symlinks   []*Moveable
+	Symlink    bool
+	SymlinkTo  *Moveable
+	Metadata   *Metadata
+	RootDir    *RelatedDirectory
+	DeepestDir *RelatedDirectory
 }
 
-type fsWalker interface {
-	WalkDir(root string, fn fs.WalkDirFunc) error
+func (m *Moveable) GetMetadata() *Metadata {
+	return m.Metadata
 }
 
-type FileWalker struct{}
+func (m *Moveable) GetSourcePath() string {
+	return m.SourcePath
+}
 
-func (*FileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
-	return filepath.WalkDir(root, fn)
+func (m *Moveable) GetDestPath() string {
+	return m.DestPath
 }
 
 type FileHandler struct {

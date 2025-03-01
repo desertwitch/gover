@@ -42,7 +42,7 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStore
 			if _, exists := m.Share.ExcludedDisks[name]; exists {
 				continue
 			}
-			alreadyExists, existsPath, err := existsOnStorageCandidate(m, disk, f.OSOps)
+			alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, disk)
 			if err != nil {
 				return nil, "", err
 			}
@@ -54,7 +54,7 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStore
 	}
 
 	if pool, ok := m.Dest.(*unraid.UnraidPool); ok {
-		alreadyExists, existsPath, err := existsOnStorageCandidate(m, pool, f.OSOps)
+		alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, pool)
 		if err != nil {
 			return nil, "", err
 		}
@@ -129,7 +129,7 @@ func (f *FileHandler) IsFileInUse(path string) (bool, error) {
 	return false, err
 }
 
-func existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable, osOps osProvider) (exists bool, existingAtPath string, err error) {
+func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to rel path: %w", err)
@@ -137,7 +137,7 @@ func existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable,
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
 
-	if _, err := osOps.Stat(dstPath); err != nil {
+	if _, err := f.OSOps.Stat(dstPath); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, "", nil
 		}
