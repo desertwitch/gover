@@ -1,9 +1,7 @@
 package unraid
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"strings"
 )
@@ -36,13 +34,13 @@ func (p *UnraidPool) SetActiveTransfer(active bool) {
 func (u *UnraidHandler) EstablishPools() (map[string]*UnraidPool, error) {
 	basePath := ConfigDirPools
 
-	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
+	if exists, err := u.FSOps.Exists(basePath); !exists {
 		return nil, fmt.Errorf("pool config dir does not exist: %w", err)
 	}
 
 	pools := make(map[string]*UnraidPool)
 
-	files, err := u.OSOps.ReadDir(basePath)
+	files, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pool config dir: %w", err)
 	}
@@ -53,7 +51,7 @@ func (u *UnraidHandler) EstablishPools() (map[string]*UnraidPool, error) {
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
-			if _, err := u.OSOps.Stat(fsPath); errors.Is(err, fs.ErrNotExist) {
+			if exists, err := u.FSOps.Exists(fsPath); !exists {
 				return nil, fmt.Errorf("pool mount %s does not exist: %w", fsPath, err)
 			}
 

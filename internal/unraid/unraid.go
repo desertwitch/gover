@@ -34,9 +34,9 @@ const (
 	StateParityPosition = "mdResyncPos"
 )
 
-type osProvider interface {
+type fsProvider interface {
+	Exists(path string) (bool, error)
 	ReadDir(name string) ([]os.DirEntry, error)
-	Stat(name string) (os.FileInfo, error)
 }
 
 type configProvider interface {
@@ -60,13 +60,13 @@ type UnraidSystem struct {
 }
 
 type UnraidHandler struct {
-	OSOps     osProvider
+	FSOps     fsProvider
 	ConfigOps configProvider
 }
 
-func NewUnraidHandler(osOps osProvider, configOps configProvider) *UnraidHandler {
+func NewUnraidHandler(fsOps fsProvider, configOps configProvider) *UnraidHandler {
 	return &UnraidHandler{
-		OSOps:     osOps,
+		FSOps:     fsOps,
 		ConfigOps: configOps,
 	}
 }

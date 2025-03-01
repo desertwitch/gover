@@ -108,7 +108,7 @@ func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Unr
 					continue
 				}
 				dirToCheck := filepath.Join(disk.FSPath, subPath)
-				if _, err := a.OSOps.Stat(dirToCheck); err == nil {
+				if exists, _ := a.FSOps.Exists(dirToCheck); exists {
 					enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 					if err != nil {
 						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)

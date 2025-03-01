@@ -30,7 +30,7 @@ func (d *RelatedDirectory) GetDestPath() string {
 	return d.DestPath
 }
 
-func walkParentDirs(m *Moveable, basePath string, osOps osProvider, unixOps unixProvider) error {
+func (f *FileHandler) walkParentDirs(m *Moveable, basePath string) error {
 	var prevElement *RelatedDirectory
 	path := m.SourcePath
 
@@ -42,7 +42,7 @@ func walkParentDirs(m *Moveable, basePath string, osOps osProvider, unixOps unix
 				SourcePath: path,
 			}
 
-			metadata, err := getMetadata(path, osOps, unixOps)
+			metadata, err := f.getMetadata(path)
 			if err != nil {
 				return fmt.Errorf("failed to get metadata: %w", err)
 			}
@@ -65,17 +65,17 @@ func walkParentDirs(m *Moveable, basePath string, osOps osProvider, unixOps unix
 	return nil
 }
 
-func ensureDirectoryStructure(m *Moveable, job *InternalProgressReport, osOps osProvider, unixOps unixProvider) error {
+func (f *FileHandler) ensureDirectoryStructure(m *Moveable, job *InternalProgressReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
 		// TO-DO: Handle generic errors here and otherwere for .Stat or .Lstat
-		if _, err := osOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
-			if err := unixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
+		if _, err := f.OSOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
+			if err := f.UnixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", dir.DestPath, err)
 			}
 
-			if err := ensurePermissions(dir.DestPath, dir.Metadata, unixOps); err != nil {
+			if err := f.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
 				return fmt.Errorf("failed to ensure permissions: %w", err)
 			}
 
@@ -88,7 +88,7 @@ func ensureDirectoryStructure(m *Moveable, job *InternalProgressReport, osOps os
 	return nil
 }
 
-func removeEmptyDirs(batch *InternalProgressReport, fsOps fsProvider, osOps osProvider) error {
+func (f *FileHandler) removeEmptyDirs(batch *InternalProgressReport) error {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
 	})
@@ -99,13 +99,13 @@ func removeEmptyDirs(batch *InternalProgressReport, fsOps fsProvider, osOps osPr
 		if _, alreadyRemoved := removed[dir.SourcePath]; alreadyRemoved {
 			continue
 		}
-		isEmpty, err := fsOps.IsEmptyFolder(dir.SourcePath)
+		isEmpty, err := f.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
 			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)", "path", dir.SourcePath, "err", err)
 			continue
 		}
 		if isEmpty {
-			if err := osOps.Remove(dir.SourcePath); err != nil {
+			if err := f.OSOps.Remove(dir.SourcePath); err != nil {
 				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)", "path", dir.SourcePath, "err", err)
 				continue
 			}

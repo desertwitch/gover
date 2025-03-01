@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-
-	"github.com/joho/godotenv"
 )
 
 type UnraidArray struct {
@@ -42,7 +40,7 @@ func (d *UnraidDisk) SetActiveTransfer(active bool) {
 func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 	stateFile := ArrayStateFile
 
-	configMap, err := godotenv.Read(stateFile)
+	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load disk state file %s: %w", stateFile, err)
 	}
@@ -64,7 +62,7 @@ func (u *UnraidHandler) EstablishDisks() (map[string]*UnraidDisk, error) {
 
 	disks := make(map[string]*UnraidDisk)
 
-	entries, err := u.OSOps.ReadDir(basePath)
+	entries, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read mounts at %s: %w", basePath, err)
 	}

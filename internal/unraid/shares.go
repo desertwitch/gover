@@ -1,9 +1,7 @@
 package unraid
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"strings"
 )
@@ -27,13 +25,13 @@ type UnraidShare struct {
 func (u *UnraidHandler) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 
-	if _, err := u.OSOps.Stat(basePath); errors.Is(err, fs.ErrNotExist) {
+	if exists, err := u.FSOps.Exists(basePath); !exists {
 		return nil, fmt.Errorf("share config dir does not exist: %w", err)
 	}
 
 	shares := make(map[string]*UnraidShare)
 
-	files, err := u.OSOps.ReadDir(basePath)
+	files, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read share config dir: %w", err)
 	}

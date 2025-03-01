@@ -34,14 +34,14 @@ func (f *FileHandler) ProcessMoveables(moveables []*Moveable, batch *InternalPro
 	for _, m := range moveables {
 		job := &InternalProgressReport{}
 
-		if err := processMoveable(m, job, f, f.OSOps, f.UnixOps); err != nil {
+		if err := f.processMoveable(m, job); err != nil {
 			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
 		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
-			if err := processMoveable(h, job, f, f.OSOps, f.UnixOps); err != nil {
+			if err := f.processMoveable(h, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
@@ -49,7 +49,7 @@ func (f *FileHandler) ProcessMoveables(moveables []*Moveable, batch *InternalPro
 		}
 
 		for _, s := range m.Symlinks {
-			if err := processMoveable(s, job, f, f.OSOps, f.UnixOps); err != nil {
+			if err := f.processMoveable(s, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				continue
 			}
@@ -63,19 +63,19 @@ func (f *FileHandler) ProcessMoveables(moveables []*Moveable, batch *InternalPro
 		batch.SymlinksProcessed = append(batch.SymlinksProcessed, job.SymlinksProcessed...)
 	}
 
-	if err := ensureTimestamps(batch, f.UnixOps); err != nil {
+	if err := f.ensureTimestamps(batch); err != nil {
 		return fmt.Errorf("failed finalizing timestamps: %w", err)
 	}
 
-	if err := removeEmptyDirs(batch, f, f.OSOps); err != nil {
+	if err := f.removeEmptyDirs(batch); err != nil {
 		return fmt.Errorf("failed cleaning source directories: %w", err)
 	}
 
 	return nil
 }
 
-func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider, osOps osProvider, unixOps unixProvider) error {
-	used, err := fsOps.IsFileInUse(m.SourcePath)
+func (f *FileHandler) processMoveable(m *Moveable, job *InternalProgressReport) error {
+	used, err := f.IsFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
@@ -84,18 +84,18 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 	}
 
 	if m.Hardlink {
-		if err := ensureDirectoryStructure(m, job, osOps, unixOps); err != nil {
+		if err := f.ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for hardlink: %w", err)
 		}
 
-		if err := unixOps.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
+		if err := f.UnixOps.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create hardlink: %w", err)
 		}
-		if err := osOps.Remove(m.SourcePath); err != nil {
+		if err := f.OSOps.Remove(m.SourcePath); err != nil {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 
-		if err := ensureLinkPermissions(m.DestPath, m.Metadata, unixOps); err != nil {
+		if err := f.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
@@ -105,18 +105,18 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 	}
 
 	if m.Symlink {
-		if err := ensureDirectoryStructure(m, job, osOps, unixOps); err != nil {
+		if err := f.ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for symlink: %w", err)
 		}
 
-		if err := unixOps.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
+		if err := f.UnixOps.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create symlink: %w", err)
 		}
-		if err := osOps.Remove(m.SourcePath); err != nil {
+		if err := f.OSOps.Remove(m.SourcePath); err != nil {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 
-		if err := ensureLinkPermissions(m.DestPath, m.Metadata, unixOps); err != nil {
+		if err := f.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
@@ -126,18 +126,18 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 	}
 
 	if m.Metadata.IsSymlink {
-		if err := ensureDirectoryStructure(m, job, osOps, unixOps); err != nil {
+		if err := f.ensureDirectoryStructure(m, job); err != nil {
 			return fmt.Errorf("failed to ensure dir tree: %w", err)
 		}
 
-		if err := unixOps.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
+		if err := f.UnixOps.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create symlink: %w", err)
 		}
-		if err := osOps.Remove(m.SourcePath); err != nil {
+		if err := f.OSOps.Remove(m.SourcePath); err != nil {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 
-		if err := ensureLinkPermissions(m.DestPath, m.Metadata, unixOps); err != nil {
+		if err := f.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
@@ -146,19 +146,19 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 		return nil
 	}
 
-	if err := ensureDirectoryStructure(m, job, osOps, unixOps); err != nil {
+	if err := f.ensureDirectoryStructure(m, job); err != nil {
 		return fmt.Errorf("failed to ensure dir tree: %w", err)
 	}
 
 	if m.Metadata.IsDir {
-		if err := unixOps.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
+		if err := f.UnixOps.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
 			return fmt.Errorf("failed to create empty dir: %w", err)
 		}
-		if err := osOps.Remove(m.SourcePath); err != nil {
+		if err := f.OSOps.Remove(m.SourcePath); err != nil {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 	} else {
-		enoughSpace, err := fsOps.HasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
+		enoughSpace, err := f.HasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			return fmt.Errorf("failed to check for enough space: %w", err)
 		}
@@ -170,15 +170,15 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 			}
 		}
 
-		if err := moveFile(m, osOps); err != nil {
+		if err := f.moveFile(m); err != nil {
 			return fmt.Errorf("failed to move file: %w", err)
 		}
-		if err := osOps.Remove(m.SourcePath); err != nil {
+		if err := f.OSOps.Remove(m.SourcePath); err != nil {
 			return fmt.Errorf("failed to remove source after move: %w", err)
 		}
 	}
 
-	if err := ensurePermissions(m.DestPath, m.Metadata, unixOps); err != nil {
+	if err := f.ensurePermissions(m.DestPath, m.Metadata); err != nil {
 		return fmt.Errorf("failed to ensure permissions: %w", err)
 	}
 
@@ -187,8 +187,8 @@ func processMoveable(m *Moveable, job *InternalProgressReport, fsOps fsProvider,
 	return nil
 }
 
-func moveFile(m *Moveable, osOps osProvider) error {
-	srcFile, err := osOps.Open(m.SourcePath)
+func (f *FileHandler) moveFile(m *Moveable) error {
+	srcFile, err := f.OSOps.Open(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
@@ -197,11 +197,11 @@ func moveFile(m *Moveable, osOps osProvider) error {
 	tmpPath := m.DestPath + ".gover"
 	defer func() {
 		if err != nil {
-			osOps.Remove(tmpPath)
+			f.OSOps.Remove(tmpPath)
 		}
 	}()
 
-	dstFile, err := osOps.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, os.FileMode(m.Metadata.Perms))
+	dstFile, err := f.OSOps.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, os.FileMode(m.Metadata.Perms))
 	if err != nil {
 		return fmt.Errorf("failed to open destination file %s: %w", tmpPath, err)
 	}
@@ -228,13 +228,13 @@ func moveFile(m *Moveable, osOps osProvider) error {
 		return fmt.Errorf("hash mismatch: %s (src) != %s (dst)", srcChecksum, dstChecksum)
 	}
 
-	if _, err := osOps.Stat(m.DestPath); err == nil {
+	if _, err := f.OSOps.Stat(m.DestPath); err == nil {
 		return fmt.Errorf("rename destination already exists")
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("failed to check rename destination existence: %w", err)
 	}
 
-	if err := osOps.Rename(tmpPath, m.DestPath); err != nil {
+	if err := f.OSOps.Rename(tmpPath, m.DestPath); err != nil {
 		return fmt.Errorf("failed to rename temporary file to destination file: %w", err)
 	}
 

@@ -16,11 +16,12 @@ import (
 func main() {
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
+	cfgProviderGeneric := &configuration.GodotenvProvider{}
 
-	configOps := configuration.NewConfigHandler(&configuration.GodotenvProvider{})
-	unraidOps := unraid.NewUnraidHandler(osProvider, configOps)
+	configOps := configuration.NewConfigHandler(cfgProviderGeneric)
 	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
-	allocOps := allocation.NewAllocator(fsOps, osProvider)
+	unraidOps := unraid.NewUnraidHandler(fsOps, configOps)
+	allocOps := allocation.NewAllocator(fsOps)
 
 	w := os.Stderr
 

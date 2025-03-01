@@ -7,9 +7,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func ensureTimestamps(batch *InternalProgressReport, unixOps unixProvider) error {
+func (f *FileHandler) ensureTimestamps(batch *InternalProgressReport) error {
 	for _, a := range batch.AnyProcessed {
-		if err := ensureTimestamp(a.GetDestPath(), a.GetMetadata(), unixOps); err != nil {
+		if err := f.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
 			slog.Warn("Warning (finalize): failure setting timestamp", "path", a.GetDestPath(), "err", err)
 			continue
 		}
@@ -17,9 +17,9 @@ func ensureTimestamps(batch *InternalProgressReport, unixOps unixProvider) error
 	return nil
 }
 
-func ensureTimestamp(path string, metadata *Metadata, unixOps unixProvider) error {
+func (f *FileHandler) ensureTimestamp(path string, metadata *Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
-	if err := unixOps.UtimesNano(path, ts); err != nil {
+	if err := f.UnixOps.UtimesNano(path, ts); err != nil {
 		return fmt.Errorf("failed to set timestamp: %w", err)
 	}
 	return nil

@@ -10,6 +10,7 @@ import (
 )
 
 type fsProvider interface {
+	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
 }
@@ -20,13 +21,11 @@ type osProvider interface {
 
 type Allocator struct {
 	FSOps fsProvider
-	OSOps osProvider
 }
 
-func NewAllocator(fsOps fsProvider, osOps osProvider) *Allocator {
+func NewAllocator(fsOps fsProvider) *Allocator {
 	return &Allocator{
 		FSOps: fsOps,
-		OSOps: osOps,
 	}
 }
 

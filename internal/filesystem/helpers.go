@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -14,6 +15,21 @@ import (
 type DiskStats struct {
 	TotalSize int64
 	FreeSpace int64
+}
+
+func (f *FileHandler) Exists(path string) (bool, error) {
+	if _, err := f.OSOps.Stat(path); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+func (f *FileHandler) ReadDir(name string) ([]os.DirEntry, error) {
+	return f.OSOps.ReadDir(name)
 }
 
 func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {

@@ -2,12 +2,12 @@ package filesystem
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/unraid"
-	"golang.org/x/sys/unix"
 )
 
 type fsProvider interface {
@@ -17,66 +17,27 @@ type fsProvider interface {
 	IsFileInUse(path string) (bool, error)
 }
 
-type osProvider interface {
-	Open(name string) (*os.File, error)
-	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
-	ReadDir(name string) ([]os.DirEntry, error)
-	Readlink(name string) (string, error)
-	Remove(name string) error
-	Rename(oldpath, newpath string) error
-	Stat(name string) (os.FileInfo, error)
+type fsWalker interface {
+	WalkDir(root string, fn fs.WalkDirFunc) error
 }
 
-type unixProvider interface {
-	Chmod(path string, mode uint32) error
-	Chown(path string, uid, gid int) error
-	Lchown(path string, uid, gid int) error
-	Link(oldpath, newpath string) error
-	Lstat(path string, stat *unix.Stat_t) error
-	Mkdir(path string, mode uint32) error
-	Statfs(path string, buf *unix.Statfs_t) error
-	Symlink(oldpath, newpath string) error
-	UtimesNano(path string, times []unix.Timespec) error
-}
+type FileWalker struct{}
 
-type Moveable struct {
-	Share      *unraid.UnraidShare
-	Source     unraid.UnraidStoreable
-	SourcePath string
-	Dest       unraid.UnraidStoreable
-	DestPath   string
-	Hardlinks  []*Moveable
-	Hardlink   bool
-	HardlinkTo *Moveable
-	Symlinks   []*Moveable
-	Symlink    bool
-	SymlinkTo  *Moveable
-	Metadata   *Metadata
-	RootDir    *RelatedDirectory
-	DeepestDir *RelatedDirectory
-}
-
-func (m *Moveable) GetMetadata() *Metadata {
-	return m.Metadata
-}
-
-func (m *Moveable) GetSourcePath() string {
-	return m.SourcePath
-}
-
-func (m *Moveable) GetDestPath() string {
-	return m.DestPath
+func (*FileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
+	return filepath.WalkDir(root, fn)
 }
 
 type FileHandler struct {
-	OSOps   osProvider
-	UnixOps unixProvider
+	OSOps    osProvider
+	UnixOps  unixProvider
+	FSWalker fsWalker
 }
 
 func NewFileHandler(osOps osProvider, unixOps unixProvider) *FileHandler {
 	return &FileHandler{
-		OSOps:   osOps,
-		UnixOps: unixOps,
+		OSOps:    osOps,
+		UnixOps:  unixOps,
+		FSWalker: &FileWalker{},
 	}
 }
 
@@ -86,7 +47,7 @@ func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
 
-	err := filepath.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
+	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -117,14 +78,14 @@ func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.
 	}
 
 	for _, m := range preSelection {
-		metadata, err := getMetadata(m.SourcePath, f.OSOps, f.UnixOps)
+		metadata, err := f.getMetadata(m.SourcePath)
 		if err != nil {
 			slog.Warn("Skipped job: failed to get metadata", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
 		m.Metadata = metadata
 
-		if err := walkParentDirs(m, shareDir, f.OSOps, f.UnixOps); err != nil {
+		if err := f.walkParentDirs(m, shareDir); err != nil {
 			slog.Warn("Skipped job: failed to get parent folders", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 			continue
 		}
