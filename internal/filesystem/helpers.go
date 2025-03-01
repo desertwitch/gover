@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/unraid"
@@ -113,20 +112,6 @@ func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
 		return false, fmt.Errorf("failed to readdir: %w", err)
 	}
 	return len(entries) == 0, nil
-}
-
-func (f *FileHandler) IsFileInUse(path string) (bool, error) {
-	cmd := exec.Command("lsof", path)
-
-	err := cmd.Run()
-	if err == nil {
-		return true, nil
-	}
-	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return false, nil
-	}
-
-	return false, err
 }
 
 func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {

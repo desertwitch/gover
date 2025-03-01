@@ -8,6 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/allocation"
 	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/io"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/desertwitch/gover/internal/validation"
 	"github.com/lmittmann/tint"
@@ -22,6 +23,7 @@ func main() {
 	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewUnraidHandler(fsOps, configOps)
 	allocOps := allocation.NewAllocator(fsOps)
+	ioOps := io.NewIOHandler(allocOps, fsOps, osProvider, unixProvider)
 
 	w := os.Stderr
 
@@ -68,7 +70,7 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
@@ -89,7 +91,7 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
@@ -119,7 +121,7 @@ func main() {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 					continue
 				}
-				if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
+				if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 					continue
 				}
@@ -141,7 +143,7 @@ func main() {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
 				continue
 			}
-			if err := fsOps.ProcessMoveables(files, &filesystem.InternalProgressReport{}); err != nil {
+			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 				continue
 			}
