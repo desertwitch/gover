@@ -1,0 +1,8 @@
+- pathing: do not accept rel paths
+- io: reallocate on target full (up to 3x?)
+- io: cleanup
+- io: zfs datasets
+- io: nocow for btrfs
+- pkg: error handling for .stat and .lstat existence checks
+- pkg: cancellation handling
+- pkg: configuration handling
