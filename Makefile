@@ -3,10 +3,9 @@
 BINARY = gover
 SRC_DIR = ./cmd/gover
 
-.PHONY: all clean info mocks generate-mocks
+.PHONY: all clean info mocks lint
 
 all: $(BINARY)
-mocks: generate-mocks
 
 $(BINARY):
 	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
@@ -16,8 +15,11 @@ info:
 	@ldd $(BINARY) || true
 	@file $(BINARY)
 
-generate-mocks:
-	@export PATH=$$PATH:$$GOPATH/bin && mockery --config .mockery.yaml
+mocks:
+	@mockery --config .mockery.yaml
+
+lint:
+	@golangci-lint run
 
 clean:
-	@rm -f $(BINARY) || true
+	@rm -vf $(BINARY) || true

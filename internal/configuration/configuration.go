@@ -18,7 +18,7 @@ func NewConfigHandler(genericHandler genericConfigProvider) *ConfigHandler {
 	}
 }
 
-func (c *ConfigHandler) ReadGeneric(filenames ...string) (envMap map[string]string, err error) {
+func (c *ConfigHandler) ReadGeneric(filenames ...string) (map[string]string, error) {
 	return c.GenericConfigHandler.Read(filenames...)
 }
 

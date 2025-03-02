@@ -3,6 +3,7 @@ linters:
     disable:
             - wsl
             - lll
+            - funlen
             - dupl
             - wrapcheck
             - varnamelen
