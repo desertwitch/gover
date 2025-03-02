@@ -26,6 +26,7 @@ func (c *ConfigHandler) MapKeyToString(envMap map[string]string, key string) str
 	if value, exists := envMap[key]; exists {
 		return value
 	}
+
 	return ""
 }
 
@@ -38,6 +39,7 @@ func (c *ConfigHandler) MapKeyToInt(envMap map[string]string, key string) int {
 	if err != nil {
 		return -1
 	}
+
 	return intValue
 }
 
@@ -50,5 +52,6 @@ func (c *ConfigHandler) MapKeyToInt64(envMap map[string]string, key string) int6
 	if err != nil {
 		return -1
 	}
+
 	return intValue
 }

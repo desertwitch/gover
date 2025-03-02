@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -13,15 +14,18 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 		existsOn, existsPath, err := f.ExistsOnStorage(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		if existsOn != nil {
 			slog.Warn("Skipped job: destination path already exists for job", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 
 		if err := establishPath(m); err != nil {
 			slog.Warn("Skipped job: cannot set destination path for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 
@@ -31,16 +35,19 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
+
 				break
 			}
 			if existsOn != nil {
 				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
+
 				break
 			}
 			if err := establishPath(h); err != nil {
 				slog.Warn("Skipped job: cannot set destination path for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
+
 				break
 			}
 		}
@@ -54,16 +61,19 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
+
 				break
 			}
 			if existsOn != nil {
 				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
+
 				break
 			}
 			if err := establishPath(s); err != nil {
 				slog.Warn("Skipped job: cannot set destination path for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
+
 				break
 			}
 		}
@@ -79,7 +89,7 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 
 func establishPath(m *Moveable) error {
 	if m.Dest == nil {
-		return fmt.Errorf("destination for job is nil")
+		return errors.New("destination for job is nil")
 	}
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
@@ -97,7 +107,7 @@ func establishPath(m *Moveable) error {
 
 func establishRelatedDirPaths(m *Moveable) error {
 	if m.RootDir == nil {
-		return fmt.Errorf("dir root is nil")
+		return errors.New("dir root is nil")
 	}
 
 	dir := m.RootDir

@@ -20,8 +20,7 @@ type UnraidShare struct {
 	CFGFile       string
 }
 
-// establishShares returns a map of pointers to established Unraid shares
-// TO-DO: Refactor into establishShare() and establishShares()
+// TO-DO: Refactor into establishShare() and establishShares().
 func (u *UnraidHandler) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
 	basePath := ConfigDirShares
 

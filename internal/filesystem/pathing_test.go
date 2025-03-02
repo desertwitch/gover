@@ -12,6 +12,7 @@ import (
 )
 
 func TestEstablishPaths_FileExists(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{
@@ -48,12 +49,13 @@ func TestEstablishPaths_FileExists(t *testing.T) {
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
 	assert.NoError(t, err)
-	assert.Len(t, filtered, 0)
+	assert.Empty(t, filtered)
 
 	mockOS.AssertExpectations(t)
 }
 
 func TestEstablishPaths_FileNotExits(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{
@@ -99,6 +101,7 @@ func TestEstablishPaths_FileNotExits(t *testing.T) {
 }
 
 func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{
@@ -144,6 +147,7 @@ func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 }
 
 func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{
@@ -189,6 +193,7 @@ func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 }
 
 func TestEstablishPaths_Unicode(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{
@@ -234,6 +239,7 @@ func TestEstablishPaths_Unicode(t *testing.T) {
 }
 
 func TestEstablishPaths_Spaces(t *testing.T) {
+	t.Parallel()
 	mockOS := new(mocks.OsProvider)
 
 	mockFS := &filesystem.FileHandler{

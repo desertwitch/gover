@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -36,6 +37,7 @@ func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) 
 		dest, err := a.AllocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		m.Dest = dest
@@ -50,6 +52,7 @@ func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) 
 			if err != nil {
 				slog.Warn("Skipped job: failed to allocate array destination for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", s.Share.Name)
 				symlinkFailure = true
+
 				break
 			}
 			s.Dest = dest
@@ -85,6 +88,7 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Un
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
+
 		return ret, nil
 
 	case unraid.AllocFillUp:
@@ -92,6 +96,7 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Un
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
+
 		return ret, nil
 
 	case unraid.AllocMostFree:
@@ -99,9 +104,10 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Un
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)
 		}
+
 		return ret, nil
 
 	default:
-		return nil, fmt.Errorf("no allocation method given in configuration")
+		return nil, errors.New("no allocation method given in configuration")
 	}
 }

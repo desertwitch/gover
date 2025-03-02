@@ -28,7 +28,7 @@ func (f *FileHandler) getMetadata(path string) (*Metadata, error) {
 
 	metadata := &Metadata{
 		Inode:      stat.Ino,
-		Perms:      (uint32(stat.Mode) & 0777),
+		Perms:      stat.Mode & 0o777,
 		UID:        stat.Uid,
 		GID:        stat.Gid,
 		AccessedAt: stat.Atim,

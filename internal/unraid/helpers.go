@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// findPool dereferences a textual pool name into a pool pointer
+// findPool dereferences a textual pool name into a pool pointer.
 func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error) {
 	if poolName == "" {
 		return nil, nil
@@ -13,10 +13,11 @@ func findPool(pools map[string]*UnraidPool, poolName string) (*UnraidPool, error
 	if pool, exists := pools[poolName]; exists {
 		return pool, nil
 	}
+
 	return nil, fmt.Errorf("configured pool %s does not exist", poolName)
 }
 
-// findDisks dereferences a list of textual disk names into a map of disk pointers
+// findDisks dereferences a list of textual disk names into a map of disk pointers.
 func findDisks(disks map[string]*UnraidDisk, diskNames string) (map[string]*UnraidDisk, error) {
 	if diskNames == "" {
 		return nil, nil

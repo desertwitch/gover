@@ -47,11 +47,13 @@ func (i *IOHandler) cleanDirectoryStructure(batch *InternalProgressReport) error
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
 			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)", "path", dir.SourcePath, "err", err)
+
 			continue
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.SourcePath); err != nil {
 				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)", "path", dir.SourcePath, "err", err)
+
 				continue
 			}
 			removed[dir.SourcePath] = struct{}{}
@@ -67,5 +69,6 @@ func calculateDirectoryDepth(dir *filesystem.RelatedDirectory) int {
 		dir = dir.Parent
 		depth++
 	}
+
 	return depth
 }

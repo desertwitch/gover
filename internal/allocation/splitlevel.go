@@ -39,6 +39,7 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 				if !errors.Is(err, ErrSplitDoesNotExceedLvl) {
 					slog.Warn("Skipped hardlink for split-level consideration", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				}
+
 				continue
 			} else {
 				splitDoesNotExceedLvl = false
@@ -99,31 +100,33 @@ func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Unr
 
 	if splitLevel <= maxLevel {
 		return nil, -1, ErrSplitDoesNotExceedLvl
-	} else {
-		for i := len(pathParts[maxLevel:]); i > 0; i-- {
-			subPath := filepath.Join(pathParts[:maxLevel+i]...)
-			found := false
-			for name, disk := range m.Share.IncludedDisks {
-				if _, exists := m.Share.ExcludedDisks[name]; exists {
+	}
+
+	for i := len(pathParts[maxLevel:]); i > 0; i-- {
+		subPath := filepath.Join(pathParts[:maxLevel+i]...)
+		found := false
+		for name, disk := range m.Share.IncludedDisks {
+			if _, exists := m.Share.ExcludedDisks[name]; exists {
+				continue
+			}
+			dirToCheck := filepath.Join(disk.FSPath, subPath)
+			if exists, _ := a.FSOps.Exists(dirToCheck); exists {
+				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+				if err != nil {
+					slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 					continue
 				}
-				dirToCheck := filepath.Join(disk.FSPath, subPath)
-				if exists, _ := a.FSOps.Exists(dirToCheck); exists {
-					enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
-					if err != nil {
-						slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
-						continue
-					}
-					if enoughSpace {
-						foundDisks = append(foundDisks, disk)
-						found = true
-					}
+				if enoughSpace {
+					foundDisks = append(foundDisks, disk)
+					found = true
 				}
 			}
-			if found {
-				return foundDisks, i, nil
-			}
 		}
-		return nil, -1, nil
+		if found {
+			return foundDisks, i, nil
+		}
 	}
+
+	return nil, -1, nil
 }

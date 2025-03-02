@@ -29,8 +29,7 @@ func (p *UnraidPool) SetActiveTransfer(active bool) {
 	p.ActiveTransfer = active
 }
 
-// establishPools returns a map of pointers to established Unraid pools
-// TO-DO: Refactor into establishPool() and establishPools()
+// TO-DO: Refactor into establishPool() and establishPools().
 func (u *UnraidHandler) EstablishPools() (map[string]*UnraidPool, error) {
 	basePath := ConfigDirPools
 

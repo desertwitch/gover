@@ -20,6 +20,7 @@ func (a *Allocator) AllocateFillUpDisk(m *filesystem.Moveable, includedDisks map
 		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		diskStats[disk] = stats
@@ -35,6 +36,7 @@ func (a *Allocator) AllocateFillUpDisk(m *filesystem.Moveable, includedDisks map
 		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		if enoughSpace && diskStats[disk].FreeSpace > m.Share.SpaceFloor {

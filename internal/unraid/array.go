@@ -35,8 +35,7 @@ func (d *UnraidDisk) SetActiveTransfer(active bool) {
 	d.ActiveTransfer = active
 }
 
-// TO-DO: establishArray should call establishDisks
-// establishArray returns a pointer to an established Unraid array
+// establishArray returns a pointer to an established Unraid array.
 func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
 	stateFile := ArrayStateFile
 
@@ -55,7 +54,7 @@ func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArr
 	return array, nil
 }
 
-// establishDisks returns a map of pointers to established Unraid disks
+// establishDisks returns a map of pointers to established Unraid disks.
 func (u *UnraidHandler) EstablishDisks() (map[string]*UnraidDisk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)

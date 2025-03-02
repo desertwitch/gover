@@ -24,6 +24,7 @@ func (f *FileHandler) Exists(path string) (bool, error) {
 			return false, err
 		}
 	}
+
 	return true, nil
 }
 
@@ -33,7 +34,7 @@ func (f *FileHandler) ReadDir(name string) ([]os.DirEntry, error) {
 
 func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
 	if m.Dest == nil {
-		return nil, "", fmt.Errorf("destination is nil")
+		return nil, "", errors.New("destination is nil")
 	}
 
 	if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
@@ -49,6 +50,7 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStore
 				return disk, existsPath, nil
 			}
 		}
+
 		return nil, "", nil
 	}
 
@@ -60,10 +62,11 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStore
 		if alreadyExists {
 			return pool, existsPath, nil
 		}
+
 		return nil, "", nil
 	}
 
-	return nil, "", fmt.Errorf("impossible storeable type")
+	return nil, "", errors.New("impossible storeable type")
 }
 
 func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
@@ -75,6 +78,7 @@ func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 		TotalSize: int64(stat.Blocks) * int64(stat.Bsize),
 		FreeSpace: int64(stat.Bavail) * int64(stat.Bsize),
 	}
+
 	return stats, nil
 }
 
@@ -111,6 +115,7 @@ func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to readdir: %w", err)
 	}
+
 	return len(entries) == 0, nil
 }
 
@@ -126,6 +131,7 @@ func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, "", nil
 		}
+
 		return false, "", fmt.Errorf("failed to check existence: %w", err)
 	}
 

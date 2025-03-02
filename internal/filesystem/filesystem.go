@@ -92,12 +92,14 @@ func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.
 		metadata, err := f.getMetadata(m.SourcePath)
 		if err != nil {
 			slog.Warn("Skipped job: failed to get metadata", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		m.Metadata = metadata
 
 		if err := f.walkParentDirs(m, shareDir); err != nil {
 			slog.Warn("Skipped job: failed to get parent folders", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 

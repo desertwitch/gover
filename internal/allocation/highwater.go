@@ -1,7 +1,7 @@
 package allocation
 
 import (
-	"fmt"
+	"errors"
 	"log/slog"
 	"sort"
 
@@ -23,6 +23,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		diskStats[disk] = stats
@@ -35,7 +36,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 	}
 
 	if maxDiskSize == 0 {
-		return nil, fmt.Errorf("failed getting stats for any disk")
+		return nil, errors.New("failed getting stats for any disk")
 	}
 
 	highWaterMark := maxDiskSize / 2
@@ -48,6 +49,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 				continue
 			}
 			if stats, found := diskStats[disk]; found && enoughSpace && stats.FreeSpace >= highWaterMark {

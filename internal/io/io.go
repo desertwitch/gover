@@ -1,6 +1,7 @@
 package io
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -14,8 +15,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type allocProvider interface {
-}
+type allocProvider interface{}
 
 type fsProvider interface {
 	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
@@ -80,6 +80,7 @@ func (i *IOHandler) ProcessMoveables(moveables []*filesystem.Moveable, batch *In
 
 		if err := i.processMoveable(m, job); err != nil {
 			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
@@ -87,6 +88,7 @@ func (i *IOHandler) ProcessMoveables(moveables []*filesystem.Moveable, batch *In
 		for _, h := range m.Hardlinks {
 			if err := i.processMoveable(h, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 				continue
 			}
 			slog.Info("Processed (hardlink):", "path", h.DestPath, "job", m.SourcePath, "share", m.Share.Name)
@@ -95,6 +97,7 @@ func (i *IOHandler) ProcessMoveables(moveables []*filesystem.Moveable, batch *In
 		for _, s := range m.Symlinks {
 			if err := i.processMoveable(s, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 				continue
 			}
 			slog.Info("Processed (symlink):", "path", s.DestPath, "job", m.SourcePath, "share", m.Share.Name)
@@ -124,7 +127,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
 	if used {
-		return fmt.Errorf("source file is currently in use")
+		return errors.New("source file is currently in use")
 	}
 
 	if m.Hardlink {
@@ -145,6 +148,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.HardlinksProcessed = append(job.HardlinksProcessed, m)
+
 		return nil
 	}
 
@@ -166,6 +170,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.SymlinksProcessed = append(job.SymlinksProcessed, m)
+
 		return nil
 	}
 
@@ -187,6 +192,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.MoveablesProcessed = append(job.MoveablesProcessed, m)
+
 		return nil
 	}
 
@@ -210,7 +216,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 			if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
 				// TO-DO: Reallocate with hardlinks
 			} else {
-				return fmt.Errorf("not enough free space on destination pool")
+				return errors.New("not enough free space on destination pool")
 			}
 		}
 
@@ -228,6 +234,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 
 	job.AnyProcessed = append(job.AnyProcessed, m)
 	job.MoveablesProcessed = append(job.MoveablesProcessed, m)
+
 	return nil
 }
 
@@ -265,15 +272,15 @@ func (i *IOHandler) moveFile(m *filesystem.Moveable) error {
 		return fmt.Errorf("failed to sync destination fs: %w", err)
 	}
 
-	srcChecksum := fmt.Sprintf("%x", srcHasher.Sum(nil))
-	dstChecksum := fmt.Sprintf("%x", dstHasher.Sum(nil))
+	srcChecksum := hex.EncodeToString(srcHasher.Sum(nil))
+	dstChecksum := hex.EncodeToString(dstHasher.Sum(nil))
 
 	if srcChecksum != dstChecksum {
 		return fmt.Errorf("hash mismatch: %s (src) != %s (dst)", srcChecksum, dstChecksum)
 	}
 
 	if _, err := i.OSOps.Stat(m.DestPath); err == nil {
-		return fmt.Errorf("rename destination already exists")
+		return errors.New("rename destination already exists")
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("failed to check rename destination existence: %w", err)
 	}

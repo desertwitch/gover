@@ -53,25 +53,30 @@ func main() {
 			files, err := fsOps.GetMoveables(share.CachePool, share, nil)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = allocOps.AllocateArrayDestinations(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to allocate jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+
 				continue
 			}
 			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 		} else {
@@ -79,20 +84,24 @@ func main() {
 			files, err := fsOps.GetMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+
 				continue
 			}
 			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 		}
@@ -109,20 +118,24 @@ func main() {
 				files, err := fsOps.GetMoveables(disk, share, share.CachePool)
 				if err != nil {
 					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
+
 					continue
 				}
 				files, err = fsOps.EstablishPaths(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+
 					continue
 				}
 				files, err = validation.ValidateMoveables(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+
 					continue
 				}
 				if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+
 					continue
 				}
 			}
@@ -131,20 +144,24 @@ func main() {
 			files, err := fsOps.GetMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = fsOps.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
+
 				continue
 			}
 			files, err = validation.ValidateMoveables(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
+
 				continue
 			}
 			if err := ioOps.ProcessMoveables(files, &io.InternalProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+
 				continue
 			}
 		}

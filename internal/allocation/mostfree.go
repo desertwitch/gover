@@ -20,6 +20,7 @@ func (a *Allocator) AllocateMostFreeDisk(m *filesystem.Moveable, includedDisks m
 		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		diskStats[disk] = stats
@@ -35,6 +36,7 @@ func (a *Allocator) AllocateMostFreeDisk(m *filesystem.Moveable, includedDisks m
 		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
 			continue
 		}
 		if enoughSpace {

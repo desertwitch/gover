@@ -71,7 +71,7 @@ func NewUnraidHandler(fsOps fsProvider, configOps configProvider) *UnraidHandler
 	}
 }
 
-// establishSystem returns a pointer to an established Unraid system
+// establishSystem returns a pointer to an established Unraid system.
 func (u *UnraidHandler) EstablishSystem() (*UnraidSystem, error) {
 	disks, err := u.EstablishDisks()
 	if err != nil {
