@@ -1,9 +1,5 @@
 linters:
-    # Enable all available linters.
-    # Default: false
     enable-all: true
-    # Disable specific linter
-    # https://golangci-lint.run/usage/linters/#disabled-by-default
     disable:
             - wsl
             - lll
@@ -15,4 +11,4 @@ linters:
 issues:
     exclude-rules:
         - path: ".*\\.go"
-          text: "(error) is always nil"
+          text: "result 0 \\(error\\) is always nil"
