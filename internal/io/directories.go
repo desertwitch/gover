@@ -10,7 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *InternalProgressReport) error {
+func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *ProgressReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -19,12 +19,12 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Internal
 				return fmt.Errorf("failed to create directory %s: %w", dir.DestPath, err)
 			}
 
+			job.AnyProcessed = append(job.AnyProcessed, dir)
+			job.DirsProcessed = append(job.DirsProcessed, dir)
+
 			if err := i.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
 				return fmt.Errorf("failed to ensure permissions: %w", err)
 			}
-
-			job.AnyProcessed = append(job.AnyProcessed, dir)
-			job.DirsProcessed = append(job.DirsProcessed, dir)
 		} else if err != nil {
 			return fmt.Errorf("failed checking folder while ensuring dir structure: %w", err)
 		}
@@ -34,7 +34,7 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Internal
 	return nil
 }
 
-func (i *Handler) cleanDirectoryStructure(batch *InternalProgressReport) error {
+func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
 	})
@@ -58,6 +58,36 @@ func (i *Handler) cleanDirectoryStructure(batch *InternalProgressReport) error {
 				continue
 			}
 			removed[dir.SourcePath] = struct{}{}
+		}
+	}
+
+	return nil
+}
+
+func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
+	sort.Slice(job.DirsProcessed, func(i, j int) bool {
+		return calculateDirectoryDepth(job.DirsProcessed[i]) > calculateDirectoryDepth(job.DirsProcessed[j])
+	})
+
+	removed := make(map[string]struct{})
+
+	for _, dir := range job.DirsProcessed {
+		if _, alreadyRemoved := removed[dir.DestPath]; alreadyRemoved {
+			continue
+		}
+		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
+		if err != nil {
+			slog.Warn("Warning (cleanup): failure establishing dest directory emptiness (skipped)", "path", dir.DestPath, "err", err)
+
+			continue
+		}
+		if isEmpty {
+			if err := i.OSOps.Remove(dir.DestPath); err != nil {
+				slog.Warn("Warning (cleanup): failure removing empty dest directory (skipped)", "path", dir.DestPath, "err", err)
+
+				continue
+			}
+			removed[dir.DestPath] = struct{}{}
 		}
 	}
 

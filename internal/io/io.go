@@ -1,17 +1,13 @@
 package io
 
 import (
-	"encoding/hex"
-	"errors"
+	"context"
 	"fmt"
-	"io"
-	"io/fs"
 	"log/slog"
 	"os"
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/unraid"
-	"github.com/zeebo/blake3"
 	"golang.org/x/sys/unix"
 )
 
@@ -46,7 +42,7 @@ type relatedElement interface {
 	GetSourcePath() string
 }
 
-type InternalProgressReport struct {
+type ProgressReport struct {
 	AnyProcessed       []relatedElement
 	DirsProcessed      []*filesystem.RelatedDirectory
 	MoveablesProcessed []*filesystem.Moveable
@@ -70,15 +66,15 @@ func NewHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unix
 	}
 }
 
-// TO-DO:
-// Reallocation if not enough space (up to 3x?)
-// Rollback, Locking?
-
-func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *InternalProgressReport) error {
+func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.Moveable, batch *ProgressReport) error {
 	for _, m := range moveables {
-		job := &InternalProgressReport{}
+		if ctx.Err() != nil {
+			break
+		}
 
-		if err := i.processMoveable(m, job); err != nil {
+		job := &ProgressReport{}
+
+		if err := i.processMoveable(ctx, m, job); err != nil {
 			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 
 			continue
@@ -86,7 +82,7 @@ func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *Inte
 		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
-			if err := i.processMoveable(h, job); err != nil {
+			if err := i.processMoveable(ctx, h, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 
 				continue
@@ -95,7 +91,7 @@ func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *Inte
 		}
 
 		for _, s := range m.Symlinks {
-			if err := i.processMoveable(s, job); err != nil {
+			if err := i.processMoveable(ctx, s, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 
 				continue
@@ -103,11 +99,7 @@ func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *Inte
 			slog.Info("Processed (symlink):", "path", s.DestPath, "job", m.SourcePath, "share", m.Share.Name)
 		}
 
-		batch.AnyProcessed = append(batch.AnyProcessed, job.AnyProcessed...)
-		batch.DirsProcessed = append(batch.DirsProcessed, job.DirsProcessed...)
-		batch.HardlinksProcessed = append(batch.HardlinksProcessed, job.HardlinksProcessed...)
-		batch.MoveablesProcessed = append(batch.MoveablesProcessed, job.MoveablesProcessed...)
-		batch.SymlinksProcessed = append(batch.SymlinksProcessed, job.SymlinksProcessed...)
+		MergeProgressReports(batch, job)
 	}
 
 	if err := i.ensureTimestamps(batch); err != nil {
@@ -121,17 +113,26 @@ func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *Inte
 	return nil
 }
 
-func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressReport) error {
-	used, err := i.IsFileInUse(m.SourcePath)
+func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *ProgressReport) error {
+	var jobComplete bool
+	intermediateJob := &ProgressReport{}
+
+	defer func() {
+		if !jobComplete {
+			i.cleanDirectoriesAfterFailure(intermediateJob)
+		}
+	}()
+
+	inUse, err := i.IsFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
-	if used {
+	if inUse {
 		return ErrSourceFileInUse
 	}
 
 	if m.Hardlink {
-		if err := i.ensureDirectoryStructure(m, job); err != nil {
+		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for hardlink: %w", err)
 		}
 
@@ -146,6 +147,9 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
+		jobComplete = true
+		MergeProgressReports(job, intermediateJob)
+
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.HardlinksProcessed = append(job.HardlinksProcessed, m)
 
@@ -153,7 +157,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 	}
 
 	if m.Symlink {
-		if err := i.ensureDirectoryStructure(m, job); err != nil {
+		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for symlink: %w", err)
 		}
 
@@ -168,6 +172,9 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
+		jobComplete = true
+		MergeProgressReports(job, intermediateJob)
+
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.SymlinksProcessed = append(job.SymlinksProcessed, m)
 
@@ -175,7 +182,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 	}
 
 	if m.Metadata.IsSymlink {
-		if err := i.ensureDirectoryStructure(m, job); err != nil {
+		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 			return fmt.Errorf("failed to ensure dir tree: %w", err)
 		}
 
@@ -190,13 +197,16 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			return fmt.Errorf("failed to ensure link permissions: %w", err)
 		}
 
+		jobComplete = true
+		MergeProgressReports(job, intermediateJob)
+
 		job.AnyProcessed = append(job.AnyProcessed, m)
 		job.MoveablesProcessed = append(job.MoveablesProcessed, m)
 
 		return nil
 	}
 
-	if err := i.ensureDirectoryStructure(m, job); err != nil {
+	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 		return fmt.Errorf("failed to ensure dir tree: %w", err)
 	}
 
@@ -216,7 +226,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			return ErrNotEnoughSpace
 		}
 
-		if err := i.moveFile(m); err != nil {
+		if err := i.moveFile(ctx, m); err != nil {
 			return fmt.Errorf("failed to move file: %w", err)
 		}
 		if err := i.OSOps.Remove(m.SourcePath); err != nil {
@@ -228,62 +238,11 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 		return fmt.Errorf("failed to ensure permissions: %w", err)
 	}
 
+	jobComplete = true
+	MergeProgressReports(job, intermediateJob)
+
 	job.AnyProcessed = append(job.AnyProcessed, m)
 	job.MoveablesProcessed = append(job.MoveablesProcessed, m)
-
-	return nil
-}
-
-func (i *Handler) moveFile(m *filesystem.Moveable) error {
-	srcFile, err := i.OSOps.Open(m.SourcePath)
-	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
-	}
-	defer srcFile.Close()
-
-	tmpPath := m.DestPath + ".gover"
-	defer func() {
-		if err != nil {
-			i.OSOps.Remove(tmpPath) //nolint:errcheck
-		}
-	}()
-
-	dstFile, err := i.OSOps.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, os.FileMode(m.Metadata.Perms))
-	if err != nil {
-		return fmt.Errorf("failed to open destination file %s: %w", tmpPath, err)
-	}
-	defer dstFile.Close()
-
-	srcHasher := blake3.New()
-	dstHasher := blake3.New()
-
-	teeReader := io.TeeReader(srcFile, srcHasher)
-	multiWriter := io.MultiWriter(dstFile, dstHasher)
-
-	if _, err := io.Copy(multiWriter, teeReader); err != nil {
-		return fmt.Errorf("failed to copy file: %w", err)
-	}
-
-	if err := dstFile.Sync(); err != nil {
-		return fmt.Errorf("failed to sync destination fs: %w", err)
-	}
-
-	srcChecksum := hex.EncodeToString(srcHasher.Sum(nil))
-	dstChecksum := hex.EncodeToString(dstHasher.Sum(nil))
-
-	if srcChecksum != dstChecksum {
-		return fmt.Errorf("%w: %s (src) != %s (dst)", ErrHashMismatch, srcChecksum, dstChecksum)
-	}
-
-	if _, err := i.OSOps.Stat(m.DestPath); err == nil {
-		return ErrRenameExists
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("failed to check rename destination existence: %w", err)
-	}
-
-	if err := i.OSOps.Rename(tmpPath, m.DestPath); err != nil {
-		return fmt.Errorf("failed to rename temporary file to destination file: %w", err)
-	}
 
 	return nil
 }
