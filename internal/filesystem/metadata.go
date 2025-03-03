@@ -19,7 +19,7 @@ type Metadata struct {
 	SymlinkTo  string
 }
 
-func (f *FileHandler) getMetadata(path string) (*Metadata, error) {
+func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
 
 	if err := f.UnixOps.Lstat(path, &stat); err != nil {

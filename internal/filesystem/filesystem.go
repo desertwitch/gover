@@ -38,21 +38,21 @@ func (m *Moveable) GetDestPath() string {
 	return m.DestPath
 }
 
-type FileHandler struct {
+type Handler struct {
 	OSOps    osProvider
 	UnixOps  unixProvider
 	FSWalker fsWalker
 }
 
-func NewFileHandler(osOps osProvider, unixOps unixProvider) *FileHandler {
-	return &FileHandler{
+func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
+	return &Handler{
 		OSOps:    osOps,
 		UnixOps:  unixOps,
 		FSWalker: &FileWalker{},
 	}
 }
 
-func (f *FileHandler) GetMoveables(source unraid.Storeable, share *unraid.Share, knownTarget unraid.Storeable) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(source unraid.Storeable, share *unraid.Share, knownTarget unraid.Storeable) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 	preSelection := []*Moveable{}
 

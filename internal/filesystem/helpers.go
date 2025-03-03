@@ -16,7 +16,7 @@ type DiskStats struct {
 	FreeSpace uint64
 }
 
-func (f *FileHandler) Exists(path string) (bool, error) {
+func (f *Handler) Exists(path string) (bool, error) {
 	if _, err := f.OSOps.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, fs.ErrNotExist
@@ -28,11 +28,11 @@ func (f *FileHandler) Exists(path string) (bool, error) {
 	return true, nil
 }
 
-func (f *FileHandler) ReadDir(name string) ([]os.DirEntry, error) {
+func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
 	return f.OSOps.ReadDir(name)
 }
 
-func (f *FileHandler) ExistsOnStorage(m *Moveable) (string, error) {
+func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 	if m.Dest == nil {
 		return "", ErrNilDestination
 	}
@@ -69,7 +69,7 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (string, error) {
 	return "", ErrImpossibleType
 }
 
-func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
+func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
 	if err := f.UnixOps.Statfs(path, &stat); err != nil {
 		return DiskStats{}, fmt.Errorf("failed to statfs: %w", err)
@@ -83,7 +83,7 @@ func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
+func (f *Handler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
 	path := s.GetFSPath()
 
 	stats, err := f.GetDiskUsage(path)
@@ -103,7 +103,7 @@ func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fil
 	return false, nil
 }
 
-func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
+func (f *Handler) IsEmptyFolder(path string) (bool, error) {
 	entries, err := f.OSOps.ReadDir(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to readdir: %w", err)
@@ -112,7 +112,7 @@ func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (bool, string, error) {
+func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to rel path: %w", err)

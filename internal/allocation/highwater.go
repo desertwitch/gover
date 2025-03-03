@@ -12,7 +12,7 @@ const (
 	highWaterDivisor = 2
 )
 
-func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
+func (a *Handler) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
 	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
 	disks := []*unraid.Disk{}
 

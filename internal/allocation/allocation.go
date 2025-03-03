@@ -15,19 +15,19 @@ type fsProvider interface {
 	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 }
 
-type Allocator struct {
+type Handler struct {
 	FSOps            fsProvider
 	alreadyAllocated map[*unraid.Disk]uint64
 }
 
-func NewAllocator(fsOps fsProvider) *Allocator {
-	return &Allocator{
+func NewHandler(fsOps fsProvider) *Handler {
+	return &Handler{
 		FSOps:            fsOps,
 		alreadyAllocated: make(map[*unraid.Disk]uint64),
 	}
 }
 
-func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	filtered := []*filesystem.Moveable{}
 
 	for _, m := range moveables {
@@ -64,7 +64,7 @@ func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) 
 	return filtered, nil
 }
 
-func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
+func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 

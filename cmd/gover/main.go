@@ -19,9 +19,9 @@ import (
 )
 
 type taskHandlers struct {
-	FSHandler     *filesystem.FileHandler
+	FSHandler     *filesystem.Handler
 	UnraidHandler *unraid.Handler
-	AllocHandler  *allocation.Allocator
+	AllocHandler  *allocation.Handler
 	IOHandler     *io.Handler
 }
 
@@ -185,9 +185,9 @@ func main() {
 	cfgProvider := &configuration.GodotenvProvider{}
 
 	configOps := configuration.NewConfigHandler(cfgProvider)
-	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
+	fsOps := filesystem.NewHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewHandler(fsOps, configOps)
-	allocOps := allocation.NewAllocator(fsOps)
+	allocOps := allocation.NewHandler(fsOps)
 	ioOps := io.NewHandler(allocOps, fsOps, osProvider, unixProvider)
 
 	deps := &taskHandlers{

@@ -37,7 +37,7 @@ func (d *RelatedDirectory) GetDestPath() string {
 	return d.DestPath
 }
 
-func (f *FileHandler) walkParentDirs(m *Moveable, basePath string) error {
+func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 	var prevElement *RelatedDirectory
 	path := m.SourcePath
 

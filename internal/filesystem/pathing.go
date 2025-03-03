@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
+func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	filtered := []*Moveable{}
 
 	for _, m := range moveables {
