@@ -1,18 +1,19 @@
 linters:
     enable-all: true
     disable:
-            - wsl
-            - lll
-            - funlen
-            - dupl
-            - wrapcheck
-            - varnamelen
+            - cyclop
             - depguard
+            - dupl
             - exhaustruct
+            - funlen
             - gocognit
             - gocyclo
-            - cyclop
+            - lll
             - nestif
+            - tenv
+            - varnamelen
+            - wrapcheck
+            - wsl
 issues:
     exclude-rules:
         - path: ".*\\.go"
