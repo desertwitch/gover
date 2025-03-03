@@ -19,13 +19,13 @@ import (
 )
 
 type taskHandlers struct {
+	FSHandler     *filesystem.FileHandler
 	UnraidHandler *unraid.Handler
 	AllocHandler  *allocation.Allocator
-	FSHandler     *filesystem.FileHandler
 	IOHandler     *io.Handler
 }
 
-func processSystem(ctx context.Context, handlers *taskHandlers) {
+func processCurrentSystem(ctx context.Context, handlers *taskHandlers) {
 	system, err := handlers.UnraidHandler.EstablishSystem()
 	if err != nil {
 		slog.Error("failed to establish unraid system", "err", err)
@@ -182,19 +182,18 @@ func main() {
 
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
+	cfgProvider := &configuration.GodotenvProvider{}
 
-	cfgProviderGeneric := &configuration.GodotenvProvider{}
-	configOps := configuration.NewConfigHandler(cfgProviderGeneric)
-
+	configOps := configuration.NewConfigHandler(cfgProvider)
 	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewAllocator(fsOps)
 	ioOps := io.NewHandler(allocOps, fsOps, osProvider, unixProvider)
 
 	deps := &taskHandlers{
+		FSHandler:     fsOps,
 		UnraidHandler: unraidOps,
 		AllocHandler:  allocOps,
-		FSHandler:     fsOps,
 		IOHandler:     ioOps,
 	}
 
@@ -209,7 +208,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processSystem(ctx, deps)
+		processCurrentSystem(ctx, deps)
 	}()
 	wg.Wait()
 
