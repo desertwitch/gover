@@ -19,10 +19,10 @@ import (
 )
 
 type taskHandlers struct {
-	FsHandler     *filesystem.FileHandler
 	UnraidHandler *unraid.Handler
 	AllocHandler  *allocation.Allocator
-	IoHandler     *io.Handler
+	FSHandler     *filesystem.FileHandler
+	IOHandler     *io.Handler
 }
 
 func processSystem(ctx context.Context, handlers *taskHandlers) {
@@ -46,7 +46,7 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 		}
 		if share.CachePool2 == nil {
 			// Cache to Array
-			files, err := handlers.FsHandler.GetMoveables(share.CachePool, share, nil)
+			files, err := handlers.FSHandler.GetMoveables(share.CachePool, share, nil)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 
@@ -58,7 +58,7 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 
 				continue
 			}
-			files, err = handlers.FsHandler.EstablishPaths(files)
+			files, err = handlers.FSHandler.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 
@@ -70,20 +70,20 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 
 				continue
 			}
-			if err := handlers.IoHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
+			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 
 				continue
 			}
 		} else {
 			// Cache to Cache2
-			files, err := handlers.FsHandler.GetMoveables(share.CachePool, share, share.CachePool2)
+			files, err := handlers.FSHandler.GetMoveables(share.CachePool, share, share.CachePool2)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 
 				continue
 			}
-			files, err = handlers.FsHandler.EstablishPaths(files)
+			files, err = handlers.FSHandler.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 
@@ -95,7 +95,7 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 
 				continue
 			}
-			if err := handlers.IoHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
+			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 
 				continue
@@ -114,13 +114,13 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 		if share.CachePool2 == nil {
 			// Array to Cache
 			for _, disk := range disks {
-				files, err := handlers.FsHandler.GetMoveables(disk, share, share.CachePool)
+				files, err := handlers.FSHandler.GetMoveables(disk, share, share.CachePool)
 				if err != nil {
 					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 
 					continue
 				}
-				files, err = handlers.FsHandler.EstablishPaths(files)
+				files, err = handlers.FSHandler.EstablishPaths(files)
 				if err != nil {
 					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 
@@ -132,7 +132,7 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 
 					continue
 				}
-				if err := handlers.IoHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
+				if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 
 					continue
@@ -140,13 +140,13 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 			}
 		} else {
 			// Cache2 to Cache
-			files, err := handlers.FsHandler.GetMoveables(share.CachePool2, share, share.CachePool)
+			files, err := handlers.FSHandler.GetMoveables(share.CachePool2, share, share.CachePool)
 			if err != nil {
 				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
 
 				continue
 			}
-			files, err = handlers.FsHandler.EstablishPaths(files)
+			files, err = handlers.FSHandler.EstablishPaths(files)
 			if err != nil {
 				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
 
@@ -158,7 +158,7 @@ func processSystem(ctx context.Context, handlers *taskHandlers) {
 
 				continue
 			}
-			if err := handlers.IoHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
+			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
 
 				continue
@@ -192,10 +192,10 @@ func main() {
 	ioOps := io.NewHandler(allocOps, fsOps, osProvider, unixProvider)
 
 	deps := &taskHandlers{
-		FsHandler:     fsOps,
 		UnraidHandler: unraidOps,
 		AllocHandler:  allocOps,
-		IoHandler:     ioOps,
+		FSHandler:     fsOps,
+		IOHandler:     ioOps,
 	}
 
 	sigChan := make(chan os.Signal, 1)
