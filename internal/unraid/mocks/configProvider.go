@@ -158,6 +158,53 @@ func (_c *ConfigProvider_MapKeyToString_Call) RunAndReturn(run func(map[string]s
 	return _c
 }
 
+// MapKeyToUInt64 provides a mock function with given fields: envMap, key
+func (_m *ConfigProvider) MapKeyToUInt64(envMap map[string]string, key string) uint64 {
+	ret := _m.Called(envMap, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MapKeyToUInt64")
+	}
+
+	var r0 uint64
+	if rf, ok := ret.Get(0).(func(map[string]string, string) uint64); ok {
+		r0 = rf(envMap, key)
+	} else {
+		r0 = ret.Get(0).(uint64)
+	}
+
+	return r0
+}
+
+// ConfigProvider_MapKeyToUInt64_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MapKeyToUInt64'
+type ConfigProvider_MapKeyToUInt64_Call struct {
+	*mock.Call
+}
+
+// MapKeyToUInt64 is a helper method to define mock.On call
+//   - envMap map[string]string
+//   - key string
+func (_e *ConfigProvider_Expecter) MapKeyToUInt64(envMap interface{}, key interface{}) *ConfigProvider_MapKeyToUInt64_Call {
+	return &ConfigProvider_MapKeyToUInt64_Call{Call: _e.mock.On("MapKeyToUInt64", envMap, key)}
+}
+
+func (_c *ConfigProvider_MapKeyToUInt64_Call) Run(run func(envMap map[string]string, key string)) *ConfigProvider_MapKeyToUInt64_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ConfigProvider_MapKeyToUInt64_Call) Return(_a0 uint64) *ConfigProvider_MapKeyToUInt64_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ConfigProvider_MapKeyToUInt64_Call) RunAndReturn(run func(map[string]string, string) uint64) *ConfigProvider_MapKeyToUInt64_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReadGeneric provides a mock function with given fields: filenames
 func (_m *ConfigProvider) ReadGeneric(filenames ...string) (map[string]string, error) {
 	_va := make([]interface{}, len(filenames))

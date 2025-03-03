@@ -16,6 +16,7 @@ info:
 	@file $(BINARY)
 
 mocks:
+	@find . -type d -name "mocks" -exec rm -vrf {} +
 	@mockery --config .mockery.yaml
 
 lint:

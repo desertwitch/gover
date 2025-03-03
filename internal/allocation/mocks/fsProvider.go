@@ -135,7 +135,7 @@ func (_c *FsProvider_GetDiskUsage_Call) RunAndReturn(run func(string) (filesyste
 }
 
 // HasEnoughFreeSpace provides a mock function with given fields: s, minFree, fileSize
-func (_m *FsProvider) HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error) {
+func (_m *FsProvider) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
 	ret := _m.Called(s, minFree, fileSize)
 
 	if len(ret) == 0 {
@@ -144,16 +144,16 @@ func (_m *FsProvider) HasEnoughFreeSpace(s unraid.Storeable, minFree int64, file
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(unraid.Storeable, int64, int64) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(unraid.Storeable, uint64, uint64) (bool, error)); ok {
 		return rf(s, minFree, fileSize)
 	}
-	if rf, ok := ret.Get(0).(func(unraid.Storeable, int64, int64) bool); ok {
+	if rf, ok := ret.Get(0).(func(unraid.Storeable, uint64, uint64) bool); ok {
 		r0 = rf(s, minFree, fileSize)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(unraid.Storeable, int64, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(unraid.Storeable, uint64, uint64) error); ok {
 		r1 = rf(s, minFree, fileSize)
 	} else {
 		r1 = ret.Error(1)
@@ -169,15 +169,15 @@ type FsProvider_HasEnoughFreeSpace_Call struct {
 
 // HasEnoughFreeSpace is a helper method to define mock.On call
 //   - s unraid.Storeable
-//   - minFree int64
-//   - fileSize int64
+//   - minFree uint64
+//   - fileSize uint64
 func (_e *FsProvider_Expecter) HasEnoughFreeSpace(s interface{}, minFree interface{}, fileSize interface{}) *FsProvider_HasEnoughFreeSpace_Call {
 	return &FsProvider_HasEnoughFreeSpace_Call{Call: _e.mock.On("HasEnoughFreeSpace", s, minFree, fileSize)}
 }
 
-func (_c *FsProvider_HasEnoughFreeSpace_Call) Run(run func(s unraid.Storeable, minFree int64, fileSize int64)) *FsProvider_HasEnoughFreeSpace_Call {
+func (_c *FsProvider_HasEnoughFreeSpace_Call) Run(run func(s unraid.Storeable, minFree uint64, fileSize uint64)) *FsProvider_HasEnoughFreeSpace_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(unraid.Storeable), args[1].(int64), args[2].(int64))
+		run(args[0].(unraid.Storeable), args[1].(uint64), args[2].(uint64))
 	})
 	return _c
 }
@@ -187,7 +187,7 @@ func (_c *FsProvider_HasEnoughFreeSpace_Call) Return(_a0 bool, _a1 error) *FsPro
 	return _c
 }
 
-func (_c *FsProvider_HasEnoughFreeSpace_Call) RunAndReturn(run func(unraid.Storeable, int64, int64) (bool, error)) *FsProvider_HasEnoughFreeSpace_Call {
+func (_c *FsProvider_HasEnoughFreeSpace_Call) RunAndReturn(run func(unraid.Storeable, uint64, uint64) (bool, error)) *FsProvider_HasEnoughFreeSpace_Call {
 	_c.Call.Return(run)
 	return _c
 }

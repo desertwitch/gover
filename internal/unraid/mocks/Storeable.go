@@ -152,9 +152,9 @@ func (_c *Storeable_IsActiveTransfer_Call) RunAndReturn(run func() bool) *Storea
 	return _c
 }
 
-// SetActiveTransfer provides a mock function with given fields: _a0
-func (_m *Storeable) SetActiveTransfer(_a0 bool) {
-	_m.Called(_a0)
+// SetActiveTransfer provides a mock function with given fields: isActive
+func (_m *Storeable) SetActiveTransfer(isActive bool) {
+	_m.Called(isActive)
 }
 
 // Storeable_SetActiveTransfer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetActiveTransfer'
@@ -163,12 +163,12 @@ type Storeable_SetActiveTransfer_Call struct {
 }
 
 // SetActiveTransfer is a helper method to define mock.On call
-//   - _a0 bool
-func (_e *Storeable_Expecter) SetActiveTransfer(_a0 interface{}) *Storeable_SetActiveTransfer_Call {
-	return &Storeable_SetActiveTransfer_Call{Call: _e.mock.On("SetActiveTransfer", _a0)}
+//   - isActive bool
+func (_e *Storeable_Expecter) SetActiveTransfer(isActive interface{}) *Storeable_SetActiveTransfer_Call {
+	return &Storeable_SetActiveTransfer_Call{Call: _e.mock.On("SetActiveTransfer", isActive)}
 }
 
-func (_c *Storeable_SetActiveTransfer_Call) Run(run func(_a0 bool)) *Storeable_SetActiveTransfer_Call {
+func (_c *Storeable_SetActiveTransfer_Call) Run(run func(isActive bool)) *Storeable_SetActiveTransfer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(bool))
 	})
