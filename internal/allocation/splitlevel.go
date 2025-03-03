@@ -3,6 +3,7 @@ package allocation
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -109,7 +110,7 @@ func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Dis
 				continue
 			}
 			dirToCheck := filepath.Join(disk.FSPath, subPath)
-			if exists, _ := a.FSOps.Exists(dirToCheck); exists {
+			if exists, err := a.FSOps.Exists(dirToCheck); err == nil && exists {
 				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
 				if err != nil {
 					slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
@@ -120,6 +121,10 @@ func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Dis
 					foundDisks = append(foundDisks, disk)
 					found = true
 				}
+			} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+
+				continue
 			}
 		}
 		if found {

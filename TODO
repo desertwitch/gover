@@ -1,4 +1,3 @@
-- pathing: do not accept rel paths
 - io: reallocate on target full (up to 3x?)
 - io: cleanup
 - io: zfs datasets

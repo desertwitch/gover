@@ -14,7 +14,6 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Internal
 	dir := m.RootDir
 
 	for dir != nil {
-		// TO-DO: Handle generic errors here and otherwere for .Stat or .Lstat
 		if _, err := i.OSOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
 			if err := i.UnixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", dir.DestPath, err)
@@ -26,6 +25,8 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Internal
 
 			job.AnyProcessed = append(job.AnyProcessed, dir)
 			job.DirsProcessed = append(job.DirsProcessed, dir)
+		} else if err != nil {
+			return fmt.Errorf("failed checking folder while ensuring dir structure: %w", err)
 		}
 		dir = dir.Child
 	}

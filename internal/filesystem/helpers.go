@@ -19,7 +19,7 @@ type DiskStats struct {
 func (f *FileHandler) Exists(path string) (bool, error) {
 	if _, err := f.OSOps.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return false, nil
+			return false, fs.ErrNotExist
 		}
 
 		return false, err

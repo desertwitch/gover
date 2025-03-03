@@ -91,6 +91,10 @@ func establishPath(m *Moveable) error {
 		return ErrNilDestination
 	}
 
+	if !filepath.IsAbs(m.SourcePath) {
+		return fmt.Errorf("%w: %s", ErrSourceIsRelative, m.SourcePath)
+	}
+
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to rel path: %w", err)
