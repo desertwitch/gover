@@ -6,29 +6,29 @@ import (
 	"strings"
 )
 
-type UnraidShare struct {
+type Share struct {
 	Name          string
 	UseCache      string
-	CachePool     *UnraidPool
-	CachePool2    *UnraidPool
+	CachePool     *Pool
+	CachePool2    *Pool
 	Allocator     string
 	SplitLevel    int
 	SpaceFloor    int64
 	DisableCOW    bool
-	IncludedDisks map[string]*UnraidDisk
-	ExcludedDisks map[string]*UnraidDisk
+	IncludedDisks map[string]*Disk
+	ExcludedDisks map[string]*Disk
 	CFGFile       string
 }
 
 // TO-DO: Refactor into establishShare() and establishShares().
-func (u *UnraidHandler) EstablishShares(disks map[string]*UnraidDisk, pools map[string]*UnraidPool) (map[string]*UnraidShare, error) {
+func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
 	basePath := ConfigDirShares
 
 	if exists, err := u.FSOps.Exists(basePath); !exists {
 		return nil, fmt.Errorf("share config dir does not exist: %w", err)
 	}
 
-	shares := make(map[string]*UnraidShare)
+	shares := make(map[string]*Share)
 
 	files, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
@@ -45,7 +45,7 @@ func (u *UnraidHandler) EstablishShares(disks map[string]*UnraidDisk, pools map[
 				return nil, fmt.Errorf("failed to read share config %s: %w", filePath, err)
 			}
 
-			share := &UnraidShare{
+			share := &Share{
 				Name:       nameWithoutExt,
 				CFGFile:    filePath,
 				UseCache:   u.ConfigOps.MapKeyToString(configMap, SettingShareUseCache),

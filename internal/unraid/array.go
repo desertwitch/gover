@@ -7,36 +7,36 @@ import (
 )
 
 type UnraidArray struct {
-	Disks         map[string]*UnraidDisk
+	Disks         map[string]*Disk
 	Status        string
 	TurboSetting  string
 	ParityRunning bool
 }
 
-type UnraidDisk struct {
+type Disk struct {
 	Name           string
 	FSPath         string
 	ActiveTransfer bool
 }
 
-func (d *UnraidDisk) GetName() string {
+func (d *Disk) GetName() string {
 	return d.Name
 }
 
-func (d *UnraidDisk) GetFSPath() string {
+func (d *Disk) GetFSPath() string {
 	return d.FSPath
 }
 
-func (d *UnraidDisk) IsActiveTransfer() bool {
+func (d *Disk) IsActiveTransfer() bool {
 	return d.ActiveTransfer
 }
 
-func (d *UnraidDisk) SetActiveTransfer(active bool) {
+func (d *Disk) SetActiveTransfer(active bool) {
 	d.ActiveTransfer = active
 }
 
 // establishArray returns a pointer to an established Unraid array.
-func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArray, error) {
+func (u *Handler) EstablishArray(disks map[string]*Disk) (*UnraidArray, error) {
 	stateFile := ArrayStateFile
 
 	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
@@ -55,11 +55,11 @@ func (u *UnraidHandler) EstablishArray(disks map[string]*UnraidDisk) (*UnraidArr
 }
 
 // establishDisks returns a map of pointers to established Unraid disks.
-func (u *UnraidHandler) EstablishDisks() (map[string]*UnraidDisk, error) {
+func (u *Handler) EstablishDisks() (map[string]*Disk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 
-	disks := make(map[string]*UnraidDisk)
+	disks := make(map[string]*Disk)
 
 	entries, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
@@ -68,7 +68,7 @@ func (u *UnraidHandler) EstablishDisks() (map[string]*UnraidDisk, error) {
 
 	for _, entry := range entries {
 		if entry.IsDir() && diskPattern.MatchString(entry.Name()) {
-			disk := &UnraidDisk{
+			disk := &Disk{
 				Name:           entry.Name(),
 				FSPath:         filepath.Join(basePath, entry.Name()),
 				ActiveTransfer: false,

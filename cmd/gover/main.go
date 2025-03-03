@@ -21,9 +21,9 @@ func main() {
 
 	configOps := configuration.NewConfigHandler(cfgProviderGeneric)
 	fsOps := filesystem.NewFileHandler(osProvider, unixProvider)
-	unraidOps := unraid.NewUnraidHandler(fsOps, configOps)
+	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewAllocator(fsOps)
-	ioOps := io.NewIOHandler(allocOps, fsOps, osProvider, unixProvider)
+	ioOps := io.NewHandler(allocOps, fsOps, osProvider, unixProvider)
 
 	w := os.Stderr
 

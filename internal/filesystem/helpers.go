@@ -32,12 +32,12 @@ func (f *FileHandler) ReadDir(name string) ([]os.DirEntry, error) {
 	return f.OSOps.ReadDir(name)
 }
 
-func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStoreable, existingAtPath string, err error) {
+func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.Storeable, existingAtPath string, err error) {
 	if m.Dest == nil {
 		return nil, "", errors.New("destination is nil")
 	}
 
-	if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
+	if _, ok := m.Dest.(*unraid.Disk); ok {
 		for name, disk := range m.Share.IncludedDisks {
 			if _, exists := m.Share.ExcludedDisks[name]; exists {
 				continue
@@ -54,7 +54,7 @@ func (f *FileHandler) ExistsOnStorage(m *Moveable) (storeable unraid.UnraidStore
 		return nil, "", nil
 	}
 
-	if pool, ok := m.Dest.(*unraid.UnraidPool); ok {
+	if pool, ok := m.Dest.(*unraid.Pool); ok {
 		alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, pool)
 		if err != nil {
 			return nil, "", err
@@ -82,7 +82,7 @@ func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func (f *FileHandler) HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error) {
+func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error) {
 	if fileSize < 0 {
 		return false, fmt.Errorf("invalid file size < 0: %d", fileSize)
 	}
@@ -119,7 +119,7 @@ func (f *FileHandler) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.UnraidStoreable) (exists bool, existingAtPath string, err error) {
+func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (exists bool, existingAtPath string, err error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to rel path: %w", err)

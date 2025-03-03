@@ -2,7 +2,7 @@ package io
 
 import "os/exec"
 
-func (i *IOHandler) IsFileInUse(path string) (bool, error) {
+func (i *Handler) IsFileInUse(path string) (bool, error) {
 	cmd := exec.Command("lsof", path)
 
 	err := cmd.Run()

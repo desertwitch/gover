@@ -6,7 +6,7 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func (i *IOHandler) ensurePermissions(path string, metadata *filesystem.Metadata) error {
+func (i *Handler) ensurePermissions(path string, metadata *filesystem.Metadata) error {
 	if err := i.UnixOps.Chown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on %s: %w", path, err)
 	}
@@ -18,7 +18,7 @@ func (i *IOHandler) ensurePermissions(path string, metadata *filesystem.Metadata
 	return nil
 }
 
-func (i *IOHandler) ensureLinkPermissions(path string, metadata *filesystem.Metadata) error {
+func (i *Handler) ensureLinkPermissions(path string, metadata *filesystem.Metadata) error {
 	if err := i.UnixOps.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("failed to set ownership on link %s: %w", path, err)
 	}

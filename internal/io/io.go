@@ -18,7 +18,7 @@ import (
 type allocProvider interface{}
 
 type fsProvider interface {
-	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
+	HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
 }
 
@@ -54,15 +54,15 @@ type InternalProgressReport struct {
 	HardlinksProcessed []*filesystem.Moveable
 }
 
-type IOHandler struct {
+type Handler struct {
 	AllocOps allocProvider
 	FSOps    fsProvider
 	OSOps    osProvider
 	UnixOps  unixProvider
 }
 
-func NewIOHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unixOps unixProvider) *IOHandler {
-	return &IOHandler{
+func NewHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unixOps unixProvider) *Handler {
+	return &Handler{
 		AllocOps: allocOps,
 		FSOps:    fsOps,
 		OSOps:    osOps,
@@ -74,7 +74,7 @@ func NewIOHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, un
 // Reallocation if not enough space (up to 3x?)
 // Rollback, Locking?
 
-func (i *IOHandler) ProcessMoveables(moveables []*filesystem.Moveable, batch *InternalProgressReport) error {
+func (i *Handler) ProcessMoveables(moveables []*filesystem.Moveable, batch *InternalProgressReport) error {
 	for _, m := range moveables {
 		job := &InternalProgressReport{}
 
@@ -121,7 +121,7 @@ func (i *IOHandler) ProcessMoveables(moveables []*filesystem.Moveable, batch *In
 	return nil
 }
 
-func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgressReport) error {
+func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressReport) error {
 	used, err := i.IsFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
@@ -213,7 +213,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 			return fmt.Errorf("failed to check for enough space: %w", err)
 		}
 		if !enoughSpace {
-			if _, ok := m.Dest.(*unraid.UnraidDisk); ok {
+			if _, ok := m.Dest.(*unraid.Disk); ok {
 				// TO-DO: Reallocate with hardlinks
 			} else {
 				return errors.New("not enough free space on destination pool")
@@ -238,7 +238,7 @@ func (i *IOHandler) processMoveable(m *filesystem.Moveable, job *InternalProgres
 	return nil
 }
 
-func (i *IOHandler) moveFile(m *filesystem.Moveable) error {
+func (i *Handler) moveFile(m *filesystem.Moveable) error {
 	srcFile, err := i.OSOps.Open(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)

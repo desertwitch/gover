@@ -10,10 +10,10 @@ import (
 )
 
 type Moveable struct {
-	Share      *unraid.UnraidShare
-	Source     unraid.UnraidStoreable
+	Share      *unraid.Share
+	Source     unraid.Storeable
 	SourcePath string
-	Dest       unraid.UnraidStoreable
+	Dest       unraid.Storeable
 	DestPath   string
 	Hardlinks  []*Moveable
 	Hardlink   bool
@@ -52,7 +52,7 @@ func NewFileHandler(osOps osProvider, unixOps unixProvider) *FileHandler {
 	}
 }
 
-func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.UnraidShare, knownTarget unraid.UnraidStoreable) ([]*Moveable, error) {
+func (f *FileHandler) GetMoveables(source unraid.Storeable, share *unraid.Share, knownTarget unraid.Storeable) ([]*Moveable, error) {
 	var moveables []*Moveable
 	var preSelection []*Moveable
 
@@ -113,7 +113,7 @@ func (f *FileHandler) GetMoveables(source unraid.UnraidStoreable, share *unraid.
 	return moveables, nil
 }
 
-func establishSymlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable) {
+func establishSymlinks(moveables []*Moveable, knownTarget unraid.Storeable) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
@@ -135,7 +135,7 @@ func establishSymlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable
 	}
 }
 
-func establishHardlinks(moveables []*Moveable, knownTarget unraid.UnraidStoreable) {
+func establishHardlinks(moveables []*Moveable, knownTarget unraid.Storeable) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {

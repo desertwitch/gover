@@ -13,7 +13,7 @@ import (
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
-	HasEnoughFreeSpace(s unraid.UnraidStoreable, minFree int64, fileSize int64) (bool, error)
+	HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error)
 }
 
 type osProvider interface {
@@ -67,7 +67,7 @@ func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) 
 	return filtered, nil
 }
 
-func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.UnraidDisk, error) {
+func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 

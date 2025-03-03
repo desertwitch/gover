@@ -12,8 +12,8 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.UnraidDisk, error) {
-	matches := make(map[int]map[string]*unraid.UnraidDisk)
+func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.Disk, error) {
+	matches := make(map[int]map[string]*unraid.Disk)
 	splitDoesNotExceedLvl := true
 
 	mainMatches, mainLevel, err := a.findDisksBySplitLevel(m)
@@ -26,7 +26,7 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 	}
 
 	if err != nil || len(mainMatches) > 0 {
-		matches[mainLevel] = make(map[string]*unraid.UnraidDisk)
+		matches[mainLevel] = make(map[string]*unraid.Disk)
 		for _, disk := range mainMatches {
 			matches[mainLevel][disk.Name] = disk
 		}
@@ -47,7 +47,7 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 
 			if len(subMatches) > 0 {
 				if matches[subLevel] == nil {
-					matches[subLevel] = make(map[string]*unraid.UnraidDisk)
+					matches[subLevel] = make(map[string]*unraid.Disk)
 				}
 				for _, disk := range subMatches {
 					matches[subLevel][disk.Name] = disk
@@ -80,8 +80,8 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 	return nil, ErrNotAllocatable
 }
 
-func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.UnraidDisk, int, error) {
-	var foundDisks []*unraid.UnraidDisk
+func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk, int, error) {
+	var foundDisks []*unraid.Disk
 	path := filepath.Dir(m.SourcePath)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)

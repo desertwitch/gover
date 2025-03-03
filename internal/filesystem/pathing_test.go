@@ -20,16 +20,16 @@ func TestEstablishPaths_FileExists(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache",
 		},
@@ -38,7 +38,7 @@ func TestEstablishPaths_FileExists(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movies",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movies",
 			IncludedDisks: includedDisks,
 		},
@@ -63,16 +63,16 @@ func TestEstablishPaths_FileNotExits(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache",
 		},
@@ -81,7 +81,7 @@ func TestEstablishPaths_FileNotExits(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movies",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movies",
 			IncludedDisks: includedDisks,
 		},
@@ -109,16 +109,16 @@ func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache/",
 		},
@@ -127,7 +127,7 @@ func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movies/",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movies",
 			IncludedDisks: includedDisks,
 		},
@@ -155,16 +155,16 @@ func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache",
 		},
@@ -173,7 +173,7 @@ func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movies/",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movies",
 			IncludedDisks: includedDisks,
 		},
@@ -201,16 +201,16 @@ func TestEstablishPaths_Unicode(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache",
 		},
@@ -219,7 +219,7 @@ func TestEstablishPaths_Unicode(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movies/",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movies",
 			IncludedDisks: includedDisks,
 		},
@@ -247,16 +247,16 @@ func TestEstablishPaths_Spaces(t *testing.T) {
 		UnixOps: nil,
 	}
 
-	mockDisk := &unraid.UnraidDisk{
+	mockDisk := &unraid.Disk{
 		Name:   "disk4",
 		FSPath: "/mnt/disk4",
 	}
 
-	includedDisks := make(map[string]*unraid.UnraidDisk)
+	includedDisks := make(map[string]*unraid.Disk)
 	includedDisks["disk4"] = mockDisk
 
 	mockMoveable := &filesystem.Moveable{
-		Source: &unraid.UnraidPool{
+		Source: &unraid.Pool{
 			Name:   "cache",
 			FSPath: "/mnt/cache",
 		},
@@ -265,7 +265,7 @@ func TestEstablishPaths_Spaces(t *testing.T) {
 		RootDir: &filesystem.RelatedDirectory{
 			SourcePath: "/mnt/cache/movi es/",
 		},
-		Share: &unraid.UnraidShare{
+		Share: &unraid.Share{
 			Name:          "movi es",
 			IncludedDisks: includedDisks,
 		},

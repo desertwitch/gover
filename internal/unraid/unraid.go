@@ -46,33 +46,33 @@ type configProvider interface {
 	MapKeyToInt64(envMap map[string]string, key string) int64
 }
 
-type UnraidStoreable interface {
+type Storeable interface {
 	GetName() string
 	GetFSPath() string
 	IsActiveTransfer() bool
 	SetActiveTransfer(bool)
 }
 
-type UnraidSystem struct {
+type System struct {
 	Array  *UnraidArray
-	Pools  map[string]*UnraidPool
-	Shares map[string]*UnraidShare
+	Pools  map[string]*Pool
+	Shares map[string]*Share
 }
 
-type UnraidHandler struct {
+type Handler struct {
 	FSOps     fsProvider
 	ConfigOps configProvider
 }
 
-func NewUnraidHandler(fsOps fsProvider, configOps configProvider) *UnraidHandler {
-	return &UnraidHandler{
+func NewHandler(fsOps fsProvider, configOps configProvider) *Handler {
+	return &Handler{
 		FSOps:     fsOps,
 		ConfigOps: configOps,
 	}
 }
 
 // establishSystem returns a pointer to an established Unraid system.
-func (u *UnraidHandler) EstablishSystem() (*UnraidSystem, error) {
+func (u *Handler) EstablishSystem() (*System, error) {
 	disks, err := u.EstablishDisks()
 	if err != nil {
 		return nil, fmt.Errorf("failed establishing disks: %w", err)
@@ -93,7 +93,7 @@ func (u *UnraidHandler) EstablishSystem() (*UnraidSystem, error) {
 		return nil, fmt.Errorf("failed establishing array: %w", err)
 	}
 
-	system := &UnraidSystem{
+	system := &System{
 		Array:  array,
 		Pools:  pools,
 		Shares: shares,

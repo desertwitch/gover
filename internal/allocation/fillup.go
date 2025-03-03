@@ -8,9 +8,9 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Allocator) AllocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.UnraidDisk, excludedDisks map[string]*unraid.UnraidDisk) (*unraid.UnraidDisk, error) {
-	diskStats := make(map[*unraid.UnraidDisk]filesystem.DiskStats)
-	var disks []*unraid.UnraidDisk
+func (a *Allocator) AllocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
+	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
+	var disks []*unraid.Disk
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
