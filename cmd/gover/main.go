@@ -184,7 +184,7 @@ func main() {
 	unixProvider := &filesystem.Unix{}
 	cfgProvider := &configuration.GodotenvProvider{}
 
-	configOps := configuration.NewConfigHandler(cfgProvider)
+	configOps := configuration.NewHandler(cfgProvider)
 	fsOps := filesystem.NewHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewHandler(fsOps)

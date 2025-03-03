@@ -8,21 +8,21 @@ type genericConfigProvider interface {
 	Read(filenames ...string) (envMap map[string]string, err error)
 }
 
-type ConfigHandler struct {
-	GenericConfigHandler genericConfigProvider
+type Handler struct {
+	GenericHandler genericConfigProvider
 }
 
-func NewConfigHandler(genericHandler genericConfigProvider) *ConfigHandler {
-	return &ConfigHandler{
-		GenericConfigHandler: genericHandler,
+func NewHandler(genericHandler genericConfigProvider) *Handler {
+	return &Handler{
+		GenericHandler: genericHandler,
 	}
 }
 
-func (c *ConfigHandler) ReadGeneric(filenames ...string) (map[string]string, error) {
-	return c.GenericConfigHandler.Read(filenames...)
+func (c *Handler) ReadGeneric(filenames ...string) (map[string]string, error) {
+	return c.GenericHandler.Read(filenames...)
 }
 
-func (c *ConfigHandler) MapKeyToString(envMap map[string]string, key string) string {
+func (c *Handler) MapKeyToString(envMap map[string]string, key string) string {
 	if value, exists := envMap[key]; exists {
 		return value
 	}
@@ -30,7 +30,7 @@ func (c *ConfigHandler) MapKeyToString(envMap map[string]string, key string) str
 	return ""
 }
 
-func (c *ConfigHandler) MapKeyToInt(envMap map[string]string, key string) int {
+func (c *Handler) MapKeyToInt(envMap map[string]string, key string) int {
 	value := c.MapKeyToString(envMap, key)
 	if value == "" {
 		return -1
@@ -43,7 +43,7 @@ func (c *ConfigHandler) MapKeyToInt(envMap map[string]string, key string) int {
 	return intValue
 }
 
-func (c *ConfigHandler) MapKeyToInt64(envMap map[string]string, key string) int64 {
+func (c *Handler) MapKeyToInt64(envMap map[string]string, key string) int64 {
 	value := c.MapKeyToString(envMap, key)
 	if value == "" {
 		return -1
@@ -56,7 +56,7 @@ func (c *ConfigHandler) MapKeyToInt64(envMap map[string]string, key string) int6
 	return intValue
 }
 
-func (c *ConfigHandler) MapKeyToUInt64(envMap map[string]string, key string) uint64 {
+func (c *Handler) MapKeyToUInt64(envMap map[string]string, key string) uint64 {
 	value := c.MapKeyToString(envMap, key)
 	if value == "" {
 		return 0
