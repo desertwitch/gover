@@ -84,19 +84,11 @@ func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 }
 
 func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
-	if fileSize < 0 {
-		return false, fmt.Errorf("%w: %d", ErrInvalidFileSize, fileSize)
-	}
-
 	path := s.GetFSPath()
 
 	stats, err := f.GetDiskUsage(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to get usage: %w", err)
-	}
-
-	if stats.TotalSize <= 0 || stats.FreeSpace < 0 {
-		return false, fmt.Errorf("%w (TotalSize: %d, FreeSpace: %d)", ErrInvalidStats, stats.TotalSize, stats.FreeSpace)
 	}
 
 	requiredFree := minFree
