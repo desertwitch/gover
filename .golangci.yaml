@@ -9,6 +9,10 @@ linters:
             - varnamelen
             - depguard
             - exhaustruct
+            - gocognit
+            - gocyclo
+            - cyclop
+            - nestif
 issues:
     exclude-rules:
         - path: ".*\\.go"

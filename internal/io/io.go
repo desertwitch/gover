@@ -127,7 +127,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
 	if used {
-		return errors.New("source file is currently in use")
+		return ErrSourceFileInUse
 	}
 
 	if m.Hardlink {
@@ -216,7 +216,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			if _, ok := m.Dest.(*unraid.Disk); ok {
 				// TO-DO: Reallocate with hardlinks
 			} else {
-				return errors.New("not enough free space on destination pool")
+				return ErrNotEnoughSpace
 			}
 		}
 
@@ -248,7 +248,7 @@ func (i *Handler) moveFile(m *filesystem.Moveable) error {
 	tmpPath := m.DestPath + ".gover"
 	defer func() {
 		if err != nil {
-			i.OSOps.Remove(tmpPath)
+			i.OSOps.Remove(tmpPath) //nolint:errcheck
 		}
 	}()
 
@@ -276,11 +276,11 @@ func (i *Handler) moveFile(m *filesystem.Moveable) error {
 	dstChecksum := hex.EncodeToString(dstHasher.Sum(nil))
 
 	if srcChecksum != dstChecksum {
-		return fmt.Errorf("hash mismatch: %s (src) != %s (dst)", srcChecksum, dstChecksum)
+		return fmt.Errorf("%w: %s (src) != %s (dst)", ErrHashMismatch, srcChecksum, dstChecksum)
 	}
 
 	if _, err := i.OSOps.Stat(m.DestPath); err == nil {
-		return errors.New("rename destination already exists")
+		return ErrRenameExists
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("failed to check rename destination existence: %w", err)
 	}

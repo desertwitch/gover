@@ -10,7 +10,7 @@ import (
 
 func (a *Allocator) AllocateMostFreeDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
 	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
-	var disks []*unraid.Disk
+	disks := []*unraid.Disk{}
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {

@@ -53,21 +53,21 @@ func NewFileHandler(osOps osProvider, unixOps unixProvider) *FileHandler {
 }
 
 func (f *FileHandler) GetMoveables(source unraid.Storeable, share *unraid.Share, knownTarget unraid.Storeable) ([]*Moveable, error) {
-	var moveables []*Moveable
-	var preSelection []*Moveable
+	moveables := []*Moveable{}
+	preSelection := []*Moveable{}
 
 	shareDir := filepath.Join(source.GetFSPath(), share.Name)
 
 	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return nil
+			return nil //nolint: nilerr
 		}
 
 		isEmptyDir := false
 		if d.IsDir() {
 			isEmptyDir, err = f.IsEmptyFolder(path)
 			if err != nil {
-				return nil
+				return nil //nolint: nilerr
 			}
 		}
 

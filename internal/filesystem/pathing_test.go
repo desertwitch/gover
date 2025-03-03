@@ -9,6 +9,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEstablishPaths_FileExists(t *testing.T) {
@@ -48,7 +49,7 @@ func TestEstablishPaths_FileExists(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, filtered)
 
 	mockOS.AssertExpectations(t)
@@ -91,7 +92,7 @@ func TestEstablishPaths_FileNotExits(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.EqualValues(t, mockMoveable, filtered[0])
 	assert.EqualValues(t, "/mnt/disk4/movies/file.mp4", filtered[0].DestPath)
@@ -137,7 +138,7 @@ func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.EqualValues(t, mockMoveable, filtered[0])
 	assert.EqualValues(t, "/mnt/disk4/movies/file.mp4", filtered[0].DestPath)
@@ -183,7 +184,7 @@ func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.EqualValues(t, mockMoveable, filtered[0])
 	assert.EqualValues(t, "/mnt/disk4/movies/dir", filtered[0].DestPath)
@@ -229,7 +230,7 @@ func TestEstablishPaths_Unicode(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.EqualValues(t, mockMoveable, filtered[0])
 	assert.EqualValues(t, "/mnt/disk4/movies/日本国", filtered[0].DestPath)
@@ -275,7 +276,7 @@ func TestEstablishPaths_Spaces(t *testing.T) {
 
 	filtered, err := mockFS.EstablishPaths([]*filesystem.Moveable{mockMoveable})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.EqualValues(t, mockMoveable, filtered[0])
 	assert.EqualValues(t, "/mnt/disk4/movi es/日本国", filtered[0].DestPath)

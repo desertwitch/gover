@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-type UnraidArray struct {
+type Array struct {
 	Disks         map[string]*Disk
 	Status        string
 	TurboSetting  string
@@ -36,7 +36,7 @@ func (d *Disk) SetActiveTransfer(active bool) {
 }
 
 // establishArray returns a pointer to an established Unraid array.
-func (u *Handler) EstablishArray(disks map[string]*Disk) (*UnraidArray, error) {
+func (u *Handler) EstablishArray(disks map[string]*Disk) (*Array, error) {
 	stateFile := ArrayStateFile
 
 	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
@@ -44,7 +44,7 @@ func (u *Handler) EstablishArray(disks map[string]*Disk) (*UnraidArray, error) {
 		return nil, fmt.Errorf("failed to load disk state file %s: %w", stateFile, err)
 	}
 
-	array := &UnraidArray{
+	array := &Array{
 		Disks:         disks,
 		Status:        u.ConfigOps.MapKeyToString(configMap, StateArrayStatus),
 		TurboSetting:  u.ConfigOps.MapKeyToString(configMap, StateTurboSetting),

@@ -1,7 +1,6 @@
 package allocation
 
 import (
-	"errors"
 	"log/slog"
 	"sort"
 
@@ -9,9 +8,13 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
+const (
+	highWaterDivisor = 2
+)
+
 func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
 	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
-	var disks []*unraid.Disk
+	disks := []*unraid.Disk{}
 
 	var maxDiskSize int64
 
@@ -36,10 +39,10 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 	}
 
 	if maxDiskSize == 0 {
-		return nil, errors.New("failed getting stats for any disk")
+		return nil, ErrNoDiskStats
 	}
 
-	highWaterMark := maxDiskSize / 2
+	highWaterMark := maxDiskSize / highWaterDivisor
 
 	for highWaterMark > 0 {
 		sort.Slice(disks, func(i, j int) bool {
@@ -56,7 +59,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 				return disk, nil
 			}
 		}
-		highWaterMark /= 2
+		highWaterMark /= highWaterDivisor
 	}
 
 	return nil, ErrNotAllocatable

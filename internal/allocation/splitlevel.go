@@ -32,7 +32,7 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 		}
 	}
 
-	if len(m.Hardlinks) > 0 {
+	if len(m.Hardlinks) > 0 { //nolint:nestif
 		for _, s := range m.Hardlinks {
 			subMatches, subLevel, err := a.findDisksBySplitLevel(s)
 			if err != nil {
@@ -41,9 +41,8 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 				}
 
 				continue
-			} else {
-				splitDoesNotExceedLvl = false
 			}
+			splitDoesNotExceedLvl = false
 
 			if len(subMatches) > 0 {
 				if matches[subLevel] == nil {
@@ -93,7 +92,7 @@ func (a *Allocator) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Dis
 	splitLevel := len(pathParts)
 
 	if splitLevel == 0 {
-		return nil, -1, fmt.Errorf("calc split level of zero: %s", path)
+		return nil, -1, fmt.Errorf("%w: %s", ErrCalcSplitLvlZero, path)
 	}
 
 	maxLevel := m.Share.SplitLevel

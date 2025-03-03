@@ -1,6 +1,9 @@
 package io
 
-import "os/exec"
+import (
+	"errors"
+	"os/exec"
+)
 
 func (i *Handler) IsFileInUse(path string) (bool, error) {
 	cmd := exec.Command("lsof", path)
@@ -9,7 +12,8 @@ func (i *Handler) IsFileInUse(path string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
-	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
 		return false, nil
 	}
 

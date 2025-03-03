@@ -50,11 +50,11 @@ type Storeable interface {
 	GetName() string
 	GetFSPath() string
 	IsActiveTransfer() bool
-	SetActiveTransfer(bool)
+	SetActiveTransfer(isActive bool)
 }
 
 type System struct {
-	Array  *UnraidArray
+	Array  *Array
 	Pools  map[string]*Pool
 	Shares map[string]*Share
 }

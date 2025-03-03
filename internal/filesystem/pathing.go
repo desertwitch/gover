@@ -1,23 +1,22 @@
 package filesystem
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 )
 
 func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
-	var filtered []*Moveable
+	filtered := []*Moveable{}
 
 	for _, m := range moveables {
-		existsOn, existsPath, err := f.ExistsOnStorage(m)
+		existsPath, err := f.ExistsOnStorage(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 
 			continue
 		}
-		if existsOn != nil {
+		if existsPath != "" {
 			slog.Warn("Skipped job: destination path already exists for job", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
 
 			continue
@@ -31,14 +30,14 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
-			existsOn, existsPath, err := f.ExistsOnStorage(h)
+			existsPath, err := f.ExistsOnStorage(h)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
 
 				break
 			}
-			if existsOn != nil {
+			if existsPath != "" {
 				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
 				hardLinkFailure = true
 
@@ -57,14 +56,14 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			existsOn, existsPath, err := f.ExistsOnStorage(s)
+			existsPath, err := f.ExistsOnStorage(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
 
 				break
 			}
-			if existsOn != nil {
+			if existsPath != "" {
 				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
 				symlinkFailure = true
 
@@ -89,7 +88,7 @@ func (f *FileHandler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error)
 
 func establishPath(m *Moveable) error {
 	if m.Dest == nil {
-		return errors.New("destination for job is nil")
+		return ErrNilDestination
 	}
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
@@ -107,7 +106,7 @@ func establishPath(m *Moveable) error {
 
 func establishRelatedDirPaths(m *Moveable) error {
 	if m.RootDir == nil {
-		return errors.New("dir root is nil")
+		return ErrNilDirRoot
 	}
 
 	dir := m.RootDir

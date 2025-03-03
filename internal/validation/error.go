@@ -1,0 +1,32 @@
+package validation
+
+import "errors"
+
+var (
+	ErrDestMismatch          = errors.New("destination path mismatches destination fs element")
+	ErrDestNotConnectBase    = errors.New("related dir root does not connect to share base (dest)")
+	ErrDestPathRelative      = errors.New("destination path is relative")
+	ErrHardlinkHasSublinks   = errors.New("hardlink has sublinks")
+	ErrHardlinkSetTarget     = errors.New("hardlink false, but has set target")
+	ErrNoDeepestDir          = errors.New("no deepest dir")
+	ErrNoDestination         = errors.New("no destination or destination path")
+	ErrNoHardlinkTarget      = errors.New("no hardlink target")
+	ErrNoMetadata            = errors.New("no metadata")
+	ErrNoRelatedDestPath     = errors.New("no related dir destination path")
+	ErrNoRelatedMetadata     = errors.New("no related dir metadata")
+	ErrNoRelatedSourcePath   = errors.New("no related dir source path")
+	ErrNoRootDir             = errors.New("no root dir")
+	ErrNoShareInfo           = errors.New("no share information")
+	ErrNoSource              = errors.New("no source or source path")
+	ErrNoSymlinkTarget       = errors.New("no symlink target")
+	ErrParentChildMismatch   = errors.New("related dir parent/child mismatch")
+	ErrRelatedDestRelative   = errors.New("related dir destination path is relative")
+	ErrRelatedDirNotDir      = errors.New("related dir is not a dir")
+	ErrRelatedDirSymlink     = errors.New("related dir is a symlink")
+	ErrRelatedSourceRelative = errors.New("related dir source path is relative")
+	ErrSourceMismatch        = errors.New("source path mismatches source fs element")
+	ErrSourceNotConnectBase  = errors.New("related dir root does not connect to share base (source)")
+	ErrSourcePathRelative    = errors.New("source path is relative")
+	ErrSymlinkHasSublinks    = errors.New("symlink has sublinks")
+	ErrSymlinkSetTarget      = errors.New("symlink false, but has set target")
+)

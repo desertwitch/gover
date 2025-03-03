@@ -1,10 +1,8 @@
 package allocation
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/unraid"
@@ -14,10 +12,6 @@ type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error)
-}
-
-type osProvider interface {
-	Stat(name string) (os.FileInfo, error)
 }
 
 type Allocator struct {
@@ -31,7 +25,7 @@ func NewAllocator(fsOps fsProvider) *Allocator {
 }
 
 func (a *Allocator) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	var filtered []*filesystem.Moveable
+	filtered := []*filesystem.Moveable{}
 
 	for _, m := range moveables {
 		dest, err := a.AllocateArrayDestination(m)
@@ -108,6 +102,6 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Di
 		return ret, nil
 
 	default:
-		return nil, errors.New("no allocation method given in configuration")
+		return nil, ErrNoAllocationMethod
 	}
 }
