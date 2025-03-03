@@ -44,6 +44,7 @@ type configProvider interface {
 	MapKeyToString(envMap map[string]string, key string) string
 	MapKeyToInt(envMap map[string]string, key string) int
 	MapKeyToInt64(envMap map[string]string, key string) int64
+	MapKeyToUInt64(envMap map[string]string, key string) uint64
 }
 
 type Storeable interface {

@@ -13,7 +13,7 @@ type Metadata struct {
 	GID        uint32
 	AccessedAt unix.Timespec
 	ModifiedAt unix.Timespec
-	Size       int64
+	Size       uint64
 	IsDir      bool
 	IsSymlink  bool
 	SymlinkTo  string
@@ -33,7 +33,7 @@ func (f *FileHandler) getMetadata(path string) (*Metadata, error) {
 		GID:        stat.Gid,
 		AccessedAt: stat.Atim,
 		ModifiedAt: stat.Mtim,
-		Size:       stat.Size,
+		Size:       handleSize(stat.Size),
 		IsDir:      (stat.Mode & unix.S_IFMT) == unix.S_IFDIR,
 		IsSymlink:  (stat.Mode & unix.S_IFMT) == unix.S_IFLNK,
 	}

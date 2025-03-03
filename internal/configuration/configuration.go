@@ -55,3 +55,16 @@ func (c *ConfigHandler) MapKeyToInt64(envMap map[string]string, key string) int6
 
 	return intValue
 }
+
+func (c *ConfigHandler) MapKeyToUInt64(envMap map[string]string, key string) uint64 {
+	value := c.MapKeyToString(envMap, key)
+	if value == "" {
+		return 0
+	}
+	intValue, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	return intValue
+}

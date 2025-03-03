@@ -18,7 +18,7 @@ import (
 type allocProvider interface{}
 
 type fsProvider interface {
-	HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error)
+	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
 }
 
@@ -213,11 +213,7 @@ func (i *Handler) processMoveable(m *filesystem.Moveable, job *InternalProgressR
 			return fmt.Errorf("failed to check for enough space: %w", err)
 		}
 		if !enoughSpace {
-			if _, ok := m.Dest.(*unraid.Disk); ok {
-				// TO-DO: Reallocate with hardlinks
-			} else {
-				return ErrNotEnoughSpace
-			}
+			return ErrNotEnoughSpace
 		}
 
 		if err := i.moveFile(m); err != nil {

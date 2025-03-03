@@ -13,7 +13,7 @@ type Share struct {
 	CachePool2    *Pool
 	Allocator     string
 	SplitLevel    int
-	SpaceFloor    int64
+	SpaceFloor    uint64
 	DisableCOW    bool
 	IncludedDisks map[string]*Disk
 	ExcludedDisks map[string]*Disk
@@ -52,7 +52,7 @@ func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool
 				Allocator:  u.ConfigOps.MapKeyToString(configMap, SettingShareAllocator),
 				DisableCOW: strings.ToLower(u.ConfigOps.MapKeyToString(configMap, SettingShareCOW)) == "no",
 				SplitLevel: u.ConfigOps.MapKeyToInt(configMap, SettingShareSplitLevel),
-				SpaceFloor: u.ConfigOps.MapKeyToInt64(configMap, SettingShareFloor),
+				SpaceFloor: u.ConfigOps.MapKeyToUInt64(configMap, SettingShareFloor),
 			}
 
 			cachepool, err := findPool(pools, u.ConfigOps.MapKeyToString(configMap, SettingShareCachePool))

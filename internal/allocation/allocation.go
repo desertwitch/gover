@@ -12,16 +12,18 @@ import (
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
-	HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error)
+	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 }
 
 type Allocator struct {
-	FSOps fsProvider
+	FSOps            fsProvider
+	alreadyAllocated map[*unraid.Disk]uint64
 }
 
 func NewAllocator(fsOps fsProvider) *Allocator {
 	return &Allocator{
-		FSOps: fsOps,
+		FSOps:            fsOps,
+		alreadyAllocated: make(map[*unraid.Disk]uint64),
 	}
 }
 
@@ -83,6 +85,7 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Di
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by high water: %w", err)
 		}
+		a.alreadyAllocated[ret] += m.Metadata.Size
 
 		return ret, nil
 
@@ -91,6 +94,7 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Di
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by fillup: %w", err)
 		}
+		a.alreadyAllocated[ret] += m.Metadata.Size
 
 		return ret, nil
 
@@ -99,6 +103,7 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Di
 		if err != nil {
 			return nil, fmt.Errorf("failed allocating by mostfree: %w", err)
 		}
+		a.alreadyAllocated[ret] += m.Metadata.Size
 
 		return ret, nil
 

@@ -16,7 +16,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
 	disks := []*unraid.Disk{}
 
-	var maxDiskSize int64
+	var maxDiskSize uint64
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
@@ -49,7 +49,7 @@ func (a *Allocator) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks 
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, m.Metadata.Size)
+			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.alreadyAllocated[disk] + m.Metadata.Size))
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration", "disk", disk.Name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
 

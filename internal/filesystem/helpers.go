@@ -12,8 +12,8 @@ import (
 )
 
 type DiskStats struct {
-	TotalSize int64
-	FreeSpace int64
+	TotalSize uint64
+	FreeSpace uint64
 }
 
 func (f *FileHandler) Exists(path string) (bool, error) {
@@ -76,14 +76,14 @@ func (f *FileHandler) GetDiskUsage(path string) (DiskStats, error) {
 	}
 
 	stats := DiskStats{
-		TotalSize: int64(stat.Blocks) * stat.Bsize, //nolint:gosec
-		FreeSpace: int64(stat.Bavail) * stat.Bsize, //nolint:gosec
+		TotalSize: stat.Blocks * handleSize(stat.Bsize),
+		FreeSpace: stat.Bavail * handleSize(stat.Bsize),
 	}
 
 	return stats, nil
 }
 
-func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree int64, fileSize int64) (bool, error) {
+func (f *FileHandler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
 	if fileSize < 0 {
 		return false, fmt.Errorf("%w: %d", ErrInvalidFileSize, fileSize)
 	}
@@ -137,4 +137,12 @@ func (f *FileHandler) existsOnStorageCandidate(m *Moveable, destCandidate unraid
 	}
 
 	return true, dstPath, nil
+}
+
+func handleSize(size int64) uint64 {
+	if size < 0 {
+		return 0
+	}
+
+	return uint64(size)
 }
