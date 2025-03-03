@@ -1,5 +1,3 @@
-- io: cleanup
 - io: zfs datasets
 - io: nocow for btrfs
-- pkg: cancellation handling
 - pkg: configuration handling

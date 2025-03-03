@@ -119,7 +119,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 
 	defer func() {
 		if !jobComplete {
-			i.cleanDirectoriesAfterFailure(intermediateJob)
+			i.cleanDirectoriesAfterFailure(intermediateJob) //nolint:errcheck
 		}
 	}()
 
