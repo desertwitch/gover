@@ -73,7 +73,7 @@ func (a *Allocator) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[strin
 	}
 
 	if splitDoesNotExceedLvl {
-		return nil, nil
+		return nil, ErrSplitDoesNotExceedLvl
 	}
 
 	return nil, ErrNotAllocatable

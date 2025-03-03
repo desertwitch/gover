@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -67,8 +68,8 @@ func (a *Allocator) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Di
 
 	if m.Share.SplitLevel >= 0 {
 		returnDisks, err := a.AllocateDisksBySplitLevel(m)
-		// TO-DO: Configurable, if not found split level files should proceed anyhow
-		if err != nil {
+		// TO-DO: Configurable if exceeding, but non allocatable, split-levels should proceed.
+		if err != nil && !errors.Is(err, ErrSplitDoesNotExceedLvl) && !errors.Is(err, ErrNotAllocatable) {
 			return nil, fmt.Errorf("failed allocating by split level: %w", err)
 		}
 		if returnDisks != nil {
