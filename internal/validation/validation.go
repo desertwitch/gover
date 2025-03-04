@@ -160,32 +160,14 @@ func validateLinks(m *filesystem.Moveable) error {
 }
 
 func validateDirectories(m *filesystem.Moveable) error {
-	numDirsA := 0
+	dir := m.RootDir
 
-	dirA := m.RootDir
-	for dirA != nil {
-		if err := validateDirectory(dirA); err != nil {
+	for dir != nil {
+		if err := validateDirectory(dir); err != nil {
 			return err
 		}
 
-		dirA = dirA.Child
-		numDirsA++
-	}
-
-	numDirsB := 0
-
-	dirB := m.DeepestDir
-	for dirB != nil {
-		if err := validateDirectory(dirB); err != nil {
-			return err
-		}
-
-		dirB = dirB.Parent
-		numDirsB++
-	}
-
-	if numDirsA != numDirsB {
-		return ErrParentChildMismatch
+		dir = dir.Child
 	}
 
 	if err := validateDirRootConnection(m); err != nil {

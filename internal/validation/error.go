@@ -19,7 +19,6 @@ var (
 	ErrNoShareInfo           = errors.New("no share information")
 	ErrNoSource              = errors.New("no source or source path")
 	ErrNoSymlinkTarget       = errors.New("no symlink target")
-	ErrParentChildMismatch   = errors.New("related dir parent/child mismatch")
 	ErrRelatedDestRelative   = errors.New("related dir destination path is relative")
 	ErrRelatedDirNotDir      = errors.New("related dir is not a dir")
 	ErrRelatedDirSymlink     = errors.New("related dir is a symlink")
