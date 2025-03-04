@@ -67,6 +67,10 @@ func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 			break
 		}
 	}
+
+	if prevElement == nil {
+		return ErrNilDirRoot
+	}
 	m.RootDir = prevElement
 
 	return nil
