@@ -16,10 +16,10 @@ type Moveable struct {
 	Dest       unraid.Storeable
 	DestPath   string
 	Hardlinks  []*Moveable
-	Hardlink   bool
+	IsHardlink bool
 	HardlinkTo *Moveable
 	Symlinks   []*Moveable
-	Symlink    bool
+	IsSymlink  bool
 	SymlinkTo  *Moveable
 	Metadata   *Metadata
 	RootDir    *RelatedDirectory
@@ -125,7 +125,7 @@ func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
-		if !m.Hardlink && !m.Metadata.IsSymlink {
+		if !m.IsHardlink && !m.Metadata.IsSymlink {
 			realFiles[m.SourcePath] = m
 		}
 	}
@@ -133,7 +133,7 @@ func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
 	for _, m := range moveables {
 		if m.Metadata.IsSymlink {
 			if target, exists := realFiles[m.Metadata.SymlinkTo]; exists {
-				m.Symlink = true
+				m.IsSymlink = true
 				m.SymlinkTo = target
 
 				m.Dest = dst
@@ -147,7 +147,7 @@ func establishHardlinks(moveables []*Moveable, dst unraid.Storeable) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
-			m.Hardlink = true
+			m.IsHardlink = true
 			m.HardlinkTo = target
 
 			m.Dest = dst
@@ -162,7 +162,7 @@ func removeInternalLinks(moveables []*Moveable) []*Moveable {
 	var ms []*Moveable
 
 	for _, m := range moveables {
-		if !m.Symlink && !m.Hardlink {
+		if !m.IsSymlink && !m.IsHardlink {
 			ms = append(ms, m)
 		}
 	}

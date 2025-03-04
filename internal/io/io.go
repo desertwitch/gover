@@ -160,7 +160,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		return ErrSourceFileInUse
 	}
 
-	if m.Hardlink {
+	if m.IsHardlink {
 		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for hardlink: %w", err)
 		}
@@ -185,7 +185,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		return nil
 	}
 
-	if m.Symlink {
+	if m.IsSymlink {
 		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 			return fmt.Errorf("failed to ensure dir tree for symlink: %w", err)
 		}

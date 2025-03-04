@@ -132,7 +132,7 @@ func validateBasicAttributes(m *filesystem.Moveable) error {
 }
 
 func validateLinks(m *filesystem.Moveable) error {
-	if m.Hardlink {
+	if m.IsHardlink {
 		if m.HardlinkTo == nil {
 			return ErrNoHardlinkTarget
 		}
@@ -144,7 +144,7 @@ func validateLinks(m *filesystem.Moveable) error {
 		return ErrHardlinkSetTarget
 	}
 
-	if m.Symlink {
+	if m.IsSymlink {
 		if m.SymlinkTo == nil {
 			return ErrNoSymlinkTarget
 		}
