@@ -15,7 +15,7 @@ import (
 
 func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.Disk, error) {
 	matches := make(map[int]map[string]*unraid.Disk)
-	splitDoesNotExceedLvl := true
+	splitExceedLvl := false
 
 	mainMatches, mainLevel, err := a.findDisksBySplitLevel(m)
 	if err != nil {
@@ -28,10 +28,10 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 			)
 		}
 	} else {
-		splitDoesNotExceedLvl = false
+		splitExceedLvl = true
 	}
 
-	if err != nil || len(mainMatches) > 0 {
+	if len(mainMatches) > 0 {
 		matches[mainLevel] = make(map[string]*unraid.Disk)
 		for _, disk := range mainMatches {
 			matches[mainLevel][disk.Name] = disk
@@ -53,7 +53,7 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 
 				continue
 			}
-			splitDoesNotExceedLvl = false
+			splitExceedLvl = true
 
 			if len(subMatches) > 0 {
 				if matches[subLevel] == nil {
@@ -79,12 +79,12 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 		}
 	}
 
-	if len(matches[mainLevel]) > 0 {
-		return matches[mainLevel], nil
+	if !splitExceedLvl {
+		return nil, ErrSplitDoesNotExceedLvl
 	}
 
-	if splitDoesNotExceedLvl {
-		return nil, ErrSplitDoesNotExceedLvl
+	if len(matches[mainLevel]) > 0 {
+		return matches[mainLevel], nil
 	}
 
 	return nil, ErrNotAllocatable
