@@ -30,12 +30,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 	// Primary to Secondary
 	for _, share := range system.Shares {
 		if ctx.Err() != nil {
-			slog.Warn("Skipped share due to cancellation",
-				"err", ctx.Err(),
-				"share", share.Name,
-			)
-
-			continue
+			return
 		}
 
 		if share.UseCache != "yes" || share.CachePool == nil {
@@ -68,12 +63,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 	// Secondary to Primary
 	for _, share := range system.Shares {
 		if ctx.Err() != nil {
-			slog.Warn("Skipped share due to cancellation",
-				"err", ctx.Err(),
-				"share", share.Name,
-			)
-
-			continue
+			return
 		}
 
 		if share.UseCache != "prefer" || share.CachePool == nil {
