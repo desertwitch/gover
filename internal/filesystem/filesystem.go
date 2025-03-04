@@ -52,31 +52,31 @@ func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
 	}
 }
 
-func (f *Handler) GetMoveables(source unraid.Storeable, share *unraid.Share, knownTarget unraid.Storeable) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst unraid.Storeable) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 	preSelection := []*Moveable{}
 
-	shareDir := filepath.Join(source.GetFSPath(), share.Name)
+	shareDir := filepath.Join(src.GetFSPath(), share.Name)
 
 	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return nil //nolint: nilerr
+			return nil
 		}
 
 		isEmptyDir := false
 		if d.IsDir() {
 			isEmptyDir, err = f.IsEmptyFolder(path)
 			if err != nil {
-				return nil //nolint: nilerr
+				return nil
 			}
 		}
 
 		if !d.IsDir() || (d.IsDir() && isEmptyDir && path != shareDir) {
 			moveable := &Moveable{
 				Share:      share,
-				Source:     source,
+				Source:     src,
 				SourcePath: path,
-				Dest:       knownTarget,
+				Dest:       dst,
 			}
 
 			preSelection = append(preSelection, moveable)
@@ -114,14 +114,14 @@ func (f *Handler) GetMoveables(source unraid.Storeable, share *unraid.Share, kno
 		moveables = append(moveables, m)
 	}
 
-	establishSymlinks(moveables, knownTarget)
-	establishHardlinks(moveables, knownTarget)
+	establishSymlinks(moveables, dst)
+	establishHardlinks(moveables, dst)
 	moveables = removeInternalLinks(moveables)
 
 	return moveables, nil
 }
 
-func establishSymlinks(moveables []*Moveable, knownTarget unraid.Storeable) {
+func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
@@ -136,21 +136,21 @@ func establishSymlinks(moveables []*Moveable, knownTarget unraid.Storeable) {
 				m.Symlink = true
 				m.SymlinkTo = target
 
-				m.Dest = knownTarget
+				m.Dest = dst
 				target.Symlinks = append(target.Symlinks, m)
 			}
 		}
 	}
 }
 
-func establishHardlinks(moveables []*Moveable, knownTarget unraid.Storeable) {
+func establishHardlinks(moveables []*Moveable, dst unraid.Storeable) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
 			m.Hardlink = true
 			m.HardlinkTo = target
 
-			m.Dest = knownTarget
+			m.Dest = dst
 			target.Hardlinks = append(target.Hardlinks, m)
 		} else {
 			inodes[m.Metadata.Inode] = m

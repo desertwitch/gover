@@ -97,7 +97,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 }
 
 func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *taskHandlers) error {
-	files, err := deps.FSHandler.GetMoveables(src, share, dst)
+	files, err := deps.FSHandler.GetMoveables(share, src, dst)
 	if err != nil {
 		return fmt.Errorf("failed to get moveables: %w", err)
 	}
