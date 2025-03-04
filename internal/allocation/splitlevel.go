@@ -29,12 +29,12 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 		}
 	} else {
 		splitExceedLvl = true
-	}
 
-	if len(mainMatches) > 0 {
-		matches[mainLevel] = make(map[string]*unraid.Disk)
-		for _, disk := range mainMatches {
-			matches[mainLevel][disk.Name] = disk
+		if len(mainMatches) > 0 {
+			matches[mainLevel] = make(map[string]*unraid.Disk)
+			for _, disk := range mainMatches {
+				matches[mainLevel][disk.Name] = disk
+			}
 		}
 	}
 
@@ -50,31 +50,17 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 						"share", m.Share.Name,
 					)
 				}
+			} else {
+				splitExceedLvl = true
 
-				continue
-			}
-			splitExceedLvl = true
-
-			if len(subMatches) > 0 {
-				if matches[subLevel] == nil {
-					matches[subLevel] = make(map[string]*unraid.Disk)
+				if len(subMatches) > 0 {
+					if matches[subLevel] == nil {
+						matches[subLevel] = make(map[string]*unraid.Disk)
+					}
+					for _, disk := range subMatches {
+						matches[subLevel][disk.Name] = disk
+					}
 				}
-				for _, disk := range subMatches {
-					matches[subLevel][disk.Name] = disk
-				}
-			}
-		}
-
-		maxKey := -1
-		for key := range matches {
-			if key > maxKey {
-				maxKey = key
-			}
-		}
-
-		if maxKey >= 0 {
-			if bestMatch, exists := matches[maxKey]; exists {
-				return bestMatch, nil
 			}
 		}
 	}
@@ -83,8 +69,17 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 		return nil, ErrSplitDoesNotExceedLvl
 	}
 
-	if len(matches[mainLevel]) > 0 {
-		return matches[mainLevel], nil
+	maxKey := -1
+	for key := range matches {
+		if key > maxKey {
+			maxKey = key
+		}
+	}
+
+	if maxKey >= 0 {
+		if bestMatch, exists := matches[maxKey]; exists {
+			return bestMatch, nil
+		}
 	}
 
 	return nil, ErrNotAllocatable
