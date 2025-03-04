@@ -34,7 +34,6 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	return nil
 }
 
-//nolint:dupl
 func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
@@ -71,7 +70,6 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 	return nil
 }
 
-//nolint:dupl
 func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 	sort.Slice(job.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsProcessed[i]) > calculateDirectoryDepth(job.DirsProcessed[j])
