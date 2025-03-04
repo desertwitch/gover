@@ -14,33 +14,53 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 
 	for _, m := range moveables {
 		if err := validateMoveable(m); err != nil {
-			slog.Warn("Skipped job: failed pre-move validation for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failed pre-move validation for job",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
 
 		hardLinkFailure := false
+
 		for _, h := range m.Hardlinks {
 			if err := validateMoveable(h); err != nil {
-				slog.Warn("Skipped job: failed pre-move validation for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: failed pre-move validation for subjob",
+					"path", h.SourcePath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
 				hardLinkFailure = true
 
 				break
 			}
 		}
+
 		if hardLinkFailure {
 			continue
 		}
 
 		symlinkFailure := false
+
 		for _, s := range m.Symlinks {
 			if err := validateMoveable(s); err != nil {
-				slog.Warn("Skipped job: failed pre-move validation for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: failed pre-move validation for subjob",
+					"path", s.SourcePath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
 				symlinkFailure = true
 
 				break
 			}
 		}
+
 		if symlinkFailure {
 			continue
 		}
@@ -52,6 +72,22 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 }
 
 func validateMoveable(m *filesystem.Moveable) error {
+	if err := validateBasicAttributes(m); err != nil {
+		return err
+	}
+
+	if err := validateLinks(m); err != nil {
+		return err
+	}
+
+	if err := validateDirectories(m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateBasicAttributes(m *filesystem.Moveable) error {
 	if m.Share == nil {
 		return ErrNoShareInfo
 	}
@@ -92,10 +128,15 @@ func validateMoveable(m *filesystem.Moveable) error {
 		return ErrDestMismatch
 	}
 
+	return nil
+}
+
+func validateLinks(m *filesystem.Moveable) error {
 	if m.Hardlink {
 		if m.HardlinkTo == nil {
 			return ErrNoHardlinkTarget
 		}
+
 		if m.Hardlinks != nil {
 			return ErrHardlinkHasSublinks
 		}
@@ -107,6 +148,7 @@ func validateMoveable(m *filesystem.Moveable) error {
 		if m.SymlinkTo == nil {
 			return ErrNoSymlinkTarget
 		}
+
 		if m.Symlinks != nil {
 			return ErrSymlinkHasSublinks
 		}
@@ -114,57 +156,28 @@ func validateMoveable(m *filesystem.Moveable) error {
 		return ErrSymlinkSetTarget
 	}
 
+	return nil
+}
+
+func validateDirectories(m *filesystem.Moveable) error {
 	numDirsA := 0
+
 	dirA := m.RootDir
 	for dirA != nil {
-		if dirA.Metadata == nil {
-			return ErrNoRelatedMetadata
+		if err := validateDirectory(dirA); err != nil {
+			return err
 		}
-		if dirA.Metadata.IsSymlink {
-			return ErrRelatedDirSymlink
-		}
-		if !dirA.Metadata.IsDir {
-			return ErrRelatedDirNotDir
-		}
-		if dirA.SourcePath == "" {
-			return ErrNoRelatedSourcePath
-		}
-		if !filepath.IsAbs(dirA.SourcePath) {
-			return ErrRelatedSourceRelative
-		}
-		if dirA.DestPath == "" {
-			return ErrNoRelatedDestPath
-		}
-		if !filepath.IsAbs(dirA.DestPath) {
-			return ErrDestPathRelative
-		}
+
 		dirA = dirA.Child
 		numDirsA++
 	}
 
 	numDirsB := 0
+
 	dirB := m.DeepestDir
 	for dirB != nil {
-		if dirB.Metadata == nil {
-			return ErrNoRelatedMetadata
-		}
-		if dirB.Metadata.IsSymlink {
-			return ErrRelatedDirSymlink
-		}
-		if !dirB.Metadata.IsDir {
-			return ErrRelatedDirNotDir
-		}
-		if dirB.SourcePath == "" {
-			return ErrNoRelatedSourcePath
-		}
-		if !filepath.IsAbs(dirB.SourcePath) {
-			return ErrRelatedSourceRelative
-		}
-		if dirB.DestPath == "" {
-			return ErrNoRelatedDestPath
-		}
-		if !filepath.IsAbs(dirB.DestPath) {
-			return ErrRelatedDestRelative
+		if err := validateDirectory(dirB); err != nil {
+			return err
 		}
 
 		dirB = dirB.Parent
@@ -175,6 +188,46 @@ func validateMoveable(m *filesystem.Moveable) error {
 		return ErrParentChildMismatch
 	}
 
+	if err := validateDirRootConnection(m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateDirectory(d *filesystem.RelatedDirectory) error {
+	if d.Metadata == nil {
+		return ErrNoRelatedMetadata
+	}
+
+	if d.Metadata.IsSymlink {
+		return ErrRelatedDirSymlink
+	}
+
+	if !d.Metadata.IsDir {
+		return ErrRelatedDirNotDir
+	}
+
+	if d.SourcePath == "" {
+		return ErrNoRelatedSourcePath
+	}
+
+	if !filepath.IsAbs(d.SourcePath) {
+		return ErrRelatedSourceRelative
+	}
+
+	if d.DestPath == "" {
+		return ErrNoRelatedDestPath
+	}
+
+	if !filepath.IsAbs(d.DestPath) {
+		return ErrDestPathRelative
+	}
+
+	return nil
+}
+
+func validateDirRootConnection(m *filesystem.Moveable) error {
 	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.Name)
 	if m.RootDir.SourcePath != shareDirSource {
 		return fmt.Errorf("%w: %s != %s", ErrSourceNotConnectBase, shareDirSource, m.RootDir.SourcePath)

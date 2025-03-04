@@ -55,6 +55,7 @@ func TestEstablishPaths_FileExists(t *testing.T) {
 	mockOS.AssertExpectations(t)
 }
 
+//nolint:dupl
 func TestEstablishPaths_FileNotExits(t *testing.T) {
 	t.Parallel()
 	mockOS := new(mocks.OsProvider)
@@ -101,6 +102,7 @@ func TestEstablishPaths_FileNotExits(t *testing.T) {
 	mockOS.AssertExpectations(t)
 }
 
+//nolint:dupl
 func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 	t.Parallel()
 	mockOS := new(mocks.OsProvider)
@@ -147,6 +149,7 @@ func TestEstablishPaths_TrailingSlashFile(t *testing.T) {
 	mockOS.AssertExpectations(t)
 }
 
+//nolint:dupl
 func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 	t.Parallel()
 	mockOS := new(mocks.OsProvider)
@@ -193,6 +196,7 @@ func TestEstablishPaths_TrailingSlashDir(t *testing.T) {
 	mockOS.AssertExpectations(t)
 }
 
+//nolint:dupl
 func TestEstablishPaths_Unicode(t *testing.T) {
 	t.Parallel()
 	mockOS := new(mocks.OsProvider)
@@ -239,6 +243,7 @@ func TestEstablishPaths_Unicode(t *testing.T) {
 	mockOS.AssertExpectations(t)
 }
 
+//nolint:dupl
 func TestEstablishPaths_Spaces(t *testing.T) {
 	t.Parallel()
 	mockOS := new(mocks.OsProvider)

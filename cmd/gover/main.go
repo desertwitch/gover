@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -25,78 +26,39 @@ type taskHandlers struct {
 	IOHandler     *io.Handler
 }
 
-func processCurrentSystem(ctx context.Context, handlers *taskHandlers) {
-	system, err := handlers.UnraidHandler.EstablishSystem()
-	if err != nil {
-		slog.Error("failed to establish unraid system", "err", err)
-
-		return
-	}
-
-	shares := system.Shares
-	disks := system.Array.Disks
-
+func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandlers) {
 	// Primary to Secondary
-	for _, share := range shares {
+	for _, share := range system.Shares {
 		if ctx.Err() != nil {
-			return
+			slog.Warn("Skipped share due to cancellation",
+				"err", ctx.Err(),
+				"share", share.Name,
+			)
+
+			continue
 		}
+
 		if share.UseCache != "yes" || share.CachePool == nil {
 			continue
 		}
+
 		if share.CachePool2 == nil {
 			// Cache to Array
-			files, err := handlers.FSHandler.GetMoveables(share.CachePool, share, nil)
-			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = handlers.AllocHandler.AllocateArrayDestinations(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to allocate jobs", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = handlers.FSHandler.EstablishPaths(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = validation.ValidateMoveables(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
-
-				continue
-			}
-			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+			if err := moveShare(ctx, share, share.CachePool, nil, handlers); err != nil {
+				slog.Warn("Skipped share due to failure",
+					"err", err,
+					"share", share.Name,
+				)
 
 				continue
 			}
 		} else {
 			// Cache to Cache2
-			files, err := handlers.FSHandler.GetMoveables(share.CachePool, share, share.CachePool2)
-			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = handlers.FSHandler.EstablishPaths(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = validation.ValidateMoveables(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
-
-				continue
-			}
-			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+			if err := moveShare(ctx, share, share.CachePool, share.CachePool2, handlers); err != nil {
+				slog.Warn("Skipped share due to failure",
+					"err", err,
+					"share", share.Name,
+				)
 
 				continue
 			}
@@ -104,62 +66,39 @@ func processCurrentSystem(ctx context.Context, handlers *taskHandlers) {
 	}
 
 	// Secondary to Primary
-	for _, share := range shares {
+	for _, share := range system.Shares {
 		if ctx.Err() != nil {
-			return
+			slog.Warn("Skipped share due to cancellation",
+				"err", ctx.Err(),
+				"share", share.Name,
+			)
+
+			continue
 		}
+
 		if share.UseCache != "prefer" || share.CachePool == nil {
 			continue
 		}
+
 		if share.CachePool2 == nil {
 			// Array to Cache
-			for _, disk := range disks {
-				files, err := handlers.FSHandler.GetMoveables(disk, share, share.CachePool)
-				if err != nil {
-					slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
-
-					continue
-				}
-				files, err = handlers.FSHandler.EstablishPaths(files)
-				if err != nil {
-					slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
-
-					continue
-				}
-				files, err = validation.ValidateMoveables(files)
-				if err != nil {
-					slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
-
-					continue
-				}
-				if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-					slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+			for _, disk := range system.Array.Disks {
+				if err := moveShare(ctx, share, disk, share.CachePool, handlers); err != nil {
+					slog.Warn("Skipped array disk of share due to failure",
+						"err", err,
+						"share", share.Name,
+					)
 
 					continue
 				}
 			}
 		} else {
 			// Cache2 to Cache
-			files, err := handlers.FSHandler.GetMoveables(share.CachePool2, share, share.CachePool)
-			if err != nil {
-				slog.Warn("Skipped share: failed to get jobs", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = handlers.FSHandler.EstablishPaths(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to establish paths", "err", err, "share", share.Name)
-
-				continue
-			}
-			files, err = validation.ValidateMoveables(files)
-			if err != nil {
-				slog.Warn("Skipped share: failed to validate jobs pre-move", "err", err, "share", share.Name)
-
-				continue
-			}
-			if err := handlers.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-				slog.Warn("Skipped share: failed to process jobs", "err", err, "share", share.Name)
+			if err := moveShare(ctx, share, share.CachePool2, share.CachePool, handlers); err != nil {
+				slog.Warn("Skipped share due to failure",
+					"err", err,
+					"share", share.Name,
+				)
 
 				continue
 			}
@@ -167,24 +106,60 @@ func processCurrentSystem(ctx context.Context, handlers *taskHandlers) {
 	}
 }
 
+func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *taskHandlers) error {
+	files, err := deps.FSHandler.GetMoveables(src, share, dst)
+	if err != nil {
+		return fmt.Errorf("failed to get moveables: %w", err)
+	}
+
+	if dst == nil {
+		files, err = deps.AllocHandler.AllocateArrayDestinations(files)
+		if err != nil {
+			return fmt.Errorf("failed to allocate array destinations: %w", err)
+		}
+	}
+
+	files, err = deps.FSHandler.EstablishPaths(files)
+	if err != nil {
+		return fmt.Errorf("failed to establish paths: %w", err)
+	}
+
+	files, err = validation.ValidateMoveables(files)
+	if err != nil {
+		return fmt.Errorf("failed to validate moveables: %w", err)
+	}
+
+	if err := deps.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
+		return fmt.Errorf("failed to move moveables: %w", err)
+	}
+
+	return nil
+}
+
 func main() {
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(context.Background())
-
-	w := os.Stderr
-
 	slog.SetDefault(slog.New(
-		tint.NewHandler(w, &tint.Options{
+		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:      slog.LevelDebug,
 			TimeFormat: time.Kitchen,
 		}),
 	))
 
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
-	cfgProvider := &configuration.GodotenvProvider{}
+	configProvider := &configuration.GodotenvProvider{}
 
-	configOps := configuration.NewHandler(cfgProvider)
+	configOps := configuration.NewHandler(configProvider)
 	fsOps := filesystem.NewHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewHandler(fsOps)
@@ -197,18 +172,19 @@ func main() {
 		IOHandler:     ioOps,
 	}
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+	system, err := unraidOps.EstablishSystem()
+	if err != nil {
+		slog.Error("failed to establish unraid system",
+			"err", err,
+		)
 
-	go func() {
-		<-sigChan
-		cancel()
-	}()
+		return
+	}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processCurrentSystem(ctx, deps)
+		moveShares(ctx, system, deps)
 	}()
 	wg.Wait()
 

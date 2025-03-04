@@ -33,7 +33,11 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 	for _, m := range moveables {
 		dest, err := a.AllocateArrayDestination(m)
 		if err != nil {
-			slog.Warn("Skipped job: failed to allocate array destination", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failed to allocate array destination",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
@@ -47,7 +51,12 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 		for _, s := range m.Symlinks {
 			dest, err := a.AllocateArrayDestination(s)
 			if err != nil {
-				slog.Warn("Skipped job: failed to allocate array destination for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", s.Share.Name)
+				slog.Warn("Skipped job: failed to allocate array destination for subjob",
+					"path", s.SourcePath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", s.Share.Name,
+				)
 				symlinkFailure = true
 
 				break

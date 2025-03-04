@@ -12,18 +12,30 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	for _, m := range moveables {
 		existsPath, err := f.ExistsOnStorage(m)
 		if err != nil {
-			slog.Warn("Skipped job: failed establishing path existence for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failed establishing path existence for job",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
 		if existsPath != "" {
-			slog.Warn("Skipped job: destination path already exists for job", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: destination path already exists for job",
+				"path", existsPath,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
 
 		if err := establishPath(m); err != nil {
-			slog.Warn("Skipped job: cannot set destination path for job", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: cannot set destination path for job",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
@@ -32,19 +44,32 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 		for _, h := range m.Hardlinks {
 			existsPath, err := f.ExistsOnStorage(h)
 			if err != nil {
-				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: failed establishing path existence for subjob",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				hardLinkFailure = true
 
 				break
 			}
 			if existsPath != "" {
-				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: destination path already exists for subjob",
+					"path", existsPath,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				hardLinkFailure = true
 
 				break
 			}
 			if err := establishPath(h); err != nil {
-				slog.Warn("Skipped job: cannot set destination path for subjob", "path", h.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: cannot set destination path for subjob",
+					"path", h.SourcePath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				hardLinkFailure = true
 
 				break
@@ -58,19 +83,32 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 		for _, s := range m.Symlinks {
 			existsPath, err := f.ExistsOnStorage(s)
 			if err != nil {
-				slog.Warn("Skipped job: failed establishing path existence for subjob", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: failed establishing path existence for subjob",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				symlinkFailure = true
 
 				break
 			}
 			if existsPath != "" {
-				slog.Warn("Skipped job: destination path already exists for subjob", "path", existsPath, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: destination path already exists for subjob",
+					"path", existsPath,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				symlinkFailure = true
 
 				break
 			}
 			if err := establishPath(s); err != nil {
-				slog.Warn("Skipped job: cannot set destination path for subjob", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped job: cannot set destination path for subjob",
+					"path", s.SourcePath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 				symlinkFailure = true
 
 				break

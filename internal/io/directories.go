@@ -34,6 +34,7 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	return nil
 }
 
+//nolint:dupl
 func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
@@ -47,13 +48,19 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
-			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)", "path", dir.SourcePath, "err", err)
+			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)",
+				"path", dir.SourcePath,
+				"err", err,
+			)
 
 			continue
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.SourcePath); err != nil {
-				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)", "path", dir.SourcePath, "err", err)
+				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)",
+					"path", dir.SourcePath,
+					"err", err,
+				)
 
 				continue
 			}
@@ -64,6 +71,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 	return nil
 }
 
+//nolint:dupl
 func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 	sort.Slice(job.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsProcessed[i]) > calculateDirectoryDepth(job.DirsProcessed[j])
@@ -77,13 +85,19 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
 		if err != nil {
-			slog.Warn("Warning (cleanup): failure establishing dest directory emptiness (skipped)", "path", dir.DestPath, "err", err)
+			slog.Warn("Warning (cleanup): failure establishing dest directory emptiness (skipped)",
+				"path", dir.DestPath,
+				"err", err,
+			)
 
 			continue
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.DestPath); err != nil {
-				slog.Warn("Warning (cleanup): failure removing empty dest directory (skipped)", "path", dir.DestPath, "err", err)
+				slog.Warn("Warning (cleanup): failure removing empty dest directory (skipped)",
+					"path", dir.DestPath,
+					"err", err,
+				)
 
 				continue
 			}

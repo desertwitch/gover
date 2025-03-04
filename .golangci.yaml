@@ -1,16 +1,9 @@
 linters:
     enable-all: true
     disable:
-            - cyclop
             - depguard
-            - dupl
             - exhaustruct
-            - funlen
-            - gocognit
-            - gocyclo
-            - lll
             - nestif
-            - tenv
             - varnamelen
             - wrapcheck
             - wsl
@@ -18,3 +11,34 @@ issues:
     exclude-rules:
         - path: ".*\\.go"
           text: "result 0 \\(error\\) is always nil"
+
+linters-settings:
+    cyclop:
+        # The maximal code complexity to report.
+        # Default: 10
+        max-complexity: 20
+        # The maximal average package complexity.
+        # If it's higher than 0.0 (float) the check is enabled
+        # Default: 0.0
+        package-average: 20.0
+
+    gocognit:
+        # Minimal code complexity to report.
+        # Default: 30
+        min-complexity: 40
+
+    funlen:
+        # Checks the number of lines in a function.
+        # If lower than 0, disable the check.
+        # Default: 60
+        lines: 80
+        # Checks the number of statements in a function.
+        # If lower than 0, disable the check.
+        # Default: 40
+        statements: 50
+        # Ignore comments when counting lines.
+        # Default false
+        ignore-comments: true
+
+    lll:
+        line-length: 180

@@ -75,28 +75,57 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 		job := &ProgressReport{}
 
 		if err := i.processMoveable(ctx, m, job); err != nil {
-			slog.Warn("Skipped job: failure during processing for job", "path", m.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failure during processing for job",
+				"path", m.DestPath,
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
-		slog.Info("Processed:", "path", m.DestPath, "job", m.SourcePath, "share", m.Share.Name)
+
+		slog.Info("Processed:",
+			"path", m.DestPath,
+			"job", m.SourcePath,
+			"share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
 			if err := i.processMoveable(ctx, h, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing for subjob", "path", h.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped subjob: failure during processing for subjob",
+					"path", h.DestPath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 
 				continue
 			}
-			slog.Info("Processed (hardlink):", "path", h.DestPath, "job", m.SourcePath, "share", m.Share.Name)
+
+			slog.Info("Processed (hardlink):",
+				"path", h.DestPath,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 		}
 
 		for _, s := range m.Symlinks {
 			if err := i.processMoveable(ctx, s, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing for subjob", "path", s.DestPath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped subjob: failure during processing for subjob",
+					"path", s.DestPath,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 
 				continue
 			}
-			slog.Info("Processed (symlink):", "path", s.DestPath, "job", m.SourcePath, "share", m.Share.Name)
+
+			slog.Info("Processed (symlink):",
+				"path", s.DestPath,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 		}
 
 		MergeProgressReports(batch, job)

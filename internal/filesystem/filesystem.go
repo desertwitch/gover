@@ -91,14 +91,22 @@ func (f *Handler) GetMoveables(source unraid.Storeable, share *unraid.Share, kno
 	for _, m := range preSelection {
 		metadata, err := f.getMetadata(m.SourcePath)
 		if err != nil {
-			slog.Warn("Skipped job: failed to get metadata", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failed to get metadata",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}
 		m.Metadata = metadata
 
 		if err := f.walkParentDirs(m, shareDir); err != nil {
-			slog.Warn("Skipped job: failed to get parent folders", "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job: failed to get parent folders",
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 
 			continue
 		}

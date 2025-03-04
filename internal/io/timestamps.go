@@ -11,7 +11,10 @@ import (
 func (i *Handler) ensureTimestamps(batch *ProgressReport) error {
 	for _, a := range batch.AnyProcessed {
 		if err := i.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
-			slog.Warn("Warning (finalize): failure setting timestamp", "path", a.GetDestPath(), "err", err)
+			slog.Warn("Warning (finalize): failure setting timestamp",
+				"path", a.GetDestPath(),
+				"err", err,
+			)
 
 			continue
 		}

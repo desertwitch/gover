@@ -20,7 +20,12 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 	mainMatches, mainLevel, err := a.findDisksBySplitLevel(m)
 	if err != nil {
 		if !errors.Is(err, ErrSplitDoesNotExceedLvl) {
-			slog.Warn("Skipped job path for split-level consideration", "path", m.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+			slog.Warn("Skipped job path for split-level consideration",
+				"path", m.SourcePath,
+				"err", err,
+				"job", m.SourcePath,
+				"share", m.Share.Name,
+			)
 		}
 	} else {
 		splitDoesNotExceedLvl = false
@@ -33,12 +38,17 @@ func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 		}
 	}
 
-	if len(m.Hardlinks) > 0 { //nolint:nestif
+	if len(m.Hardlinks) > 0 {
 		for _, s := range m.Hardlinks {
 			subMatches, subLevel, err := a.findDisksBySplitLevel(s)
 			if err != nil {
 				if !errors.Is(err, ErrSplitDoesNotExceedLvl) {
-					slog.Warn("Skipped hardlink for split-level consideration", "path", s.SourcePath, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+					slog.Warn("Skipped hardlink for split-level consideration",
+						"path", s.SourcePath,
+						"err", err,
+						"job", m.SourcePath,
+						"share", m.Share.Name,
+					)
 				}
 
 				continue
@@ -113,7 +123,12 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 			if exists, err := a.FSOps.Exists(dirToCheck); err == nil && exists {
 				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.alreadyAllocated[disk] + m.Metadata.Size))
 				if err != nil {
-					slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+					slog.Warn("Skipped disk for split-level consideration",
+						"disk", name,
+						"err", err,
+						"job", m.SourcePath,
+						"share", m.Share.Name,
+					)
 
 					continue
 				}
@@ -122,7 +137,12 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 					found = true
 				}
 			} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
-				slog.Warn("Skipped disk for split-level consideration", "disk", name, "err", err, "job", m.SourcePath, "share", m.Share.Name)
+				slog.Warn("Skipped disk for split-level consideration",
+					"disk", name,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
 
 				continue
 			}
