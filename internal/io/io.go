@@ -129,11 +129,11 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 			)
 		}
 
-		MergeProgressReports(batch, job)
+		mergeProgressReports(batch, job)
 	}
 
 	if err := i.ensureTimestamps(batch); err != nil {
-		return fmt.Errorf("failed finalizing timestamps: %w", err)
+		return fmt.Errorf("failed setting timestamps: %w", err)
 	}
 
 	if err := i.cleanDirectoryStructure(batch); err != nil {
@@ -145,134 +145,66 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 
 func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *ProgressReport) error {
 	var jobComplete bool
+
 	intermediateJob := &ProgressReport{}
 
 	defer func() {
-		if !jobComplete {
+		if jobComplete {
+			addToProgressReport(intermediateJob, m)
+			mergeProgressReports(job, intermediateJob)
+		} else {
 			i.cleanDirectoriesAfterFailure(intermediateJob)
 		}
 	}()
 
-	inUse, err := i.FSOps.IsFileInUse(m.SourcePath)
-	if err != nil {
+	if inUse, err := i.FSOps.IsFileInUse(m.SourcePath); err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
-	}
-	if inUse {
+	} else if inUse {
 		return ErrSourceFileInUse
 	}
 
-	if m.IsHardlink {
-		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
-			return fmt.Errorf("failed to ensure dir tree for hardlink: %w", err)
-		}
-
-		if err := i.UnixOps.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
-			return fmt.Errorf("failed to create hardlink: %w", err)
-		}
-		if err := i.OSOps.Remove(m.SourcePath); err != nil {
-			return fmt.Errorf("failed to remove source after move: %w", err)
-		}
-
-		if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
-			return fmt.Errorf("failed to ensure link permissions: %w", err)
-		}
-
-		jobComplete = true
-		MergeProgressReports(job, intermediateJob)
-
-		job.AnyProcessed = append(job.AnyProcessed, m)
-		job.HardlinksProcessed = append(job.HardlinksProcessed, m)
-
-		return nil
-	}
-
-	if m.IsSymlink {
-		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
-			return fmt.Errorf("failed to ensure dir tree for symlink: %w", err)
-		}
-
-		if err := i.UnixOps.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
-			return fmt.Errorf("failed to create symlink: %w", err)
-		}
-		if err := i.OSOps.Remove(m.SourcePath); err != nil {
-			return fmt.Errorf("failed to remove source after move: %w", err)
-		}
-
-		if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
-			return fmt.Errorf("failed to ensure link permissions: %w", err)
-		}
-
-		jobComplete = true
-		MergeProgressReports(job, intermediateJob)
-
-		job.AnyProcessed = append(job.AnyProcessed, m)
-		job.SymlinksProcessed = append(job.SymlinksProcessed, m)
-
-		return nil
-	}
-
-	if m.Metadata.IsSymlink {
-		if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
-			return fmt.Errorf("failed to ensure dir tree: %w", err)
-		}
-
-		if err := i.UnixOps.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
-			return fmt.Errorf("failed to create symlink: %w", err)
-		}
-		if err := i.OSOps.Remove(m.SourcePath); err != nil {
-			return fmt.Errorf("failed to remove source after move: %w", err)
-		}
-
-		if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
-			return fmt.Errorf("failed to ensure link permissions: %w", err)
-		}
-
-		jobComplete = true
-		MergeProgressReports(job, intermediateJob)
-
-		job.AnyProcessed = append(job.AnyProcessed, m)
-		job.MoveablesProcessed = append(job.MoveablesProcessed, m)
-
-		return nil
-	}
-
 	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
-		return fmt.Errorf("failed to ensure dir tree: %w", err)
+		return fmt.Errorf("failed to ensure dir structure: %w", err)
+	}
+
+	if !m.Metadata.IsDir && !m.IsHardlink && !m.IsSymlink && !m.Metadata.IsSymlink {
+		if err := i.processFile(ctx, m); err != nil {
+			return fmt.Errorf("failed to process file: %w", err)
+		}
+		jobComplete = true
 	}
 
 	if m.Metadata.IsDir {
-		if err := i.UnixOps.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
-			return fmt.Errorf("failed to create empty dir: %w", err)
+		if err := i.processDirectory(m); err != nil {
+			return fmt.Errorf("failed to process directory: %w", err)
 		}
-		if err := i.OSOps.Remove(m.SourcePath); err != nil {
-			return fmt.Errorf("failed to remove source after move: %w", err)
-		}
-	} else {
-		enoughSpace, err := i.FSOps.HasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
-		if err != nil {
-			return fmt.Errorf("failed to check for enough space: %w", err)
-		}
-		if !enoughSpace {
-			return ErrNotEnoughSpace
-		}
-
-		if err := i.moveFile(ctx, m); err != nil {
-			return fmt.Errorf("failed to move file: %w", err)
-		}
-		if err := i.OSOps.Remove(m.SourcePath); err != nil {
-			return fmt.Errorf("failed to remove source after move: %w", err)
-		}
+		jobComplete = true
 	}
 
-	if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
-		return fmt.Errorf("failed to ensure permissions: %w", err)
+	if m.IsHardlink {
+		if err := i.processHardlink(m); err != nil {
+			return fmt.Errorf("failed to process hardlink: %w", err)
+		}
+		jobComplete = true
 	}
 
-	jobComplete = true
-	MergeProgressReports(job, intermediateJob)
+	if m.IsSymlink {
+		if err := i.processSymlink(m, true); err != nil {
+			return fmt.Errorf("failed to process symlink: %w", err)
+		}
+		jobComplete = true
+	}
 
-	job.AnyProcessed = append(job.AnyProcessed, m)
-	job.MoveablesProcessed = append(job.MoveablesProcessed, m)
+	if m.Metadata.IsSymlink {
+		if err := i.processSymlink(m, false); err != nil {
+			return fmt.Errorf("failed to process symlink: %w", err)
+		}
+		jobComplete = true
+	}
+
+	if !jobComplete {
+		return ErrNothingToProcess
+	}
 
 	return nil
 }
