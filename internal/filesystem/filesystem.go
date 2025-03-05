@@ -117,8 +117,38 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 	establishSymlinks(moveables, dst)
 	establishHardlinks(moveables, dst)
 	moveables = removeInternalLinks(moveables)
+	moveables = f.removeInUseFiles(moveables)
 
 	return moveables, nil
+}
+
+func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
+	filtered := []*Moveable{}
+
+	for _, m := range moveables {
+		if !m.Metadata.IsDir {
+			if inUse, err := f.IsFileInUse(m.SourcePath); err != nil {
+				slog.Warn("Skipped job: failed to check if file is in use",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
+				continue
+			} else if inUse {
+				slog.Warn("Skipped job: file is in use",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
+				continue
+			}
+		}
+		filtered = append(filtered, m)
+	}
+
+	return filtered
 }
 
 func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
@@ -159,13 +189,13 @@ func establishHardlinks(moveables []*Moveable, dst unraid.Storeable) {
 }
 
 func removeInternalLinks(moveables []*Moveable) []*Moveable {
-	var ms []*Moveable
+	var filtered []*Moveable
 
 	for _, m := range moveables {
 		if !m.IsSymlink && !m.IsHardlink {
-			ms = append(ms, m)
+			filtered = append(filtered, m)
 		}
 	}
 
-	return ms
+	return filtered
 }

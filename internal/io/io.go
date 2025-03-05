@@ -16,6 +16,7 @@ type allocProvider interface{}
 type fsProvider interface {
 	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
+	IsFileInUse(path string) (bool, error)
 }
 
 type osProvider interface {
@@ -152,7 +153,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		}
 	}()
 
-	inUse, err := i.IsFileInUse(m.SourcePath)
+	inUse, err := i.FSOps.IsFileInUse(m.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed checking if source file is in use: %w", err)
 	}
