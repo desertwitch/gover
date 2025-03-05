@@ -60,6 +60,12 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 
 	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
+			slog.Warn("Failure for path during walking of directory tree (skipped)",
+				"path", path,
+				"err", err,
+				"share", share.Name,
+			)
+
 			return nil
 		}
 
@@ -67,6 +73,12 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		if d.IsDir() {
 			isEmptyDir, err = f.IsEmptyFolder(path)
 			if err != nil {
+				slog.Warn("Failure checking directory for emptiness during walking of tree (skipped)",
+					"path", path,
+					"err", err,
+					"share", share.Name,
+				)
+
 				return nil
 			}
 		}

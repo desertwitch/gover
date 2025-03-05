@@ -34,7 +34,7 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	return nil
 }
 
-func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
+func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
 	})
@@ -47,7 +47,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
-			slog.Warn("Warning (cleanup): failure establishing source directory emptiness (skipped)",
+			slog.Warn("Failure establishing directory emptiness during cleaning source directories (skipped)",
 				"path", dir.SourcePath,
 				"err", err,
 			)
@@ -56,7 +56,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.SourcePath); err != nil {
-				slog.Warn("Warning (cleanup): failure removing empty source directory (skipped)",
+				slog.Warn("Failure removing directory during cleaning source directories (skipped)",
 					"path", dir.SourcePath,
 					"err", err,
 				)
@@ -66,11 +66,9 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) error {
 			removed[dir.SourcePath] = struct{}{}
 		}
 	}
-
-	return nil
 }
 
-func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
+func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 	sort.Slice(job.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsProcessed[i]) > calculateDirectoryDepth(job.DirsProcessed[j])
 	})
@@ -83,7 +81,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
 		if err != nil {
-			slog.Warn("Warning (cleanup): failure establishing dest directory emptiness (skipped)",
+			slog.Warn("Failure checking emptiness during cleaning of failed directories (skipped)",
 				"path", dir.DestPath,
 				"err", err,
 			)
@@ -92,7 +90,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.DestPath); err != nil {
-				slog.Warn("Warning (cleanup): failure removing empty dest directory (skipped)",
+				slog.Warn("Failure removing directory during cleaning of failed directories (skipped)",
 					"path", dir.DestPath,
 					"err", err,
 				)
@@ -102,8 +100,6 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) error {
 			removed[dir.DestPath] = struct{}{}
 		}
 	}
-
-	return nil
 }
 
 func calculateDirectoryDepth(dir *filesystem.RelatedDirectory) int {

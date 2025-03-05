@@ -132,12 +132,11 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 		mergeProgressReports(batch, job)
 	}
 
-	if err := i.ensureTimestamps(batch); err != nil {
-		return fmt.Errorf("failed setting timestamps: %w", err)
-	}
+	i.ensureTimestamps(batch)
+	i.cleanDirectoryStructure(batch)
 
-	if err := i.cleanDirectoryStructure(batch); err != nil {
-		return fmt.Errorf("failed cleaning source directories: %w", err)
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
 	return nil

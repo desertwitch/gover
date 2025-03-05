@@ -15,13 +15,16 @@ func mergeProgressReports(target, source *ProgressReport) {
 }
 
 func addToProgressReport(p *ProgressReport, m *filesystem.Moveable) {
-	if m.IsHardlink {
+	switch {
+	case m.IsHardlink:
 		p.AnyProcessed = append(p.AnyProcessed, m)
 		p.HardlinksProcessed = append(p.HardlinksProcessed, m)
-	} else if m.IsSymlink || m.Metadata.IsSymlink {
+
+	case m.IsSymlink || m.Metadata.IsSymlink:
 		p.AnyProcessed = append(p.AnyProcessed, m)
 		p.SymlinksProcessed = append(p.SymlinksProcessed, m)
-	} else {
+
+	default:
 		p.AnyProcessed = append(p.AnyProcessed, m)
 		p.MoveablesProcessed = append(p.MoveablesProcessed, m)
 	}

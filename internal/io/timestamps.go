@@ -8,10 +8,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (i *Handler) ensureTimestamps(batch *ProgressReport) error {
+func (i *Handler) ensureTimestamps(batch *ProgressReport) {
 	for _, a := range batch.AnyProcessed {
 		if err := i.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
-			slog.Warn("Warning (finalize): failure setting timestamp",
+			slog.Warn("Failure setting timestamp (skipped)",
 				"path", a.GetDestPath(),
 				"err", err,
 			)
@@ -19,8 +19,6 @@ func (i *Handler) ensureTimestamps(batch *ProgressReport) error {
 			continue
 		}
 	}
-
-	return nil
 }
 
 func (i *Handler) ensureTimestamp(path string, metadata *filesystem.Metadata) error {

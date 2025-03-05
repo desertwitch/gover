@@ -57,8 +57,8 @@ func (i *Handler) processHardlink(m *filesystem.Moveable) error {
 	return nil
 }
 
-func (i *Handler) processSymlink(m *filesystem.Moveable, internal bool) error {
-	if internal {
+func (i *Handler) processSymlink(m *filesystem.Moveable, internalLink bool) error {
+	if internalLink {
 		if err := i.UnixOps.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("failed to create symlink: %w", err)
 		}
