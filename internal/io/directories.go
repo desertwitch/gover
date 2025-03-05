@@ -16,17 +16,17 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	for dir != nil {
 		if _, err := i.OSOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
 			if err := i.UnixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", dir.DestPath, err)
+				return fmt.Errorf("(io-ensuredirs) failed to create directory %s: %w", dir.DestPath, err)
 			}
 
 			job.AnyProcessed = append(job.AnyProcessed, dir)
 			job.DirsProcessed = append(job.DirsProcessed, dir)
 
 			if err := i.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
-				return fmt.Errorf("failed to ensure permissions: %w", err)
+				return fmt.Errorf("(io-ensuredirs) failed to ensure permissions: %w", err)
 			}
 		} else if err != nil {
-			return fmt.Errorf("failed checking folder while ensuring dir structure: %w", err)
+			return fmt.Errorf("(io-ensuredirs) failed checking folder: %w", err)
 		}
 		dir = dir.Child
 	}

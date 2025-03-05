@@ -73,7 +73,7 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
 	if err := f.UnixOps.Statfs(path, &stat); err != nil {
-		return DiskStats{}, fmt.Errorf("failed to statfs: %w", err)
+		return DiskStats{}, fmt.Errorf("(fs-diskuse) failed to statfs: %w", err)
 	}
 
 	stats := DiskStats{
@@ -89,7 +89,7 @@ func (f *Handler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSiz
 
 	stats, err := f.GetDiskUsage(path)
 	if err != nil {
-		return false, fmt.Errorf("failed to get usage: %w", err)
+		return false, fmt.Errorf("(fs-enoughfree) failed to get usage: %w", err)
 	}
 
 	requiredFree := minFree
@@ -107,7 +107,7 @@ func (f *Handler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSiz
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {
 	entries, err := f.OSOps.ReadDir(path)
 	if err != nil {
-		return false, fmt.Errorf("failed to readdir: %w", err)
+		return false, fmt.Errorf("(fs-isempty) failed to readdir: %w", err)
 	}
 
 	return len(entries) == 0, nil
@@ -131,7 +131,7 @@ func (f *Handler) IsFileInUse(path string) (bool, error) {
 func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return false, "", fmt.Errorf("failed to rel path: %w", err)
+		return false, "", fmt.Errorf("(fs-existson) failed to rel path: %w", err)
 	}
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
@@ -141,7 +141,7 @@ func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Sto
 			return false, "", nil
 		}
 
-		return false, "", fmt.Errorf("failed to check existence: %w", err)
+		return false, "", fmt.Errorf("(fs-existson) failed to check existence: %w", err)
 	}
 
 	return true, dstPath, nil

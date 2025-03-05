@@ -25,14 +25,14 @@ func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool
 	basePath := ConfigDirShares
 
 	if exists, err := u.FSOps.Exists(basePath); !exists {
-		return nil, fmt.Errorf("share config dir does not exist: %w", err)
+		return nil, fmt.Errorf("(unraid-shares) share config dir does not exist: %w", err)
 	}
 
 	shares := make(map[string]*Share)
 
 	files, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read share config dir: %w", err)
+		return nil, fmt.Errorf("(unraid-shares) failed to read share config dir: %w", err)
 	}
 
 	for _, file := range files {
@@ -42,7 +42,7 @@ func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool
 
 			configMap, err := u.ConfigOps.ReadGeneric(filePath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read share config %s: %w", filePath, err)
+				return nil, fmt.Errorf("(unraid-shares) failed to read share config %s: %w", filePath, err)
 			}
 
 			share := &Share{
@@ -57,19 +57,19 @@ func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool
 
 			cachepool, err := findPool(pools, u.ConfigOps.MapKeyToString(configMap, SettingShareCachePool))
 			if err != nil {
-				return nil, fmt.Errorf("failed to dereference primary cache for share %s: %w", nameWithoutExt, err)
+				return nil, fmt.Errorf("(unraid-shares) failed to dereference primary cache for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool = cachepool
 
 			cachepool2, err := findPool(pools, u.ConfigOps.MapKeyToString(configMap, SettingShareCachePool2))
 			if err != nil {
-				return nil, fmt.Errorf("failed to dereference secondary cache for share %s: %w", nameWithoutExt, err)
+				return nil, fmt.Errorf("(unraid-shares) failed to dereference secondary cache for share %s: %w", nameWithoutExt, err)
 			}
 			share.CachePool2 = cachepool2
 
 			includedDisks, err := findDisks(disks, u.ConfigOps.MapKeyToString(configMap, SettingShareIncludeDisks))
 			if err != nil {
-				return nil, fmt.Errorf("failed to dereference included disks for share %s: %w", nameWithoutExt, err)
+				return nil, fmt.Errorf("(unraid-shares) failed to dereference included disks for share %s: %w", nameWithoutExt, err)
 			}
 			if includedDisks != nil {
 				share.IncludedDisks = includedDisks
@@ -80,7 +80,7 @@ func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool
 
 			excludedDisks, err := findDisks(disks, u.ConfigOps.MapKeyToString(configMap, SettingShareExcludeDisks))
 			if err != nil {
-				return nil, fmt.Errorf("failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
+				return nil, fmt.Errorf("(unraid-shares) failed to dereference excluded disks for share %s: %w", nameWithoutExt, err)
 			}
 			share.ExcludedDisks = excludedDisks
 

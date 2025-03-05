@@ -130,17 +130,17 @@ func establishPath(m *Moveable) error {
 	}
 
 	if !filepath.IsAbs(m.SourcePath) {
-		return fmt.Errorf("%w: %s", ErrSourceIsRelative, m.SourcePath)
+		return fmt.Errorf("(fs-paths) %w: %s", ErrSourceIsRelative, m.SourcePath)
 	}
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return fmt.Errorf("failed to rel path: %w", err)
+		return fmt.Errorf("(fs-paths) failed to rel path: %w", err)
 	}
 	m.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 
 	if err := establishRelatedDirPaths(m); err != nil {
-		return fmt.Errorf("failed related dir path generation: %w", err)
+		return fmt.Errorf("(fs-paths) failed related dir path generation: %w", err)
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func establishRelatedDirPaths(m *Moveable) error {
 	for dir != nil {
 		relPath, err := filepath.Rel(m.Source.GetFSPath(), dir.SourcePath)
 		if err != nil {
-			return fmt.Errorf("failed to rel path: %w", err)
+			return fmt.Errorf("(fs-dirpaths) failed to rel path: %w", err)
 		}
 		dir.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 		dir = dir.Child

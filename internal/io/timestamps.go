@@ -24,7 +24,7 @@ func (i *Handler) ensureTimestamps(batch *ProgressReport) {
 func (i *Handler) ensureTimestamp(path string, metadata *filesystem.Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
 	if err := i.UnixOps.UtimesNano(path, ts); err != nil {
-		return fmt.Errorf("failed to set timestamp: %w", err)
+		return fmt.Errorf("(io-times) failed to set timestamp: %w", err)
 	}
 
 	return nil

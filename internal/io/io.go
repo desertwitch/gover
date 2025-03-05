@@ -136,7 +136,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 	i.cleanDirectoryStructure(batch)
 
 	if ctx.Err() != nil {
-		return ErrContextError
+		return fmt.Errorf("(io) %w: %w", ErrContextError, ctx.Err())
 	}
 
 	return nil
@@ -157,46 +157,46 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 	}()
 
 	if inUse, err := i.FSOps.IsFileInUse(m.SourcePath); err != nil {
-		return fmt.Errorf("failed checking if source file is in use: %w", err)
+		return fmt.Errorf("(io) failed checking if source file is in use: %w", err)
 	} else if inUse {
 		return ErrSourceFileInUse
 	}
 
 	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
-		return fmt.Errorf("failed to ensure dir structure: %w", err)
+		return fmt.Errorf("(io) failed to ensure dir structure: %w", err)
 	}
 
 	if !m.Metadata.IsDir && !m.IsHardlink && !m.IsSymlink && !m.Metadata.IsSymlink {
 		if err := i.processFile(ctx, m); err != nil {
-			return fmt.Errorf("failed to process file: %w", err)
+			return fmt.Errorf("(io) failed to process file: %w", err)
 		}
 		jobComplete = true
 	}
 
 	if m.Metadata.IsDir {
 		if err := i.processDirectory(m); err != nil {
-			return fmt.Errorf("failed to process directory: %w", err)
+			return fmt.Errorf("(io) failed to process directory: %w", err)
 		}
 		jobComplete = true
 	}
 
 	if m.IsHardlink {
 		if err := i.processHardlink(m); err != nil {
-			return fmt.Errorf("failed to process hardlink: %w", err)
+			return fmt.Errorf("(io) failed to process hardlink: %w", err)
 		}
 		jobComplete = true
 	}
 
 	if m.IsSymlink {
 		if err := i.processSymlink(m, true); err != nil {
-			return fmt.Errorf("failed to process symlink: %w", err)
+			return fmt.Errorf("(io) failed to process symlink: %w", err)
 		}
 		jobComplete = true
 	}
 
 	if m.Metadata.IsSymlink {
 		if err := i.processSymlink(m, false); err != nil {
-			return fmt.Errorf("failed to process symlink: %w", err)
+			return fmt.Errorf("(io) failed to process symlink: %w", err)
 		}
 		jobComplete = true
 	}

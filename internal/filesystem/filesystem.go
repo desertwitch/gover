@@ -97,7 +97,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error walking share: %w", err)
+		return nil, fmt.Errorf("(fs) error walking share: %w", err)
 	}
 
 	for _, m := range preSelection {

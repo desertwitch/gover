@@ -51,7 +51,7 @@ func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 
 			metadata, err := f.getMetadata(path)
 			if err != nil {
-				return fmt.Errorf("failed to get metadata: %w", err)
+				return fmt.Errorf("(fs-parents) failed to get metadata: %w", err)
 			}
 			thisElement.Metadata = metadata
 

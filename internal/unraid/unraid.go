@@ -76,22 +76,22 @@ func NewHandler(fsOps fsProvider, configOps configProvider) *Handler {
 func (u *Handler) EstablishSystem() (*System, error) {
 	disks, err := u.EstablishDisks()
 	if err != nil {
-		return nil, fmt.Errorf("failed establishing disks: %w", err)
+		return nil, fmt.Errorf("(unraid) failed establishing disks: %w", err)
 	}
 
 	pools, err := u.EstablishPools()
 	if err != nil {
-		return nil, fmt.Errorf("failed establishing pools: %w", err)
+		return nil, fmt.Errorf("(unraid) failed establishing pools: %w", err)
 	}
 
 	shares, err := u.EstablishShares(disks, pools)
 	if err != nil {
-		return nil, fmt.Errorf("failed establishing shares: %w", err)
+		return nil, fmt.Errorf("(unraid) failed establishing shares: %w", err)
 	}
 
 	array, err := u.EstablishArray(disks)
 	if err != nil {
-		return nil, fmt.Errorf("failed establishing array: %w", err)
+		return nil, fmt.Errorf("(unraid) failed establishing array: %w", err)
 	}
 
 	system := &System{

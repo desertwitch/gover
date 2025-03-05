@@ -100,29 +100,29 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *taskHandlers) error {
 	files, err := deps.FSHandler.GetMoveables(share, src, dst)
 	if err != nil {
-		return fmt.Errorf("failed to get moveables: %w", err)
+		return fmt.Errorf("(main) failed to get moveables: %w", err)
 	}
 
 	if dst == nil {
 		files, err = deps.AllocHandler.AllocateArrayDestinations(files)
 		if err != nil {
-			return fmt.Errorf("failed to allocate array destinations: %w", err)
+			return fmt.Errorf("(main) failed to allocate array destinations: %w", err)
 		}
 	}
 
 	files, err = deps.FSHandler.EstablishPaths(files)
 	if err != nil {
-		return fmt.Errorf("failed to establish paths: %w", err)
+		return fmt.Errorf("(main) failed to establish paths: %w", err)
 	}
 
 	files, err = validation.ValidateMoveables(files)
 	if err != nil {
-		return fmt.Errorf("failed to validate moveables: %w", err)
+		return fmt.Errorf("(main) failed to validate moveables: %w", err)
 	}
 
 	if err := deps.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 		if !errors.Is(err, io.ErrContextError) {
-			return fmt.Errorf("failed to move moveables: %w", err)
+			return fmt.Errorf("(main) failed to move moveables: %w", err)
 		}
 	}
 

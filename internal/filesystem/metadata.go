@@ -23,7 +23,7 @@ func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
 
 	if err := f.UnixOps.Lstat(path, &stat); err != nil {
-		return nil, fmt.Errorf("failed to lstat: %w", err)
+		return nil, fmt.Errorf("(fs-metadata) failed to lstat: %w", err)
 	}
 
 	metadata := &Metadata{
@@ -41,7 +41,7 @@ func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	if metadata.IsSymlink {
 		symlinkTarget, err := f.OSOps.Readlink(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read symlink: %w", err)
+			return nil, fmt.Errorf("(fs-metadata) failed to read symlink: %w", err)
 		}
 		metadata.SymlinkTo = symlinkTarget
 	}
