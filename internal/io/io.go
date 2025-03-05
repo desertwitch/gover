@@ -76,7 +76,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 		job := &ProgressReport{}
 
 		if err := i.processMoveable(ctx, m, job); err != nil {
-			slog.Warn("Skipped job: failure during processing for job",
+			slog.Warn("Skipped job: failure during processing",
 				"path", m.DestPath,
 				"err", err,
 				"job", m.SourcePath,
@@ -93,9 +93,10 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 
 		for _, h := range m.Hardlinks {
 			if err := i.processMoveable(ctx, h, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing for subjob",
+				slog.Warn("Skipped subjob: failure during processing",
 					"path", h.DestPath,
 					"err", err,
+					"subjob", h.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -105,6 +106,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 
 			slog.Info("Processed (hardlink):",
 				"path", h.DestPath,
+				"subjob", h.SourcePath,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
 			)
@@ -112,9 +114,10 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 
 		for _, s := range m.Symlinks {
 			if err := i.processMoveable(ctx, s, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing for subjob",
+				slog.Warn("Skipped subjob: failure during processing",
 					"path", s.DestPath,
 					"err", err,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -124,6 +127,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 
 			slog.Info("Processed (symlink):",
 				"path", s.DestPath,
+				"subjob", s.SourcePath,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
 			)
@@ -157,9 +161,9 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 	}()
 
 	if inUse, err := i.FSOps.IsFileInUse(m.SourcePath); err != nil {
-		return fmt.Errorf("(io) failed checking if source file is in use: %w", err)
+		return fmt.Errorf("(io) failed to check src in use: %w", err)
 	} else if inUse {
-		return ErrSourceFileInUse
+		return fmt.Errorf("(io) %w", ErrSourceFileInUse)
 	}
 
 	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
@@ -196,13 +200,13 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 
 	if m.Metadata.IsSymlink {
 		if err := i.processSymlink(m, false); err != nil {
-			return fmt.Errorf("(io) failed to process symlink: %w", err)
+			return fmt.Errorf("(io) failed to process ext symlink: %w", err)
 		}
 		jobComplete = true
 	}
 
 	if !jobComplete {
-		return ErrNothingToProcess
+		return fmt.Errorf("(io) %w", ErrNothingToProcess)
 	}
 
 	return nil

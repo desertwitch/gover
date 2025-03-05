@@ -91,7 +91,7 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)
 	if err != nil {
-		return nil, -1, fmt.Errorf("(alloc-splitlvl) failed deriving subpath: %w", err)
+		return nil, -1, fmt.Errorf("(alloc-splitlvl) failed to rel %w", err)
 	}
 
 	pathParts := strings.Split(relPath, string(os.PathSeparator))

@@ -33,7 +33,7 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
 
 	srcFile, err := i.OSOps.Open(m.SourcePath)
 	if err != nil {
-		return fmt.Errorf("(io-movefile) failed to open source file: %w", err)
+		return fmt.Errorf("(io-movefile) failed to open src: %w", err)
 	}
 	defer srcFile.Close()
 
@@ -46,7 +46,7 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
 
 	dstFile, err := i.OSOps.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, os.FileMode(m.Metadata.Perms))
 	if err != nil {
-		return fmt.Errorf("(io-movefile) failed to open destination file %s: %w", tmpPath, err)
+		return fmt.Errorf("(io-movefile) failed to open dst: %w", err)
 	}
 	defer dstFile.Close()
 
@@ -61,14 +61,14 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
 
 	if _, err := io.Copy(multiWriter, ctxReader); err != nil {
 		if errors.Is(err, context.Canceled) {
-			return fmt.Errorf("(io-movefile) transfer canceled: %w", err)
+			return fmt.Errorf("(io-movefile) canceled: %w", err)
 		}
 
-		return fmt.Errorf("(io-movefile) failed to copy file: %w", err)
+		return fmt.Errorf("(io-movefile) failed to copy: %w", err)
 	}
 
 	if err := dstFile.Sync(); err != nil {
-		return fmt.Errorf("(io-movefile) failed to sync destination fs: %w", err)
+		return fmt.Errorf("(io-movefile) failed to sync dst: %w", err)
 	}
 
 	srcChecksum := hex.EncodeToString(srcHasher.Sum(nil))
@@ -79,13 +79,13 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
 	}
 
 	if _, err := i.OSOps.Stat(m.DestPath); err == nil {
-		return ErrRenameExists
+		return fmt.Errorf("(io-movefile) %w", ErrRenameExists)
 	} else if !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("(io-movefile) failed to check rename destination existence: %w", err)
+		return fmt.Errorf("(io-movefile) failed to stat (pre rename existence): %w", err)
 	}
 
 	if err := i.OSOps.Rename(tmpPath, m.DestPath); err != nil {
-		return fmt.Errorf("(io-movefile) failed to rename temporary file to destination file: %w", err)
+		return fmt.Errorf("(io-movefile) failed to rename tmp file to dst file: %w", err)
 	}
 
 	transferComplete = true

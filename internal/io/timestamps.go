@@ -11,7 +11,7 @@ import (
 func (i *Handler) ensureTimestamps(batch *ProgressReport) {
 	for _, a := range batch.AnyProcessed {
 		if err := i.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
-			slog.Warn("Failure setting timestamp (skipped)",
+			slog.Warn("Failure setting a timestamp (was skipped)",
 				"path", a.GetDestPath(),
 				"err", err,
 			)
@@ -24,7 +24,7 @@ func (i *Handler) ensureTimestamps(batch *ProgressReport) {
 func (i *Handler) ensureTimestamp(path string, metadata *filesystem.Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
 	if err := i.UnixOps.UtimesNano(path, ts); err != nil {
-		return fmt.Errorf("(io-times) failed to set timestamp: %w", err)
+		return fmt.Errorf("(io-times) failed to utimesnano: %w", err)
 	}
 
 	return nil

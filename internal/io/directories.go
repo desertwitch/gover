@@ -16,17 +16,17 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	for dir != nil {
 		if _, err := i.OSOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
 			if err := i.UnixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
-				return fmt.Errorf("(io-ensuredirs) failed to create directory %s: %w", dir.DestPath, err)
+				return fmt.Errorf("(io-ensuredirs) failed to mkdir %s: %w", dir.DestPath, err)
 			}
 
 			job.AnyProcessed = append(job.AnyProcessed, dir)
 			job.DirsProcessed = append(job.DirsProcessed, dir)
 
 			if err := i.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
-				return fmt.Errorf("(io-ensuredirs) failed to ensure permissions: %w", err)
+				return fmt.Errorf("(io-ensuredirs) failed permissioning: %w", err)
 			}
 		} else if err != nil {
-			return fmt.Errorf("(io-ensuredirs) failed checking folder: %w", err)
+			return fmt.Errorf("(io-ensuredirs) failed to stat (existence): %w", err)
 		}
 		dir = dir.Child
 	}
@@ -47,7 +47,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
-			slog.Warn("Failure establishing directory emptiness during cleaning source directories (skipped)",
+			slog.Warn("Failure checking emptiness cleaning source directories (skipped)",
 				"path", dir.SourcePath,
 				"err", err,
 			)
@@ -56,7 +56,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.SourcePath); err != nil {
-				slog.Warn("Failure removing directory during cleaning source directories (skipped)",
+				slog.Warn("Failure removing directory cleaning source directories (skipped)",
 					"path", dir.SourcePath,
 					"err", err,
 				)
@@ -81,7 +81,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
 		if err != nil {
-			slog.Warn("Failure checking emptiness during cleaning of failed directories (skipped)",
+			slog.Warn("Failure checking emptiness cleaning failed directories (skipped)",
 				"path", dir.DestPath,
 				"err", err,
 			)
@@ -90,7 +90,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.DestPath); err != nil {
-				slog.Warn("Failure removing directory during cleaning of failed directories (skipped)",
+				slog.Warn("Failure removing directory cleaning failed directories (skipped)",
 					"path", dir.DestPath,
 					"err", err,
 				)

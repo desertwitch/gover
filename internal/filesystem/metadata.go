@@ -41,7 +41,7 @@ func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	if metadata.IsSymlink {
 		symlinkTarget, err := f.OSOps.Readlink(path)
 		if err != nil {
-			return nil, fmt.Errorf("(fs-metadata) failed to read symlink: %w", err)
+			return nil, fmt.Errorf("(fs-metadata) failed to readlink: %w", err)
 		}
 		metadata.SymlinkTo = symlinkTarget
 	}

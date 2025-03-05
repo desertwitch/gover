@@ -34,14 +34,14 @@ func (u *Handler) EstablishPools() (map[string]*Pool, error) {
 	basePath := ConfigDirPools
 
 	if exists, err := u.FSOps.Exists(basePath); !exists {
-		return nil, fmt.Errorf("(unraid-pools) pool config dir does not exist: %w", err)
+		return nil, fmt.Errorf("(unraid-pools) config dir does not exist (%s): %w", basePath, err)
 	}
 
 	pools := make(map[string]*Pool)
 
 	files, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
-		return nil, fmt.Errorf("(unraid-pools) failed to read pool config dir: %w", err)
+		return nil, fmt.Errorf("(unraid-pools) failed to readdir: %w", err)
 	}
 
 	for _, file := range files {
@@ -50,8 +50,8 @@ func (u *Handler) EstablishPools() (map[string]*Pool, error) {
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
-			if exists, err := u.FSOps.Exists(fsPath); !exists {
-				return nil, fmt.Errorf("(unraid-pools) pool mount %s does not exist: %w", fsPath, err)
+			if exists, _ := u.FSOps.Exists(fsPath); !exists {
+				return nil, fmt.Errorf("(unraid-pools) mountpoint does not exist (%s): %w", fsPath, err)
 			}
 
 			pool := &Pool{

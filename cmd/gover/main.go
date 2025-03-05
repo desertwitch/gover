@@ -41,7 +41,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 		if share.CachePool2 == nil {
 			// Cache to Array
 			if err := moveShare(ctx, share, share.CachePool, nil, handlers); err != nil {
-				slog.Warn("Skipped share due to failure",
+				slog.Warn("Skipped processing share due to failure",
 					"err", err,
 					"share", share.Name,
 				)
@@ -51,7 +51,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 		} else {
 			// Cache to Cache2
 			if err := moveShare(ctx, share, share.CachePool, share.CachePool2, handlers); err != nil {
-				slog.Warn("Skipped share due to failure",
+				slog.Warn("Skipped processing share due to failure",
 					"err", err,
 					"share", share.Name,
 				)
@@ -75,7 +75,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 			// Array to Cache
 			for _, disk := range system.Array.Disks {
 				if err := moveShare(ctx, share, disk, share.CachePool, handlers); err != nil {
-					slog.Warn("Skipped array disk of share due to failure",
+					slog.Warn("Skipped processing array disk of share due to failure",
 						"err", err,
 						"share", share.Name,
 					)
@@ -86,7 +86,7 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 		} else {
 			// Cache2 to Cache
 			if err := moveShare(ctx, share, share.CachePool2, share.CachePool, handlers); err != nil {
-				slog.Warn("Skipped share due to failure",
+				slog.Warn("Skipped processing share due to failure",
 					"err", err,
 					"share", share.Name,
 				)
@@ -100,13 +100,13 @@ func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandle
 func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *taskHandlers) error {
 	files, err := deps.FSHandler.GetMoveables(share, src, dst)
 	if err != nil {
-		return fmt.Errorf("(main) failed to get moveables: %w", err)
+		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
 	if dst == nil {
 		files, err = deps.AllocHandler.AllocateArrayDestinations(files)
 		if err != nil {
-			return fmt.Errorf("(main) failed to allocate array destinations: %w", err)
+			return fmt.Errorf("(main) failed to allocate: %w", err)
 		}
 	}
 
@@ -117,12 +117,12 @@ func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, d
 
 	files, err = validation.ValidateMoveables(files)
 	if err != nil {
-		return fmt.Errorf("(main) failed to validate moveables: %w", err)
+		return fmt.Errorf("(main) failed to validate: %w", err)
 	}
 
 	if err := deps.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
 		if !errors.Is(err, io.ErrContextError) {
-			return fmt.Errorf("(main) failed to move moveables: %w", err)
+			return fmt.Errorf("(main) failed to move: %w", err)
 		}
 	}
 
@@ -167,7 +167,7 @@ func main() {
 
 	system, err := unraidOps.EstablishSystem()
 	if err != nil {
-		slog.Error("failed to establish unraid system",
+		slog.Error("Failed to establish (parts of) the Unraid system.",
 			"err", err,
 		)
 

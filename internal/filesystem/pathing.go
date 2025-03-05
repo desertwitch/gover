@@ -12,7 +12,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	for _, m := range moveables {
 		existsPath, err := f.ExistsOnStorage(m)
 		if err != nil {
-			slog.Warn("Skipped job: failed establishing path existence for job",
+			slog.Warn("Skipped job: failed establishing path existence",
 				"err", err,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
@@ -21,7 +21,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 			continue
 		}
 		if existsPath != "" {
-			slog.Warn("Skipped job: destination path already exists for job",
+			slog.Warn("Skipped job: destination path already exists",
 				"path", existsPath,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
@@ -31,7 +31,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 		}
 
 		if err := establishPath(m); err != nil {
-			slog.Warn("Skipped job: cannot set destination path for job",
+			slog.Warn("Skipped job: cannot set destination path",
 				"err", err,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
@@ -46,6 +46,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob",
 					"err", err,
+					"subjob", h.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -56,6 +57,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 			if existsPath != "" {
 				slog.Warn("Skipped job: destination path already exists for subjob",
 					"path", existsPath,
+					"subjob", h.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -67,6 +69,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 				slog.Warn("Skipped job: cannot set destination path for subjob",
 					"path", h.SourcePath,
 					"err", err,
+					"subjob", h.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -85,6 +88,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 			if err != nil {
 				slog.Warn("Skipped job: failed establishing path existence for subjob",
 					"err", err,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -95,6 +99,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 			if existsPath != "" {
 				slog.Warn("Skipped job: destination path already exists for subjob",
 					"path", existsPath,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -106,6 +111,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 				slog.Warn("Skipped job: cannot set destination path for subjob",
 					"path", s.SourcePath,
 					"err", err,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -126,7 +132,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 func establishPath(m *Moveable) error {
 	if m.Dest == nil {
-		return ErrNilDestination
+		return fmt.Errorf("(fs-paths) %w", ErrNilDestination)
 	}
 
 	if !filepath.IsAbs(m.SourcePath) {
@@ -135,12 +141,12 @@ func establishPath(m *Moveable) error {
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return fmt.Errorf("(fs-paths) failed to rel path: %w", err)
+		return fmt.Errorf("(fs-paths) failed to rel: %w", err)
 	}
 	m.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 
 	if err := establishRelatedDirPaths(m); err != nil {
-		return fmt.Errorf("(fs-paths) failed related dir path generation: %w", err)
+		return fmt.Errorf("(fs-paths) failed related dir pathing: %w", err)
 	}
 
 	return nil
@@ -148,14 +154,14 @@ func establishPath(m *Moveable) error {
 
 func establishRelatedDirPaths(m *Moveable) error {
 	if m.RootDir == nil {
-		return ErrNilDirRoot
+		return fmt.Errorf("(fs-dirpaths) %w", ErrNilDirRoot)
 	}
 
 	dir := m.RootDir
 	for dir != nil {
 		relPath, err := filepath.Rel(m.Source.GetFSPath(), dir.SourcePath)
 		if err != nil {
-			return fmt.Errorf("(fs-dirpaths) failed to rel path: %w", err)
+			return fmt.Errorf("(fs-dirpaths) failed to rel: %w", err)
 		}
 		dir.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 		dir = dir.Child

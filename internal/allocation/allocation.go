@@ -54,6 +54,7 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 				slog.Warn("Skipped job: failed to allocate array destination for subjob",
 					"path", s.SourcePath,
 					"err", err,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", s.Share.Name,
 				)

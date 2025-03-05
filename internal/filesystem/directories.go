@@ -69,7 +69,7 @@ func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 	}
 
 	if prevElement == nil {
-		return ErrNilDirRoot
+		return fmt.Errorf("(fs-parents) %w", ErrNilDirRoot)
 	}
 	m.RootDir = prevElement
 

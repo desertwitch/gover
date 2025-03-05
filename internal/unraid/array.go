@@ -41,7 +41,7 @@ func (u *Handler) EstablishArray(disks map[string]*Disk) (*Array, error) {
 
 	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
 	if err != nil {
-		return nil, fmt.Errorf("(unraid-array) failed to load disk state file %s: %w", stateFile, err)
+		return nil, fmt.Errorf("(unraid-array) failed to load array state file: %w", err)
 	}
 
 	array := &Array{
@@ -63,7 +63,7 @@ func (u *Handler) EstablishDisks() (map[string]*Disk, error) {
 
 	entries, err := u.FSOps.ReadDir(basePath)
 	if err != nil {
-		return nil, fmt.Errorf("(unraid-array) failed to read mounts at %s: %w", basePath, err)
+		return nil, fmt.Errorf("(unraid-array) failed to readdir: %w", err)
 	}
 
 	for _, entry := range entries {

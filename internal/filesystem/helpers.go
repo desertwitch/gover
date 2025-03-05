@@ -131,7 +131,7 @@ func (f *Handler) IsFileInUse(path string) (bool, error) {
 func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return false, "", fmt.Errorf("(fs-existson) failed to rel path: %w", err)
+		return false, "", fmt.Errorf("(fs-existson) failed to rel: %w", err)
 	}
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
@@ -141,7 +141,7 @@ func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Sto
 			return false, "", nil
 		}
 
-		return false, "", fmt.Errorf("(fs-existson) failed to check existence: %w", err)
+		return false, "", fmt.Errorf("(fs-existson) failed to stat: %w", err)
 	}
 
 	return true, dstPath, nil

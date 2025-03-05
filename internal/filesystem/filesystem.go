@@ -60,7 +60,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 
 	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			slog.Warn("Failure for path during walking of directory tree (skipped)",
+			slog.Warn("Failure for path during walking of directory tree (was skipped)",
 				"path", path,
 				"err", err,
 				"share", share.Name,
@@ -73,7 +73,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		if d.IsDir() {
 			isEmptyDir, err = f.IsEmptyFolder(path)
 			if err != nil {
-				slog.Warn("Failure checking directory for emptiness during walking of tree (skipped)",
+				slog.Warn("Failure checking directory for emptiness during walking of tree (was skipped)",
 					"path", path,
 					"err", err,
 					"share", share.Name,
@@ -97,7 +97,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("(fs) error walking share: %w", err)
+		return nil, fmt.Errorf("(fs) error walking %s: %w", shareDir, err)
 	}
 
 	for _, m := range preSelection {
@@ -148,7 +148,7 @@ func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
 
 				continue
 			} else if inUse {
-				slog.Warn("Skipped job: file is in use",
+				slog.Warn("Skipped job: source file is in use",
 					"err", err,
 					"job", m.SourcePath,
 					"share", m.Share.Name,

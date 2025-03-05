@@ -14,7 +14,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 
 	for _, m := range moveables {
 		if err := validateMoveable(m); err != nil {
-			slog.Warn("Skipped job: failed pre-move validation for job",
+			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,
 				"job", m.SourcePath,
 				"share", m.Share.Name,
@@ -30,6 +30,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 				slog.Warn("Skipped job: failed pre-move validation for subjob",
 					"path", h.SourcePath,
 					"err", err,
+					"subjob", h.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
@@ -51,6 +52,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 				slog.Warn("Skipped job: failed pre-move validation for subjob",
 					"path", s.SourcePath,
 					"err", err,
+					"subjob", s.SourcePath,
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
