@@ -8,10 +8,6 @@ linters:
             - varnamelen
             - wrapcheck
             - wsl
-# issues:
-#     exclude-rules:
-#         - path: ".*\\.go"
-#           text: "result 0 \\(error\\) is always nil"
 
 linters-settings:
     cyclop:

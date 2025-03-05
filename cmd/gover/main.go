@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -120,7 +121,9 @@ func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, d
 	}
 
 	if err := deps.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-		return fmt.Errorf("failed to move moveables: %w", err)
+		if !errors.Is(err, io.ErrContextError) {
+			return fmt.Errorf("failed to move moveables: %w", err)
+		}
 	}
 
 	return nil

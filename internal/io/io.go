@@ -136,7 +136,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 	i.cleanDirectoryStructure(batch)
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return ErrContextError
 	}
 
 	return nil

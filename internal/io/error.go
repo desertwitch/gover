@@ -8,4 +8,5 @@ var (
 	ErrHashMismatch     = errors.New("hash mismatch")
 	ErrRenameExists     = errors.New("rename destination already exists")
 	ErrNothingToProcess = errors.New("moveable with nothing process")
+	ErrContextError     = errors.New("context error")
 )
