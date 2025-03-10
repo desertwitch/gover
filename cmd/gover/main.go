@@ -29,8 +29,6 @@ type taskHandlers struct {
 func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.System, deps *taskHandlers) {
 	defer wg.Done()
 
-	var queueWG sync.WaitGroup
-
 	files, err := getFilesBySystem(ctx, system, deps)
 	if err != nil {
 		slog.Error("Failure enumerating queue", "err", err)
@@ -43,12 +41,13 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 
 	bqueues := bqueue.GetQueuesUnsafe()
 
-	maxWorkers := runtime.NumCPU()
-	semaphore := make(chan struct{}, maxWorkers)
-
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
 	ioOps := io.NewHandler(deps.AllocHandler, deps.FSHandler, osProvider, unixProvider)
+
+	var queueWG sync.WaitGroup
+	maxWorkers := runtime.NumCPU()
+	semaphore := make(chan struct{}, maxWorkers)
 
 	for _, q := range bqueues {
 		queueWG.Add(1)
@@ -65,6 +64,7 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 			}
 		}(q)
 	}
+
 	queueWG.Wait()
 }
 
