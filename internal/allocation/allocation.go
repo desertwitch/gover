@@ -29,20 +29,6 @@ func NewHandler(fsOps fsProvider) *Handler {
 	}
 }
 
-func (a *Handler) getAlreadyAllocated(disk *unraid.Disk) uint64 {
-	a.RLock()
-	defer a.RUnlock()
-
-	return a.alreadyAllocated[disk]
-}
-
-func (a *Handler) addAlreadyAllocated(disk *unraid.Disk, size uint64) {
-	a.Lock()
-	defer a.Unlock()
-
-	a.alreadyAllocated[disk] += size
-}
-
 func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	filtered := []*filesystem.Moveable{}
 
