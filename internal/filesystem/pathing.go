@@ -20,7 +20,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 			continue
 		}
-		if existsPath != "" {
+		if !m.Metadata.IsDir && existsPath != "" {
 			slog.Warn("Skipped job: destination path already exists",
 				"path", existsPath,
 				"job", m.SourcePath,

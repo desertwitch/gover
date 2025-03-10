@@ -2,9 +2,11 @@ package io
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"golang.org/x/sys/unix"
 )
 
 func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error {
@@ -30,14 +32,23 @@ func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error
 }
 
 func (i *Handler) processDirectory(m *filesystem.Moveable) error {
+	dirExisted := false
+
 	if err := i.UnixOps.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
-		return fmt.Errorf("(io-dir) failed to mkdir: %w", err)
+		if !errors.Is(err, unix.EEXIST) {
+			return fmt.Errorf("(io-dir) failed to mkdir: %w", err)
+		}
+		dirExisted = true
 	}
+
 	if err := i.OSOps.Remove(m.SourcePath); err != nil {
 		return fmt.Errorf("(io-dir) failed to remove src after move: %w", err)
 	}
-	if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
-		return fmt.Errorf("(io-dir) failed to ensure permissions: %w", err)
+
+	if !dirExisted {
+		if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
+			return fmt.Errorf("(io-dir) failed to ensure permissions: %w", err)
+		}
 	}
 
 	return nil

@@ -1,4 +1,3 @@
-- pathing: empty folder exists, source removal where?
 - io: zfs datasets
 - io: nocow for btrfs
 - pkg: configuration handling
