@@ -7,30 +7,30 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-type BucketQueue struct {
+type QueueManager struct {
 	sync.RWMutex
-	items map[unraid.Storeable]*QueueManager
+	items map[unraid.Storeable]*DestinationQueue
 }
 
-func NewBucketQueue() *BucketQueue {
-	return &BucketQueue{
-		items: make(map[unraid.Storeable]*QueueManager),
+func NewQueueManager() *QueueManager {
+	return &QueueManager{
+		items: make(map[unraid.Storeable]*DestinationQueue),
 	}
 }
 
-func (b *BucketQueue) Enqueue(items ...*filesystem.Moveable) {
+func (b *QueueManager) Enqueue(items ...*filesystem.Moveable) {
 	b.Lock()
 	defer b.Unlock()
 
 	for _, item := range items {
 		if b.items[item.Dest] == nil {
-			b.items[item.Dest] = NewQueueManager()
+			b.items[item.Dest] = NewDestinationQueue()
 		}
 		b.items[item.Dest].Enqueue(item)
 	}
 }
 
-func (b *BucketQueue) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bool) {
+func (b *QueueManager) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bool) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -41,7 +41,7 @@ func (b *BucketQueue) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bo
 	return nil, false
 }
 
-func (b *BucketQueue) GetQueueUnsafe(target unraid.Storeable) (*QueueManager, bool) {
+func (b *QueueManager) GetQueueUnsafe(target unraid.Storeable) (*DestinationQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 
@@ -52,14 +52,14 @@ func (b *BucketQueue) GetQueueUnsafe(target unraid.Storeable) (*QueueManager, bo
 	return nil, false
 }
 
-func (b *BucketQueue) GetQueuesUnsafe() map[unraid.Storeable]*QueueManager {
+func (b *QueueManager) GetQueuesUnsafe() map[unraid.Storeable]*DestinationQueue {
 	b.RLock()
 	defer b.RUnlock()
 
 	return b.items
 }
 
-type QueueManager struct {
+type DestinationQueue struct {
 	sync.Mutex
 	head       int
 	items      []*filesystem.Moveable
@@ -68,8 +68,8 @@ type QueueManager struct {
 	InProgress map[*filesystem.Moveable]struct{}
 }
 
-func NewQueueManager() *QueueManager {
-	return &QueueManager{
+func NewDestinationQueue() *DestinationQueue {
+	return &DestinationQueue{
 		items:      []*filesystem.Moveable{},
 		InProgress: make(map[*filesystem.Moveable]struct{}),
 		Success:    []*filesystem.Moveable{},
@@ -77,14 +77,14 @@ func NewQueueManager() *QueueManager {
 	}
 }
 
-func (q *QueueManager) Enqueue(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) Enqueue(items ...*filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
 	q.items = append(q.items, items...)
 }
 
-func (q *QueueManager) Dequeue() (*filesystem.Moveable, bool) {
+func (q *DestinationQueue) Dequeue() (*filesystem.Moveable, bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -98,7 +98,7 @@ func (q *QueueManager) Dequeue() (*filesystem.Moveable, bool) {
 	return item, true
 }
 
-func (q *QueueManager) SetSuccess(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetSuccess(items ...*filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -108,7 +108,7 @@ func (q *QueueManager) SetSuccess(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *QueueManager) SetSkipped(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetSkipped(items ...*filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -118,7 +118,7 @@ func (q *QueueManager) SetSkipped(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *QueueManager) SetProcessing(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetProcessing(items ...*filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
