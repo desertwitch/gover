@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/queue"
 	"github.com/desertwitch/gover/internal/unraid"
 	"golang.org/x/sys/unix"
 )
@@ -67,14 +68,22 @@ func NewHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unix
 	}
 }
 
-func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.Moveable, batch *ProgressReport) error {
-	for _, m := range moveables {
+func (i *Handler) ProcessQueue(ctx context.Context, q *queue.QueueManager) error {
+	batch := &ProgressReport{}
+
+	for {
 		if ctx.Err() != nil {
+			break
+		}
+
+		m, ok := q.Dequeue()
+		if !ok {
 			break
 		}
 
 		job := &ProgressReport{}
 
+		q.SetProcessing(m)
 		if err := i.processMoveable(ctx, m, job); err != nil {
 			slog.Warn("Skipped job: failure during processing",
 				"path", m.DestPath,
@@ -82,9 +91,11 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 				"job", m.SourcePath,
 				"share", m.Share.Name,
 			)
+			q.SetSkipped(m)
 
 			continue
 		}
+		q.SetSuccess(m)
 
 		slog.Info("Processed:",
 			"path", m.DestPath,
@@ -92,6 +103,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 			"share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
+			q.SetProcessing(h)
 			if err := i.processMoveable(ctx, h, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing",
 					"path", h.DestPath,
@@ -100,9 +112,11 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
+				q.SetSkipped(h)
 
 				continue
 			}
+			q.SetSuccess(h)
 
 			slog.Info("Processed (hardlink):",
 				"path", h.DestPath,
@@ -113,6 +127,7 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 		}
 
 		for _, s := range m.Symlinks {
+			q.SetProcessing(s)
 			if err := i.processMoveable(ctx, s, job); err != nil {
 				slog.Warn("Skipped subjob: failure during processing",
 					"path", s.DestPath,
@@ -121,9 +136,11 @@ func (i *Handler) ProcessMoveables(ctx context.Context, moveables []*filesystem.
 					"job", m.SourcePath,
 					"share", m.Share.Name,
 				)
+				q.SetSkipped(s)
 
 				continue
 			}
+			q.SetSuccess(s)
 
 			slog.Info("Processed (symlink):",
 				"path", s.DestPath,

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/unraid"
@@ -16,6 +17,7 @@ type fsProvider interface {
 }
 
 type Handler struct {
+	sync.RWMutex
 	FSOps            fsProvider
 	alreadyAllocated map[*unraid.Disk]uint64
 }
@@ -25,6 +27,20 @@ func NewHandler(fsOps fsProvider) *Handler {
 		FSOps:            fsOps,
 		alreadyAllocated: make(map[*unraid.Disk]uint64),
 	}
+}
+
+func (a *Handler) getAlreadyAllocated(disk *unraid.Disk) uint64 {
+	a.RLock()
+	defer a.RUnlock()
+
+	return a.alreadyAllocated[disk]
+}
+
+func (a *Handler) addAlreadyAllocated(disk *unraid.Disk, size uint64) {
+	a.Lock()
+	defer a.Unlock()
+
+	a.alreadyAllocated[disk] += size
 }
 
 func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
@@ -95,7 +111,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by high water: %w", err)
 		}
-		a.alreadyAllocated[ret] += m.Metadata.Size
+		a.addAlreadyAllocated(ret, m.Metadata.Size)
 
 		return ret, nil
 
@@ -104,7 +120,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by fillup: %w", err)
 		}
-		a.alreadyAllocated[ret] += m.Metadata.Size
+		a.addAlreadyAllocated(ret, m.Metadata.Size)
 
 		return ret, nil
 
@@ -113,7 +129,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by mostfree: %w", err)
 		}
-		a.alreadyAllocated[ret] += m.Metadata.Size
+		a.addAlreadyAllocated(ret, m.Metadata.Size)
 
 		return ret, nil
 

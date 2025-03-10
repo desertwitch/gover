@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -15,8 +14,8 @@ import (
 	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/io"
+	"github.com/desertwitch/gover/internal/queue"
 	"github.com/desertwitch/gover/internal/unraid"
-	"github.com/desertwitch/gover/internal/validation"
 	"github.com/lmittmann/tint"
 )
 
@@ -27,106 +26,46 @@ type taskHandlers struct {
 	IOHandler     *io.Handler
 }
 
-func moveShares(ctx context.Context, system *unraid.System, handlers *taskHandlers) {
-	// Primary to Secondary
-	for _, share := range system.Shares {
-		if ctx.Err() != nil {
-			return
-		}
+func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.System, deps *taskHandlers) {
+	defer wg.Done()
 
-		if share.UseCache != "yes" || share.CachePool == nil {
-			continue
-		}
+	var qwg sync.WaitGroup
 
-		if share.CachePool2 == nil {
-			// Cache to Array
-			if err := moveShare(ctx, share, share.CachePool, nil, handlers); err != nil {
-				slog.Warn("Skipped processing share due to failure",
-					"err", err,
-					"share", share.Name,
-				)
-
-				continue
-			}
-		} else {
-			// Cache to Cache2
-			if err := moveShare(ctx, share, share.CachePool, share.CachePool2, handlers); err != nil {
-				slog.Warn("Skipped processing share due to failure",
-					"err", err,
-					"share", share.Name,
-				)
-
-				continue
-			}
-		}
-	}
-
-	// Secondary to Primary
-	for _, share := range system.Shares {
-		if ctx.Err() != nil {
-			return
-		}
-
-		if share.UseCache != "prefer" || share.CachePool == nil {
-			continue
-		}
-
-		if share.CachePool2 == nil {
-			// Array to Cache
-			for _, disk := range system.Array.Disks {
-				if err := moveShare(ctx, share, disk, share.CachePool, handlers); err != nil {
-					slog.Warn("Skipped processing array disk of share due to failure",
-						"err", err,
-						"share", share.Name,
-					)
-
-					continue
-				}
-			}
-		} else {
-			// Cache2 to Cache
-			if err := moveShare(ctx, share, share.CachePool2, share.CachePool, handlers); err != nil {
-				slog.Warn("Skipped processing share due to failure",
-					"err", err,
-					"share", share.Name,
-				)
-
-				continue
-			}
-		}
-	}
-}
-
-func moveShare(ctx context.Context, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *taskHandlers) error {
-	files, err := deps.FSHandler.GetMoveables(share, src, dst)
+	files, err := getFilesBySystem(ctx, system, deps)
 	if err != nil {
-		return fmt.Errorf("(main) failed to enumerate: %w", err)
+		slog.Error("Failure enumerating queue", "err", err)
+
+		return
 	}
 
-	if dst == nil {
-		files, err = deps.AllocHandler.AllocateArrayDestinations(files)
-		if err != nil {
-			return fmt.Errorf("(main) failed to allocate: %w", err)
-		}
-	}
+	bqueue := queue.NewBucketQueue()
+	bqueue.Enqueue(files...)
 
-	files, err = deps.FSHandler.EstablishPaths(files)
-	if err != nil {
-		return fmt.Errorf("(main) failed to establish paths: %w", err)
-	}
+	bqueues := bqueue.GetQueuesUnsafe()
 
-	files, err = validation.ValidateMoveables(files)
-	if err != nil {
-		return fmt.Errorf("(main) failed to validate: %w", err)
-	}
+	maxWorkers := runtime.NumCPU()
+	semaphore := make(chan struct{}, maxWorkers)
 
-	if err := deps.IOHandler.ProcessMoveables(ctx, files, &io.ProgressReport{}); err != nil {
-		if !errors.Is(err, io.ErrContextError) {
-			return fmt.Errorf("(main) failed to move: %w", err)
-		}
-	}
+	osProvider := &filesystem.OS{}
+	unixProvider := &filesystem.Unix{}
+	ioOps := io.NewHandler(deps.AllocHandler, deps.FSHandler, osProvider, unixProvider)
 
-	return nil
+	for _, q := range bqueues {
+		qwg.Add(1)
+		semaphore <- struct{}{}
+
+		go func(q *queue.QueueManager) {
+			defer qwg.Done()
+			defer func() { <-semaphore }()
+
+			if err := ioOps.ProcessQueue(ctx, q); err != nil {
+				slog.Error("Failure processing a queue", "err", err)
+
+				return
+			}
+		}(q)
+	}
+	qwg.Wait()
 }
 
 func main() {
@@ -175,10 +114,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		moveShares(ctx, system, deps)
-	}()
+	go processSystem(&wg, ctx, system, deps)
 	wg.Wait()
 
 	if ctx.Err() != nil {
