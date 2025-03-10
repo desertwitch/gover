@@ -68,10 +68,12 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 			i.Unlock()
 
 			if err != nil {
-				slog.Warn("Failure removing directory cleaning source directories (skipped)",
-					"path", dir.SourcePath,
-					"err", err,
-				)
+				if !errors.Is(err, fs.ErrNotExist) {
+					slog.Warn("Failure removing directory cleaning source directories (skipped)",
+						"path", dir.SourcePath,
+						"err", err,
+					)
+				}
 
 				continue
 			}
@@ -107,10 +109,12 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.DestPath); err != nil {
-				slog.Warn("Failure removing directory cleaning failed directories (skipped)",
-					"path", dir.DestPath,
-					"err", err,
-				)
+				if !errors.Is(err, fs.ErrNotExist) {
+					slog.Warn("Failure removing directory cleaning failed directories (skipped)",
+						"path", dir.DestPath,
+						"err", err,
+					)
+				}
 
 				continue
 			}
