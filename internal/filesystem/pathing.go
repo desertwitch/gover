@@ -20,6 +20,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 			continue
 		}
+
 		// A directory is allowed to exist, that gets handled later in IO.
 		if !m.Metadata.IsDir && existsPath != "" {
 			slog.Warn("Skipped job: destination path already exists",
