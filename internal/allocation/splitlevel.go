@@ -111,19 +111,30 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 		subPath := filepath.Join(pathParts[:maxLevel+i]...)
 		found := false
 
-		alreadyAllocated := a.getAllocatedForSubpath(subPath)
+		alreadyAllocated := a.getAllocatedsForSubpath(subPath)
 
 		for name, disk := range m.Share.IncludedDisks {
 			if _, exists := m.Share.ExcludedDisks[name]; exists {
 				continue
 			}
 
+			dirToCheck := filepath.Join(disk.FSPath, subPath)
+
+			existsPhysical, err := a.FSOps.Exists(dirToCheck)
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				slog.Warn("Skipped disk for split-level consideration",
+					"disk", name,
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
+				continue
+			}
+
 			_, existsAllocated := alreadyAllocated[disk.Name]
 
-			dirToCheck := filepath.Join(disk.FSPath, subPath)
-			existsPhysical, err := a.FSOps.Exists(dirToCheck)
-
-			if existsAllocated || (err == nil && existsPhysical) {
+			if existsPhysical || existsAllocated {
 				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
 				if err != nil {
 					slog.Warn("Skipped disk for split-level consideration",
@@ -139,15 +150,6 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 					foundDisks = append(foundDisks, disk)
 					found = true
 				}
-			} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
-				slog.Warn("Skipped disk for split-level consideration",
-					"disk", name,
-					"err", err,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-
-				continue
 			}
 		}
 

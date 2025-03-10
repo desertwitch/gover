@@ -8,7 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Handler) getAllocatedForSubpath(subPath string) map[string]*unraid.Disk {
+func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]*unraid.Disk {
 	a.RLock()
 	defer a.RUnlock()
 
