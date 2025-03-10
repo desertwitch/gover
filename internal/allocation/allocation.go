@@ -16,16 +16,24 @@ type fsProvider interface {
 	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 }
 
+type allocInfo struct {
+	sourcePath    string
+	sourceBase    string
+	allocatedDisk *unraid.Disk
+}
+
 type Handler struct {
 	sync.RWMutex
-	FSOps            fsProvider
-	alreadyAllocated map[*unraid.Disk]uint64
+	FSOps                 fsProvider
+	alreadyAllocated      map[*filesystem.Moveable]*allocInfo
+	alreadyAllocatedSpace map[*unraid.Disk]uint64
 }
 
 func NewHandler(fsOps fsProvider) *Handler {
 	return &Handler{
-		FSOps:            fsOps,
-		alreadyAllocated: make(map[*unraid.Disk]uint64),
+		FSOps:                 fsOps,
+		alreadyAllocated:      make(map[*filesystem.Moveable]*allocInfo),
+		alreadyAllocatedSpace: make(map[*unraid.Disk]uint64),
 	}
 }
 
@@ -97,7 +105,8 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by high water: %w", err)
 		}
-		a.addAlreadyAllocated(ret, m.Metadata.Size)
+		a.addAllocated(m, ret)
+		a.addAllocatedSpace(ret, m.Metadata.Size)
 
 		return ret, nil
 
@@ -106,7 +115,8 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by fillup: %w", err)
 		}
-		a.addAlreadyAllocated(ret, m.Metadata.Size)
+		a.addAllocated(m, ret)
+		a.addAllocatedSpace(ret, m.Metadata.Size)
 
 		return ret, nil
 
@@ -115,7 +125,8 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by mostfree: %w", err)
 		}
-		a.addAlreadyAllocated(ret, m.Metadata.Size)
+		a.addAllocated(m, ret)
+		a.addAllocatedSpace(ret, m.Metadata.Size)
 
 		return ret, nil
 

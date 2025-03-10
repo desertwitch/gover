@@ -54,7 +54,7 @@ func (a *Handler) AllocateHighWaterDisk(m *filesystem.Moveable, includedDisks ma
 			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
 		})
 		for _, disk := range disks {
-			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAlreadyAllocated(disk) + m.Metadata.Size))
+			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration",
 					"disk", disk.Name,

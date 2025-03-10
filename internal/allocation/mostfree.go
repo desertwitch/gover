@@ -38,7 +38,7 @@ func (a *Handler) AllocateMostFreeDisk(m *filesystem.Moveable, includedDisks map
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAlreadyAllocated(disk) + m.Metadata.Size))
+		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration",
 				"disk", disk.Name,

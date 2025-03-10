@@ -21,6 +21,7 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 
 			job.AnyCreated = append(job.AnyCreated, dir)
 			job.DirsCreated = append(job.DirsCreated, dir)
+			job.DirsProcessed = append(job.DirsProcessed, dir)
 
 			if err := i.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
 				return fmt.Errorf("(io-ensuredirs) failed permissioning: %w", err)
@@ -50,13 +51,13 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
+			if errors.Is(err, fs.ErrNotExist) {
+				removed[dir.SourcePath] = struct{}{}
+			} else {
 				slog.Warn("Failure checking emptiness cleaning source directories (skipped)",
 					"path", dir.SourcePath,
 					"err", err,
 				)
-			} else {
-				removed[dir.SourcePath] = struct{}{}
 			}
 
 			continue
@@ -68,7 +69,9 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 			i.Unlock()
 
 			if err != nil {
-				if !errors.Is(err, fs.ErrNotExist) {
+				if errors.Is(err, fs.ErrNotExist) {
+					removed[dir.SourcePath] = struct{}{}
+				} else {
 					slog.Warn("Failure removing directory cleaning source directories (skipped)",
 						"path", dir.SourcePath,
 						"err", err,
@@ -96,20 +99,22 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 		}
 		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
+			if errors.Is(err, fs.ErrNotExist) {
+				removed[dir.DestPath] = struct{}{}
+			} else {
 				slog.Warn("Failure checking emptiness cleaning failed directories (skipped)",
 					"path", dir.DestPath,
 					"err", err,
 				)
-			} else {
-				removed[dir.DestPath] = struct{}{}
 			}
 
 			continue
 		}
 		if isEmpty {
 			if err := i.OSOps.Remove(dir.DestPath); err != nil {
-				if !errors.Is(err, fs.ErrNotExist) {
+				if errors.Is(err, fs.ErrNotExist) {
+					removed[dir.DestPath] = struct{}{}
+				} else {
 					slog.Warn("Failure removing directory cleaning failed directories (skipped)",
 						"path", dir.DestPath,
 						"err", err,
@@ -118,6 +123,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
 
 				continue
 			}
+
 			removed[dir.DestPath] = struct{}{}
 		}
 	}

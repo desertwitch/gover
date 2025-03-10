@@ -1,17 +1,52 @@
 package allocation
 
-import "github.com/desertwitch/gover/internal/unraid"
+import (
+	"path/filepath"
+	"strings"
 
-func (a *Handler) getAlreadyAllocated(disk *unraid.Disk) uint64 {
+	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/unraid"
+)
+
+func (a *Handler) getAllocatedForSubpath(subPath string) map[string]*unraid.Disk {
 	a.RLock()
 	defer a.RUnlock()
 
-	return a.alreadyAllocated[disk]
+	found := make(map[string]*unraid.Disk)
+
+	for _, allocInfo := range a.alreadyAllocated {
+		checkPath := filepath.Join(allocInfo.sourceBase, subPath)
+		if strings.HasPrefix(allocInfo.sourcePath, checkPath) {
+			found[allocInfo.allocatedDisk.Name] = allocInfo.allocatedDisk
+		}
+	}
+
+	return found
 }
 
-func (a *Handler) addAlreadyAllocated(disk *unraid.Disk, size uint64) {
+func (a *Handler) getAllocatedSpace(disk *unraid.Disk) uint64 {
+	a.RLock()
+	defer a.RUnlock()
+
+	return a.alreadyAllocatedSpace[disk]
+}
+
+func (a *Handler) addAllocated(m *filesystem.Moveable, dst *unraid.Disk) {
 	a.Lock()
 	defer a.Unlock()
 
-	a.alreadyAllocated[disk] += size
+	allocInfo := &allocInfo{
+		sourcePath:    m.SourcePath,
+		sourceBase:    m.Source.GetFSPath(),
+		allocatedDisk: dst,
+	}
+
+	a.alreadyAllocated[m] = allocInfo
+}
+
+func (a *Handler) addAllocatedSpace(disk *unraid.Disk, size uint64) {
+	a.Lock()
+	defer a.Unlock()
+
+	a.alreadyAllocatedSpace[disk] += size
 }
