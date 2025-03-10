@@ -71,7 +71,7 @@ func NewHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unix
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q *queue.QueueManager) error {
+func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) error {
 	batch := &ProgressReport{}
 
 	for {

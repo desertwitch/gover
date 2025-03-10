@@ -36,10 +36,10 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 		return
 	}
 
-	bqueue := queue.NewBucketQueue()
-	bqueue.Enqueue(files...)
+	queueMan := queue.NewQueueManager()
+	queueMan.Enqueue(files...)
 
-	bqueues := bqueue.GetQueuesUnsafe()
+	destQueues := queueMan.GetQueuesUnsafe()
 
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
@@ -49,11 +49,11 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 	maxWorkers := runtime.NumCPU()
 	semaphore := make(chan struct{}, maxWorkers)
 
-	for _, q := range bqueues {
+	for _, destQueue := range destQueues {
 		queueWG.Add(1)
 		semaphore <- struct{}{}
 
-		go func(q *queue.QueueManager) {
+		go func(q *queue.DestinationQueue) {
 			defer queueWG.Done()
 			defer func() { <-semaphore }()
 
@@ -62,7 +62,7 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 
 				return
 			}
-		}(q)
+		}(destQueue)
 	}
 
 	queueWG.Wait()
