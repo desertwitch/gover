@@ -9,7 +9,7 @@ import (
 )
 
 func (i *Handler) ensureTimestamps(batch *ProgressReport) {
-	for _, a := range batch.AnyProcessed {
+	for _, a := range batch.AnyCreated {
 		if err := i.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
 			slog.Warn("Failure setting a timestamp (was skipped)",
 				"path", a.GetDestPath(),

@@ -7,25 +7,26 @@ func mergeProgressReports(target, source *ProgressReport) {
 		return
 	}
 
-	target.AnyProcessed = append(target.AnyProcessed, source.AnyProcessed...)
+	target.AnyCreated = append(target.AnyCreated, source.AnyCreated...)
+	target.DirsCreated = append(target.DirsCreated, source.DirsCreated...)
 	target.DirsProcessed = append(target.DirsProcessed, source.DirsProcessed...)
-	target.HardlinksProcessed = append(target.HardlinksProcessed, source.HardlinksProcessed...)
-	target.MoveablesProcessed = append(target.MoveablesProcessed, source.MoveablesProcessed...)
-	target.SymlinksProcessed = append(target.SymlinksProcessed, source.SymlinksProcessed...)
+	target.HardlinksCreated = append(target.HardlinksCreated, source.HardlinksCreated...)
+	target.MoveablesCreated = append(target.MoveablesCreated, source.MoveablesCreated...)
+	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
 func addToProgressReport(p *ProgressReport, m *filesystem.Moveable) {
 	switch {
 	case m.IsHardlink:
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.HardlinksProcessed = append(p.HardlinksProcessed, m)
+		p.AnyCreated = append(p.AnyCreated, m)
+		p.HardlinksCreated = append(p.HardlinksCreated, m)
 
 	case m.IsSymlink || m.Metadata.IsSymlink:
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.SymlinksProcessed = append(p.SymlinksProcessed, m)
+		p.AnyCreated = append(p.AnyCreated, m)
+		p.SymlinksCreated = append(p.SymlinksCreated, m)
 
 	default:
-		p.AnyProcessed = append(p.AnyProcessed, m)
-		p.MoveablesProcessed = append(p.MoveablesProcessed, m)
+		p.AnyCreated = append(p.AnyCreated, m)
+		p.MoveablesCreated = append(p.MoveablesCreated, m)
 	}
 }

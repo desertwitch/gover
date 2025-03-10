@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/queue"
@@ -45,14 +46,16 @@ type relatedElement interface {
 }
 
 type ProgressReport struct {
-	AnyProcessed       []relatedElement
-	DirsProcessed      []*filesystem.RelatedDirectory
-	MoveablesProcessed []*filesystem.Moveable
-	SymlinksProcessed  []*filesystem.Moveable
-	HardlinksProcessed []*filesystem.Moveable
+	AnyCreated       []relatedElement
+	DirsCreated      []*filesystem.RelatedDirectory
+	DirsProcessed    []*filesystem.RelatedDirectory
+	MoveablesCreated []*filesystem.Moveable
+	SymlinksCreated  []*filesystem.Moveable
+	HardlinksCreated []*filesystem.Moveable
 }
 
 type Handler struct {
+	sync.Mutex
 	AllocOps allocProvider
 	FSOps    fsProvider
 	OSOps    osProvider

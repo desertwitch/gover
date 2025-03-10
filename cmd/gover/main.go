@@ -29,7 +29,7 @@ type taskHandlers struct {
 func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.System, deps *taskHandlers) {
 	defer wg.Done()
 
-	var qwg sync.WaitGroup
+	var queueWG sync.WaitGroup
 
 	files, err := getFilesBySystem(ctx, system, deps)
 	if err != nil {
@@ -51,11 +51,11 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 	ioOps := io.NewHandler(deps.AllocHandler, deps.FSHandler, osProvider, unixProvider)
 
 	for _, q := range bqueues {
-		qwg.Add(1)
+		queueWG.Add(1)
 		semaphore <- struct{}{}
 
 		go func(q *queue.QueueManager) {
-			defer qwg.Done()
+			defer queueWG.Done()
 			defer func() { <-semaphore }()
 
 			if err := ioOps.ProcessQueue(ctx, q); err != nil {
@@ -65,7 +65,7 @@ func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.Syste
 			}
 		}(q)
 	}
-	qwg.Wait()
+	queueWG.Wait()
 }
 
 func main() {
