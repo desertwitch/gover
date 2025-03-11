@@ -30,12 +30,12 @@ func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType
 		if share.GetCachePool2() == nil {
 			// Cache to Array
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.GetCachePool(), nil, deps)
+				enumerateShareWorker(ch, share, share.GetCachePool(), nil, deps)
 			})
 		} else {
 			// Cache to Cache2
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.GetCachePool(), share.GetCachePool2(), deps)
+				enumerateShareWorker(ch, share, share.GetCachePool(), share.GetCachePool2(), deps)
 			})
 		}
 	}
@@ -54,13 +54,13 @@ func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType
 			// Array to Cache
 			for _, disk := range disks {
 				tasks = append(tasks, func() {
-					enumerationWorker(ch, share, disk, share.GetCachePool(), deps)
+					enumerateShareWorker(ch, share, disk, share.GetCachePool(), deps)
 				})
 			}
 		} else {
 			// Cache2 to Cache
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.GetCachePool2(), share.GetCachePool(), deps)
+				enumerateShareWorker(ch, share, share.GetCachePool2(), share.GetCachePool(), deps)
 			})
 		}
 	}
@@ -92,7 +92,7 @@ func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType
 	return files, nil
 }
 
-func enumerationWorker(ch chan<- []*filesystem.Moveable, share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) {
+func enumerateShareWorker(ch chan<- []*filesystem.Moveable, share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) {
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
 		if _, ok := src.(filesystem.DiskType); ok {
