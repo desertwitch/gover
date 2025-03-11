@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/desertwitch/gover/internal/adapters/unraid"
 	"github.com/desertwitch/gover/internal/generic/allocation"
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/io"
 	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/storage"
-	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
 
