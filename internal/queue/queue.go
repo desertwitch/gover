@@ -7,18 +7,18 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-type QueueManager struct {
+type Manager struct {
 	sync.RWMutex
 	items map[unraid.Storeable]*DestinationQueue
 }
 
-func NewQueueManager() *QueueManager {
-	return &QueueManager{
+func NewManager() *Manager {
+	return &Manager{
 		items: make(map[unraid.Storeable]*DestinationQueue),
 	}
 }
 
-func (b *QueueManager) Enqueue(items ...*filesystem.Moveable) {
+func (b *Manager) Enqueue(items ...*filesystem.Moveable) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -30,7 +30,7 @@ func (b *QueueManager) Enqueue(items ...*filesystem.Moveable) {
 	}
 }
 
-func (b *QueueManager) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bool) {
+func (b *Manager) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bool) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -41,7 +41,7 @@ func (b *QueueManager) Dequeue(target unraid.Storeable) (*filesystem.Moveable, b
 	return nil, false
 }
 
-func (b *QueueManager) GetQueueUnsafe(target unraid.Storeable) (*DestinationQueue, bool) {
+func (b *Manager) GetQueueUnsafe(target unraid.Storeable) (*DestinationQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 
@@ -52,7 +52,7 @@ func (b *QueueManager) GetQueueUnsafe(target unraid.Storeable) (*DestinationQueu
 	return nil, false
 }
 
-func (b *QueueManager) GetQueuesUnsafe() map[unraid.Storeable]*DestinationQueue {
+func (b *Manager) GetQueuesUnsafe() map[unraid.Storeable]*DestinationQueue {
 	b.RLock()
 	defer b.RUnlock()
 

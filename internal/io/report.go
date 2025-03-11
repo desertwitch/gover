@@ -2,7 +2,16 @@ package io
 
 import "github.com/desertwitch/gover/internal/filesystem"
 
-func mergeProgressReports(target, source *ProgressReport) {
+type creationReport struct {
+	AnyCreated       []relatedElement
+	DirsCreated      []*filesystem.RelatedDirectory
+	DirsProcessed    []*filesystem.RelatedDirectory
+	MoveablesCreated []*filesystem.Moveable
+	SymlinksCreated  []*filesystem.Moveable
+	HardlinksCreated []*filesystem.Moveable
+}
+
+func mergecreationReports(target, source *creationReport) {
 	if target == nil || source == nil {
 		return
 	}
@@ -15,7 +24,7 @@ func mergeProgressReports(target, source *ProgressReport) {
 	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
-func addToProgressReport(p *ProgressReport, m *filesystem.Moveable) {
+func addTocreationReport(p *creationReport, m *filesystem.Moveable) {
 	switch {
 	case m.IsHardlink:
 		p.AnyCreated = append(p.AnyCreated, m)

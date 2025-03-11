@@ -19,49 +19,50 @@ import (
 	"github.com/lmittmann/tint"
 )
 
-type taskHandlers struct {
+type depCoordinator struct {
 	FSHandler     *filesystem.Handler
 	UnraidHandler *unraid.Handler
 	AllocHandler  *allocation.Handler
-	IOHandler     *io.Handler
 }
 
-func processSystem(wg *sync.WaitGroup, ctx context.Context, system *unraid.System, deps *taskHandlers) {
-	defer wg.Done()
-
-	files, err := getFilesBySystem(ctx, system, deps)
-	if err != nil {
-		slog.Error("Failure enumerating queue", "err", err)
-
-		return
+func newDepCoordinator(fsOps *filesystem.Handler, unraidOps *unraid.Handler, allocOps *allocation.Handler) *depCoordinator {
+	return &depCoordinator{
+		FSHandler:     fsOps,
+		UnraidHandler: unraidOps,
+		AllocHandler:  allocOps,
 	}
+}
 
-	queueMan := queue.NewQueueManager()
-	queueMan.Enqueue(files...)
-
-	destQueues := queueMan.GetQueuesUnsafe()
+func processSystem(ctx context.Context, wg *sync.WaitGroup, system *unraid.System, deps *depCoordinator) {
+	defer wg.Done()
 
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
-	ioOps := io.NewHandler(deps.AllocHandler, deps.FSHandler, osProvider, unixProvider)
+
+	queueMan := queue.NewManager()
+	ioOps := io.NewHandler(deps.FSHandler, osProvider, unixProvider)
+
+	files, err := enumSystem(ctx, system, deps)
+	if err != nil {
+		return
+	}
+
+	queueMan.Enqueue(files...)
+	destQueues := queueMan.GetQueuesUnsafe()
 
 	var queueWG sync.WaitGroup
 	maxWorkers := runtime.NumCPU()
 	semaphore := make(chan struct{}, maxWorkers)
 
 	for _, destQueue := range destQueues {
-		queueWG.Add(1)
 		semaphore <- struct{}{}
 
+		queueWG.Add(1)
 		go func(q *queue.DestinationQueue) {
 			defer queueWG.Done()
 			defer func() { <-semaphore }()
 
-			if err := ioOps.ProcessQueue(ctx, q); err != nil {
-				slog.Error("Failure processing a queue", "err", err)
-
-				return
-			}
+			ioOps.ProcessQueue(ctx, q)
 		}(destQueue)
 	}
 
@@ -95,14 +96,8 @@ func main() {
 	fsOps := filesystem.NewHandler(osProvider, unixProvider)
 	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewHandler(fsOps)
-	ioOps := io.NewHandler(allocOps, fsOps, osProvider, unixProvider)
 
-	deps := &taskHandlers{
-		FSHandler:     fsOps,
-		UnraidHandler: unraidOps,
-		AllocHandler:  allocOps,
-		IOHandler:     ioOps,
-	}
+	deps := newDepCoordinator(fsOps, unraidOps, allocOps)
 
 	system, err := unraidOps.EstablishSystem()
 	if err != nil {
@@ -114,7 +109,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go processSystem(&wg, ctx, system, deps)
+	go processSystem(ctx, &wg, system, deps)
 	wg.Wait()
 
 	if ctx.Err() != nil {

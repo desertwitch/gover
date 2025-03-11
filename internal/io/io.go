@@ -13,8 +13,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type allocProvider interface{}
-
 type fsProvider interface {
 	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
@@ -45,34 +43,23 @@ type relatedElement interface {
 	GetSourcePath() string
 }
 
-type ProgressReport struct {
-	AnyCreated       []relatedElement
-	DirsCreated      []*filesystem.RelatedDirectory
-	DirsProcessed    []*filesystem.RelatedDirectory
-	MoveablesCreated []*filesystem.Moveable
-	SymlinksCreated  []*filesystem.Moveable
-	HardlinksCreated []*filesystem.Moveable
-}
-
 type Handler struct {
 	sync.Mutex
-	AllocOps allocProvider
-	FSOps    fsProvider
-	OSOps    osProvider
-	UnixOps  unixProvider
+	FSOps   fsProvider
+	OSOps   osProvider
+	UnixOps unixProvider
 }
 
-func NewHandler(allocOps allocProvider, fsOps fsProvider, osOps osProvider, unixOps unixProvider) *Handler {
+func NewHandler(fsOps fsProvider, osOps osProvider, unixOps unixProvider) *Handler {
 	return &Handler{
-		AllocOps: allocOps,
-		FSOps:    fsOps,
-		OSOps:    osOps,
-		UnixOps:  unixOps,
+		FSOps:   fsOps,
+		OSOps:   osOps,
+		UnixOps: unixOps,
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) error {
-	batch := &ProgressReport{}
+func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
+	batch := &creationReport{}
 
 	for {
 		if ctx.Err() != nil {
@@ -84,97 +71,99 @@ func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) e
 			break
 		}
 
-		job := &ProgressReport{}
+		job := &creationReport{}
 
-		q.SetProcessing(m)
-		if err := i.processMoveable(ctx, m, job); err != nil {
-			slog.Warn("Skipped job: failure during processing",
-				"path", m.DestPath,
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-			q.SetSkipped(m)
-
+		if err := i.ProcessQueueElement(ctx, m, q, job); err != nil {
 			continue
 		}
-		q.SetSuccess(m)
-
-		slog.Info("Processed:",
-			"path", m.DestPath,
-			"job", m.SourcePath,
-			"share", m.Share.Name)
 
 		for _, h := range m.Hardlinks {
-			q.SetProcessing(h)
-			if err := i.processMoveable(ctx, h, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing",
-					"path", h.DestPath,
-					"err", err,
-					"subjob", h.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				q.SetSkipped(h)
-
+			if err := i.ProcessQueueSubElement(ctx, h, m, q, job); err != nil {
 				continue
 			}
-			q.SetSuccess(h)
-
-			slog.Info("Processed (hardlink):",
-				"path", h.DestPath,
-				"subjob", h.SourcePath,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
 		}
 
 		for _, s := range m.Symlinks {
-			q.SetProcessing(s)
-			if err := i.processMoveable(ctx, s, job); err != nil {
-				slog.Warn("Skipped subjob: failure during processing",
-					"path", s.DestPath,
-					"err", err,
-					"subjob", s.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				q.SetSkipped(s)
-
+			if err := i.ProcessQueueSubElement(ctx, s, m, q, job); err != nil {
 				continue
 			}
-			q.SetSuccess(s)
-
-			slog.Info("Processed (symlink):",
-				"path", s.DestPath,
-				"subjob", s.SourcePath,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
 		}
 
-		mergeProgressReports(batch, job)
+		mergecreationReports(batch, job)
 	}
 
 	i.ensureTimestamps(batch)
 	i.cleanDirectoryStructure(batch)
+}
 
-	if ctx.Err() != nil {
-		return fmt.Errorf("(io) %w: %w", ErrContextError, ctx.Err())
+func (i *Handler) ProcessQueueElement(ctx context.Context, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
+	q.SetProcessing(elem)
+
+	if err := i.processMoveable(ctx, elem, job); err != nil {
+		slog.Warn("Skipped job: failure during processing",
+			"path", elem.DestPath,
+			"err", err,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+		q.SetSkipped(elem)
+
+		return err
 	}
+
+	q.SetSuccess(elem)
+
+	slog.Info("Processed:",
+		"path", elem.DestPath,
+		"job", elem.SourcePath,
+		"share", elem.Share.Name,
+	)
 
 	return nil
 }
 
-func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *ProgressReport) error {
+func (i *Handler) ProcessQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
+	q.SetProcessing(subelem)
+
+	if err := i.processMoveable(ctx, subelem, job); err != nil {
+		slog.Warn("Skipped subjob: failure during processing",
+			"path", subelem.DestPath,
+			"err", err,
+			"subjob", subelem.SourcePath,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+		q.SetSkipped(subelem)
+
+		return err
+	}
+
+	q.SetSuccess(subelem)
+
+	linkType := "hardlink"
+	if subelem.IsSymlink || subelem.Metadata.IsSymlink {
+		linkType = "symlink"
+	}
+
+	slog.Info(fmt.Sprintf("Processed (%s):", linkType),
+		"path", subelem.DestPath,
+		"subjob", subelem.SourcePath,
+		"job", elem.SourcePath,
+		"share", elem.Share.Name,
+	)
+
+	return nil
+}
+
+func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *creationReport) error {
 	var jobComplete bool
 
-	intermediateJob := &ProgressReport{}
+	intermediateJob := &creationReport{}
 
 	defer func() {
 		if jobComplete {
-			addToProgressReport(intermediateJob, m)
-			mergeProgressReports(job, intermediateJob)
+			addTocreationReport(intermediateJob, m)
+			mergecreationReports(job, intermediateJob)
 		} else {
 			i.cleanDirectoriesAfterFailure(intermediateJob)
 		}

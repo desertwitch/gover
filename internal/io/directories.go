@@ -10,7 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 )
 
-func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *ProgressReport) error {
+func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *creationReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -38,7 +38,7 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *Progress
 	return nil
 }
 
-func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
+func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
 	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
 	})
@@ -86,7 +86,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ProgressReport) {
 	}
 }
 
-func (i *Handler) cleanDirectoriesAfterFailure(job *ProgressReport) {
+func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
 	sort.Slice(job.DirsCreated, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsCreated[i]) > calculateDirectoryDepth(job.DirsCreated[j])
 	})

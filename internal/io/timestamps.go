@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (i *Handler) ensureTimestamps(batch *ProgressReport) {
+func (i *Handler) ensureTimestamps(batch *creationReport) {
 	for _, a := range batch.AnyCreated {
 		if err := i.ensureTimestamp(a.GetDestPath(), a.GetMetadata()); err != nil {
 			slog.Warn("Failure setting a timestamp (was skipped)",
