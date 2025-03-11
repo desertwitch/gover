@@ -3,6 +3,7 @@ package filesystem
 import (
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"path/filepath"
 	"strings"
 )
@@ -35,6 +36,20 @@ func (d *RelatedDirectory) GetSourcePath() string {
 
 func (d *RelatedDirectory) GetDestPath() string {
 	return d.DestPath
+}
+
+func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
+	if err := f.walkParentDirs(m, basePath); err != nil {
+		slog.Warn("Skipped job: failed to get parent folders",
+			"err", err,
+			"job", m.SourcePath,
+			"share", m.Share.GetName(),
+		)
+
+		return err
+	}
+
+	return nil
 }
 
 func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {

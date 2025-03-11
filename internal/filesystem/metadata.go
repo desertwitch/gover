@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"fmt"
+	"log/slog"
 
 	"golang.org/x/sys/unix"
 )
@@ -22,6 +23,22 @@ type Metadata struct {
 const (
 	unixBasePerms = 0o777
 )
+
+func (f *Handler) establishMetadata(m *Moveable) error {
+	metadata, err := f.getMetadata(m.SourcePath)
+	if err != nil {
+		slog.Warn("Skipped job: failed to get metadata",
+			"err", err,
+			"job", m.SourcePath,
+			"share", m.Share.GetName(),
+		)
+
+		return err
+	}
+	m.Metadata = metadata
+
+	return nil
+}
 
 func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
