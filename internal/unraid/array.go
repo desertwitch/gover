@@ -14,9 +14,8 @@ type Array struct {
 }
 
 type Disk struct {
-	Name           string
-	FSPath         string
-	ActiveTransfer bool
+	Name   string
+	FSPath string
 }
 
 func (d *Disk) GetName() string {
@@ -25,14 +24,6 @@ func (d *Disk) GetName() string {
 
 func (d *Disk) GetFSPath() string {
 	return d.FSPath
-}
-
-func (d *Disk) IsActiveTransfer() bool {
-	return d.ActiveTransfer
-}
-
-func (d *Disk) SetActiveTransfer(active bool) {
-	d.ActiveTransfer = active
 }
 
 // establishArray returns a pointer to an established Unraid array.
@@ -69,9 +60,8 @@ func (u *Handler) establishDisks() (map[string]*Disk, error) {
 	for _, entry := range entries {
 		if entry.IsDir() && diskPattern.MatchString(entry.Name()) {
 			disk := &Disk{
-				Name:           entry.Name(),
-				FSPath:         filepath.Join(basePath, entry.Name()),
-				ActiveTransfer: false,
+				Name:   entry.Name(),
+				FSPath: filepath.Join(basePath, entry.Name()),
 			}
 			disks[disk.Name] = disk
 		}

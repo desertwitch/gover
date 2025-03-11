@@ -7,10 +7,8 @@ import (
 )
 
 type Pool struct {
-	Name           string
-	FSPath         string
-	CFGFile        string
-	ActiveTransfer bool
+	Name   string
+	FSPath string
 }
 
 func (p *Pool) GetName() string {
@@ -19,14 +17,6 @@ func (p *Pool) GetName() string {
 
 func (p *Pool) GetFSPath() string {
 	return p.FSPath
-}
-
-func (p *Pool) IsActiveTransfer() bool {
-	return p.ActiveTransfer
-}
-
-func (p *Pool) SetActiveTransfer(active bool) {
-	p.ActiveTransfer = active
 }
 
 // TO-DO: Refactor into establishPool() and establishPools().
@@ -46,7 +36,6 @@ func (u *Handler) establishPools() (map[string]*Pool, error) {
 
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".cfg") {
-			cfgPath := filepath.Join(basePath, file.Name())
 			nameWithoutExt := strings.TrimSuffix(file.Name(), ".cfg")
 
 			fsPath := filepath.Join("/mnt", nameWithoutExt)
@@ -55,10 +44,8 @@ func (u *Handler) establishPools() (map[string]*Pool, error) {
 			}
 
 			pool := &Pool{
-				Name:           nameWithoutExt,
-				FSPath:         fsPath,
-				CFGFile:        cfgPath,
-				ActiveTransfer: false,
+				Name:   nameWithoutExt,
+				FSPath: fsPath,
 			}
 
 			pools[pool.Name] = pool

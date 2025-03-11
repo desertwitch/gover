@@ -50,8 +50,6 @@ type configProvider interface {
 type Storeable interface {
 	GetName() string
 	GetFSPath() string
-	IsActiveTransfer() bool
-	SetActiveTransfer(isActive bool)
 }
 
 type System struct {
