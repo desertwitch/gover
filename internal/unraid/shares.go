@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/desertwitch/gover/internal/storage"
+	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
 type Share struct {

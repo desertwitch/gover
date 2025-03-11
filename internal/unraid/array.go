@@ -3,7 +3,7 @@ package unraid
 import (
 	"fmt"
 
-	"github.com/desertwitch/gover/internal/storage"
+	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
 type Array struct {
