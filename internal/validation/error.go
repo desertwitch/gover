@@ -8,7 +8,6 @@ var (
 	ErrDestPathRelative      = errors.New("destination path is relative")
 	ErrHardlinkHasSublinks   = errors.New("hardlink has sublinks")
 	ErrHardlinkSetTarget     = errors.New("hardlink false, but has set target")
-	ErrNoDeepestDir          = errors.New("no deepest dir")
 	ErrNoDestination         = errors.New("no destination or destination path")
 	ErrNoHardlinkTarget      = errors.New("no hardlink target")
 	ErrNoMetadata            = errors.New("no metadata")

@@ -23,7 +23,6 @@ type Moveable struct {
 	SymlinkTo  *Moveable
 	Metadata   *Metadata
 	RootDir    *RelatedDirectory
-	DeepestDir *RelatedDirectory
 }
 
 func (m *Moveable) GetMetadata() *Metadata {
@@ -85,7 +84,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 			}
 		}
 
-		if !d.IsDir() || (d.IsDir() && isEmptyDir && path != shareDir) {
+		if !d.IsDir() || (d.IsDir() && isEmptyDir) {
 			moveable := &Moveable{
 				Share:      share,
 				Source:     src,

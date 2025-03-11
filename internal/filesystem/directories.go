@@ -58,8 +58,6 @@ func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 			if prevElement != nil {
 				thisElement.Child = prevElement
 				prevElement.Parent = thisElement
-			} else {
-				m.DeepestDir = thisElement
 			}
 
 			prevElement = thisElement
@@ -68,9 +66,6 @@ func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
 		}
 	}
 
-	if prevElement == nil {
-		return fmt.Errorf("(fs-parents) %w", ErrNilDirRoot)
-	}
 	m.RootDir = prevElement
 
 	return nil

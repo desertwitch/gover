@@ -98,14 +98,6 @@ func validateBasicAttributes(m *filesystem.Moveable) error {
 		return fmt.Errorf("(validation) %w", ErrNoMetadata)
 	}
 
-	if m.RootDir == nil {
-		return fmt.Errorf("(validation) %w", ErrNoRootDir)
-	}
-
-	if m.DeepestDir == nil {
-		return fmt.Errorf("(validation) %w", ErrNoDeepestDir)
-	}
-
 	if m.Source == nil || m.SourcePath == "" {
 		return fmt.Errorf("(validation) %w", ErrNoSource)
 	}
@@ -213,6 +205,17 @@ func validateDirectory(d *filesystem.RelatedDirectory) error {
 
 func validateDirRootConnection(m *filesystem.Moveable) error {
 	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.Name)
+
+	// Special case: Moveable is an empty share folder (the base).
+	// We allow this because no directory relations will be processed (later).
+	if m.SourcePath == shareDirSource {
+		return nil
+	}
+
+	if m.RootDir == nil {
+		return fmt.Errorf("(validation) %w: root is nil", ErrSourceNotConnectBase)
+	}
+
 	if m.RootDir.SourcePath != shareDirSource {
 		return fmt.Errorf("(validation) %w: %s != %s", ErrSourceNotConnectBase, shareDirSource, m.RootDir.SourcePath)
 	}

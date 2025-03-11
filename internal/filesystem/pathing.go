@@ -140,11 +140,8 @@ func establishPath(m *Moveable) error {
 }
 
 func establishRelatedDirPaths(m *Moveable) error {
-	if m.RootDir == nil {
-		return fmt.Errorf("(fs-dirpaths) %w", ErrNilDirRoot)
-	}
-
 	dir := m.RootDir
+
 	for dir != nil {
 		relPath, err := filepath.Rel(m.Source.GetFSPath(), dir.SourcePath)
 		if err != nil {
