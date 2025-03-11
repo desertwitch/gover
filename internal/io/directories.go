@@ -63,7 +63,6 @@ func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
 			continue
 		}
 		if isEmpty {
-			// Source is being worked on concurrently, so ensure removals do not overlap.
 			i.Lock()
 			err := i.OSOps.Remove(dir.SourcePath)
 			i.Unlock()

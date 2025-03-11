@@ -13,7 +13,7 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Handler) AllocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.Disk, error) {
+func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.Disk, error) {
 	matches := make(map[int]map[string]*unraid.Disk)
 	splitExceedLvl := false
 

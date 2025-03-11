@@ -41,7 +41,7 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 	filtered := []*filesystem.Moveable{}
 
 	for _, m := range moveables {
-		dest, err := a.AllocateArrayDestination(m)
+		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
 				"err", err,
@@ -59,7 +59,7 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			dest, err := a.AllocateArrayDestination(s)
+			dest, err := a.allocateArrayDestination(s)
 			if err != nil {
 				slog.Warn("Skipped job: failed to allocate array destination for subjob",
 					"path", s.SourcePath,
@@ -84,12 +84,12 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 	return filtered, nil
 }
 
-func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
+func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
 	includedDisks := m.Share.IncludedDisks
 	excludedDisks := m.Share.ExcludedDisks
 
 	if m.Share.SplitLevel >= 0 {
-		returnDisks, err := a.AllocateDisksBySplitLevel(m)
+		returnDisks, err := a.allocateDisksBySplitLevel(m)
 		// TO-DO: Configurable if exceeding, but non allocatable, split-levels should proceed.
 		if err != nil && !errors.Is(err, ErrSplitDoesNotExceedLvl) && !errors.Is(err, ErrNotAllocatable) {
 			return nil, fmt.Errorf("(alloc) failed allocating by split level: %w", err)
@@ -101,7 +101,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 
 	switch allocationMethod := m.Share.Allocator; allocationMethod {
 	case unraid.AllocHighWater:
-		ret, err := a.AllocateHighWaterDisk(m, includedDisks, excludedDisks)
+		ret, err := a.allocateHighWaterDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by high water: %w", err)
 		}
@@ -111,7 +111,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		return ret, nil
 
 	case unraid.AllocFillUp:
-		ret, err := a.AllocateFillUpDisk(m, includedDisks, excludedDisks)
+		ret, err := a.allocateFillUpDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by fillup: %w", err)
 		}
@@ -121,7 +121,7 @@ func (a *Handler) AllocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		return ret, nil
 
 	case unraid.AllocMostFree:
-		ret, err := a.AllocateMostFreeDisk(m, includedDisks, excludedDisks)
+		ret, err := a.allocateMostFreeDisk(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by mostfree: %w", err)
 		}

@@ -36,7 +36,7 @@ func (d *Disk) SetActiveTransfer(active bool) {
 }
 
 // establishArray returns a pointer to an established Unraid array.
-func (u *Handler) EstablishArray(disks map[string]*Disk) (*Array, error) {
+func (u *Handler) establishArray(disks map[string]*Disk) (*Array, error) {
 	stateFile := ArrayStateFile
 
 	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
@@ -55,7 +55,7 @@ func (u *Handler) EstablishArray(disks map[string]*Disk) (*Array, error) {
 }
 
 // establishDisks returns a map of pointers to established Unraid disks.
-func (u *Handler) EstablishDisks() (map[string]*Disk, error) {
+func (u *Handler) establishDisks() (map[string]*Disk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)
 

@@ -74,22 +74,22 @@ func NewHandler(fsOps fsProvider, configOps configProvider) *Handler {
 
 // establishSystem returns a pointer to an established Unraid system.
 func (u *Handler) EstablishSystem() (*System, error) {
-	disks, err := u.EstablishDisks()
+	disks, err := u.establishDisks()
 	if err != nil {
 		return nil, fmt.Errorf("(unraid) failed establishing disks: %w", err)
 	}
 
-	pools, err := u.EstablishPools()
+	pools, err := u.establishPools()
 	if err != nil {
 		return nil, fmt.Errorf("(unraid) failed establishing pools: %w", err)
 	}
 
-	shares, err := u.EstablishShares(disks, pools)
+	shares, err := u.establishShares(disks, pools)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid) failed establishing shares: %w", err)
 	}
 
-	array, err := u.EstablishArray(disks)
+	array, err := u.establishArray(disks)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid) failed establishing array: %w", err)
 	}

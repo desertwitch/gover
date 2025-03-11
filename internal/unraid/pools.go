@@ -30,7 +30,7 @@ func (p *Pool) SetActiveTransfer(active bool) {
 }
 
 // TO-DO: Refactor into establishPool() and establishPools().
-func (u *Handler) EstablishPools() (map[string]*Pool, error) {
+func (u *Handler) establishPools() (map[string]*Pool, error) {
 	basePath := ConfigDirPools
 
 	if exists, err := u.FSOps.Exists(basePath); !exists {

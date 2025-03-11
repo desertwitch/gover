@@ -21,7 +21,7 @@ type Share struct {
 }
 
 // TO-DO: Refactor into establishShare() and establishShares().
-func (u *Handler) EstablishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
+func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
 	basePath := ConfigDirShares
 
 	if exists, err := u.FSOps.Exists(basePath); !exists {

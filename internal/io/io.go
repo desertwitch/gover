@@ -73,18 +73,18 @@ func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
 
 		job := &creationReport{}
 
-		if err := i.ProcessQueueElement(ctx, m, q, job); err != nil {
+		if err := i.processQueueElement(ctx, m, q, job); err != nil {
 			continue
 		}
 
 		for _, h := range m.Hardlinks {
-			if err := i.ProcessQueueSubElement(ctx, h, m, q, job); err != nil {
+			if err := i.processQueueSubElement(ctx, h, m, q, job); err != nil {
 				continue
 			}
 		}
 
 		for _, s := range m.Symlinks {
-			if err := i.ProcessQueueSubElement(ctx, s, m, q, job); err != nil {
+			if err := i.processQueueSubElement(ctx, s, m, q, job); err != nil {
 				continue
 			}
 		}
@@ -96,7 +96,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
 	i.cleanDirectoryStructure(batch)
 }
 
-func (i *Handler) ProcessQueueElement(ctx context.Context, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
+func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
 	q.SetProcessing(elem)
 
 	if err := i.processMoveable(ctx, elem, job); err != nil {
@@ -122,7 +122,7 @@ func (i *Handler) ProcessQueueElement(ctx context.Context, elem *filesystem.Move
 	return nil
 }
 
-func (i *Handler) ProcessQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
+func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
 	q.SetProcessing(subelem)
 
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
