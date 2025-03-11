@@ -18,7 +18,7 @@ type DiskStats struct {
 }
 
 func (f *Handler) Exists(path string) (bool, error) {
-	if _, err := f.OSOps.Stat(path); err != nil {
+	if _, err := f.OSHandler.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, fs.ErrNotExist
 		}
@@ -30,7 +30,7 @@ func (f *Handler) Exists(path string) (bool, error) {
 }
 
 func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
-	return f.OSOps.ReadDir(name)
+	return f.OSHandler.ReadDir(name)
 }
 
 func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
@@ -73,7 +73,7 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 
 func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
-	if err := f.UnixOps.Statfs(path, &stat); err != nil {
+	if err := f.UnixHandler.Statfs(path, &stat); err != nil {
 		return DiskStats{}, fmt.Errorf("(fs-diskuse) failed to statfs: %w", err)
 	}
 
@@ -106,7 +106,7 @@ func (f *Handler) HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize
 }
 
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {
-	entries, err := f.OSOps.ReadDir(path)
+	entries, err := f.OSHandler.ReadDir(path)
 	if err != nil {
 		return false, fmt.Errorf("(fs-isempty) failed to readdir: %w", err)
 	}
@@ -137,7 +137,7 @@ func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate storage.St
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
 
-	if _, err := f.OSOps.Stat(dstPath); err != nil {
+	if _, err := f.OSHandler.Stat(dstPath); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, "", nil
 		}

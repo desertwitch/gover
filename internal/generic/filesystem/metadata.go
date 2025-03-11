@@ -43,7 +43,7 @@ func (f *Handler) establishMetadata(m *Moveable) error {
 func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
 
-	if err := f.UnixOps.Lstat(path, &stat); err != nil {
+	if err := f.UnixHandler.Lstat(path, &stat); err != nil {
 		return nil, fmt.Errorf("(fs-metadata) failed to lstat: %w", err)
 	}
 
@@ -60,7 +60,7 @@ func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	}
 
 	if metadata.IsSymlink {
-		symlinkTarget, err := f.OSOps.Readlink(path)
+		symlinkTarget, err := f.OSHandler.Readlink(path)
 		if err != nil {
 			return nil, fmt.Errorf("(fs-metadata) failed to readlink: %w", err)
 		}

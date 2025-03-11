@@ -26,11 +26,11 @@ type depPackage struct {
 	IOHandler    *io.Handler
 }
 
-func newDepPackage(fsOps *filesystem.Handler, allocOps *allocation.Handler, ioOps *io.Handler) *depPackage {
+func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, ioHandler *io.Handler) *depPackage {
 	return &depPackage{
-		FSHandler:    fsOps,
-		AllocHandler: allocOps,
-		IOHandler:    ioOps,
+		FSHandler:    fsHandler,
+		AllocHandler: allocHandler,
+		IOHandler:    ioHandler,
 	}
 }
 
@@ -89,14 +89,14 @@ func main() {
 	unixProvider := &filesystem.Unix{}
 	configProvider := &configuration.GodotenvProvider{}
 
-	configOps := configuration.NewHandler(configProvider)
-	fsOps := filesystem.NewHandler(osProvider, unixProvider)
-	allocOps := allocation.NewHandler(fsOps)
-	ioOps := io.NewHandler(fsOps, osProvider, unixProvider)
+	configHandler := configuration.NewHandler(configProvider)
+	fsHandler := filesystem.NewHandler(osProvider, unixProvider)
+	allocHandler := allocation.NewHandler(fsHandler)
+	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
 
-	unraidOps := unraid.NewHandler(fsOps, configOps)
+	unraidHandler := unraid.NewHandler(fsHandler, configHandler)
 
-	system, err := unraidOps.EstablishSystem()
+	system, err := unraidHandler.EstablishSystem()
 	if err != nil {
 		slog.Error("Failed to establish (parts of) the Unraid system.",
 			"err", err,
@@ -105,7 +105,7 @@ func main() {
 		return
 	}
 
-	deps := newDepPackage(fsOps, allocOps, ioOps)
+	deps := newDepPackage(fsHandler, allocHandler, ioHandler)
 
 	wg.Add(1)
 	go processSystem(ctx, &wg, system, deps)

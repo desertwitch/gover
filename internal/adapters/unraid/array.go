@@ -32,16 +32,16 @@ func (a *Array) GetDisks() map[string]storage.Disk {
 func (u *Handler) establishArray(disks map[string]*Disk) (*Array, error) {
 	stateFile := ArrayStateFile
 
-	configMap, err := u.ConfigOps.ReadGeneric(stateFile)
+	configMap, err := u.ConfigHandler.ReadGeneric(stateFile)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-array) failed to load array state file: %w", err)
 	}
 
 	array := &Array{
 		Disks:         disks,
-		Status:        u.ConfigOps.MapKeyToString(configMap, StateArrayStatus),
-		TurboSetting:  u.ConfigOps.MapKeyToString(configMap, StateTurboSetting),
-		ParityRunning: u.ConfigOps.MapKeyToInt(configMap, StateParityPosition) > 0,
+		Status:        u.ConfigHandler.MapKeyToString(configMap, StateArrayStatus),
+		TurboSetting:  u.ConfigHandler.MapKeyToString(configMap, StateTurboSetting),
+		ParityRunning: u.ConfigHandler.MapKeyToInt(configMap, StateParityPosition) > 0,
 	}
 
 	return array, nil

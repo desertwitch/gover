@@ -14,8 +14,8 @@ func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *creation
 	dir := m.RootDir
 
 	for dir != nil {
-		if _, err := i.OSOps.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
-			if err := i.UnixOps.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
+		if _, err := i.OSHandler.Stat(dir.DestPath); errors.Is(err, fs.ErrNotExist) {
+			if err := i.UnixHandler.Mkdir(dir.DestPath, dir.Metadata.Perms); err != nil {
 				return fmt.Errorf("(io-ensuredirs) failed to mkdir %s: %w", dir.DestPath, err)
 			}
 
@@ -49,7 +49,7 @@ func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
 		if _, alreadyRemoved := removed[dir.SourcePath]; alreadyRemoved {
 			continue
 		}
-		isEmpty, err := i.FSOps.IsEmptyFolder(dir.SourcePath)
+		isEmpty, err := i.FSHandler.IsEmptyFolder(dir.SourcePath)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				removed[dir.SourcePath] = struct{}{}
@@ -64,7 +64,7 @@ func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
 		}
 		if isEmpty {
 			i.Lock()
-			err := i.OSOps.Remove(dir.SourcePath)
+			err := i.OSHandler.Remove(dir.SourcePath)
 			i.Unlock()
 
 			if err != nil {
@@ -96,7 +96,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
 		if _, alreadyRemoved := removed[dir.DestPath]; alreadyRemoved {
 			continue
 		}
-		isEmpty, err := i.FSOps.IsEmptyFolder(dir.DestPath)
+		isEmpty, err := i.FSHandler.IsEmptyFolder(dir.DestPath)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				removed[dir.DestPath] = struct{}{}
@@ -110,7 +110,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
 			continue
 		}
 		if isEmpty {
-			if err := i.OSOps.Remove(dir.DestPath); err != nil {
+			if err := i.OSHandler.Remove(dir.DestPath); err != nil {
 				if errors.Is(err, fs.ErrNotExist) {
 					removed[dir.DestPath] = struct{}{}
 				} else {

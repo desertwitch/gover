@@ -47,13 +47,13 @@ type configProvider interface {
 }
 
 type Handler struct {
-	FSOps     fsProvider
-	ConfigOps configProvider
+	FSHandler     fsProvider
+	ConfigHandler configProvider
 }
 
-func NewHandler(fsOps fsProvider, configOps configProvider) *Handler {
+func NewHandler(fsHandler fsProvider, configHandler configProvider) *Handler {
 	return &Handler{
-		FSOps:     fsOps,
-		ConfigOps: configOps,
+		FSHandler:     fsHandler,
+		ConfigHandler: configHandler,
 	}
 }

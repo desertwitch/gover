@@ -38,16 +38,16 @@ func (m *Moveable) GetDestPath() string {
 }
 
 type Handler struct {
-	OSOps    osProvider
-	UnixOps  unixProvider
-	FSWalker fsWalker
+	OSHandler   osProvider
+	UnixHandler unixProvider
+	FSWalker    fsWalker
 }
 
-func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
+func NewHandler(osHandler osProvider, unixHandler unixProvider) *Handler {
 	return &Handler{
-		OSOps:    osOps,
-		UnixOps:  unixOps,
-		FSWalker: &fileWalker{},
+		OSHandler:   osHandler,
+		UnixHandler: unixHandler,
+		FSWalker:    &fileWalker{},
 	}
 }
 

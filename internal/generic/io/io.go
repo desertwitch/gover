@@ -45,16 +45,16 @@ type relatedElement interface {
 
 type Handler struct {
 	sync.Mutex
-	FSOps   fsProvider
-	OSOps   osProvider
-	UnixOps unixProvider
+	FSHandler   fsProvider
+	OSHandler   osProvider
+	UnixHandler unixProvider
 }
 
-func NewHandler(fsOps fsProvider, osOps osProvider, unixOps unixProvider) *Handler {
+func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProvider) *Handler {
 	return &Handler{
-		FSOps:   fsOps,
-		OSOps:   osOps,
-		UnixOps: unixOps,
+		FSHandler:   fsHandler,
+		OSHandler:   osHandler,
+		UnixHandler: unixHandler,
 	}
 }
 
@@ -169,7 +169,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		}
 	}()
 
-	if inUse, err := i.FSOps.IsFileInUse(m.SourcePath); err != nil {
+	if inUse, err := i.FSHandler.IsFileInUse(m.SourcePath); err != nil {
 		return fmt.Errorf("(io) failed to check src in use: %w", err)
 	} else if inUse {
 		return fmt.Errorf("(io) %w", ErrSourceFileInUse)

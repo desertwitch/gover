@@ -25,14 +25,14 @@ type allocInfo struct {
 
 type Handler struct {
 	sync.RWMutex
-	FSOps                 fsProvider
+	FSHandler             fsProvider
 	alreadyAllocated      map[*filesystem.Moveable]*allocInfo
 	alreadyAllocatedSpace map[string]uint64
 }
 
-func NewHandler(fsOps fsProvider) *Handler {
+func NewHandler(fsHandler fsProvider) *Handler {
 	return &Handler{
-		FSOps:                 fsOps,
+		FSHandler:             fsHandler,
 		alreadyAllocated:      make(map[*filesystem.Moveable]*allocInfo),
 		alreadyAllocatedSpace: make(map[string]uint64),
 	}

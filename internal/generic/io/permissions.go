@@ -7,11 +7,11 @@ import (
 )
 
 func (i *Handler) ensurePermissions(path string, metadata *filesystem.Metadata) error {
-	if err := i.UnixOps.Chown(path, int(metadata.UID), int(metadata.GID)); err != nil {
+	if err := i.UnixHandler.Chown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("(io-perms) failed to chown: %w", err)
 	}
 
-	if err := i.UnixOps.Chmod(path, metadata.Perms); err != nil {
+	if err := i.UnixHandler.Chmod(path, metadata.Perms); err != nil {
 		return fmt.Errorf("(io-perms) failed to chmod: %w", err)
 	}
 
@@ -19,7 +19,7 @@ func (i *Handler) ensurePermissions(path string, metadata *filesystem.Metadata) 
 }
 
 func (i *Handler) ensureLinkPermissions(path string, metadata *filesystem.Metadata) error {
-	if err := i.UnixOps.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
+	if err := i.UnixHandler.Lchown(path, int(metadata.UID), int(metadata.GID)); err != nil {
 		return fmt.Errorf("(io-perms) failed to lchown: %w", err)
 	}
 

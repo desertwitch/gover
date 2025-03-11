@@ -120,7 +120,7 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]storage.Disk,
 
 			dirToCheck := filepath.Join(disk.GetFSPath(), subPath)
 
-			existsPhysical, err := a.FSOps.Exists(dirToCheck)
+			existsPhysical, err := a.FSHandler.Exists(dirToCheck)
 			if err != nil && !errors.Is(err, fs.ErrNotExist) {
 				slog.Warn("Skipped disk for split-level consideration",
 					"disk", name,
@@ -135,7 +135,7 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]storage.Disk,
 			_, existsAllocated := alreadyAllocated[disk.GetName()]
 
 			if existsPhysical || existsAllocated {
-				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
+				enoughSpace, err := a.FSHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 				if err != nil {
 					slog.Warn("Skipped disk for split-level consideration",
 						"disk", name,
