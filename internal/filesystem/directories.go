@@ -12,9 +12,9 @@ type fsWalker interface {
 	WalkDir(root string, fn fs.WalkDirFunc) error
 }
 
-type FileWalker struct{}
+type fileWalker struct{}
 
-func (*FileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
+func (*fileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
 }
 

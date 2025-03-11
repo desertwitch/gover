@@ -45,7 +45,7 @@ func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
 	return &Handler{
 		OSOps:    osOps,
 		UnixOps:  unixOps,
-		FSWalker: &FileWalker{},
+		FSWalker: &fileWalker{},
 	}
 }
 
