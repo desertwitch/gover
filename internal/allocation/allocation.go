@@ -8,18 +8,19 @@ import (
 
 	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
-	HasEnoughFreeSpace(s filesystem.StorageType, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
 }
 
 type allocInfo struct {
 	sourcePath    string
 	sourceBase    string
-	allocatedDisk filesystem.DiskType
+	allocatedDisk storage.Disk
 }
 
 type Handler struct {
@@ -84,13 +85,12 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 	return filtered, nil
 }
 
-func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (filesystem.DiskType, error) {
+func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (storage.Disk, error) {
 	includedDisks := m.Share.GetIncludedDisks()
 	excludedDisks := m.Share.GetExcludedDisks()
 
 	if m.Share.GetSplitLevel() >= 0 {
 		returnDisks, err := a.allocateDisksBySplitLevel(m)
-		// TO-DO: Configurable if exceeding, but non allocatable, split-levels should proceed.
 		if err != nil && !errors.Is(err, ErrSplitDoesNotExceedLvl) && !errors.Is(err, ErrNotAllocatable) {
 			return nil, fmt.Errorf("(alloc) failed allocating by split level: %w", err)
 		}

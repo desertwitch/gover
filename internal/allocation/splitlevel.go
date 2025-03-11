@@ -10,10 +10,11 @@ import (
 	"strings"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
-func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]filesystem.DiskType, error) {
-	matches := make(map[int]map[string]filesystem.DiskType)
+func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]storage.Disk, error) {
+	matches := make(map[int]map[string]storage.Disk)
 	splitExceedLvl := false
 
 	mainMatches, mainLevel, err := a.findDisksBySplitLevel(m)
@@ -30,7 +31,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 		splitExceedLvl = true
 
 		if len(mainMatches) > 0 {
-			matches[mainLevel] = make(map[string]filesystem.DiskType)
+			matches[mainLevel] = make(map[string]storage.Disk)
 			for _, disk := range mainMatches {
 				matches[mainLevel][disk.GetName()] = disk
 			}
@@ -54,7 +55,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 
 				if len(subMatches) > 0 {
 					if matches[subLevel] == nil {
-						matches[subLevel] = make(map[string]filesystem.DiskType)
+						matches[subLevel] = make(map[string]storage.Disk)
 					}
 					for _, disk := range subMatches {
 						matches[subLevel][disk.GetName()] = disk
@@ -84,8 +85,8 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 	return nil, ErrNotAllocatable
 }
 
-func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]filesystem.DiskType, int, error) {
-	var foundDisks []filesystem.DiskType
+func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]storage.Disk, int, error) {
+	var foundDisks []storage.Disk
 	path := filepath.Dir(m.SourcePath)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)

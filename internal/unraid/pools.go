@@ -23,7 +23,6 @@ func (p *Pool) GetFSPath() string {
 	return p.FSPath
 }
 
-// TO-DO: Refactor into establishPool() and establishPools().
 func (u *Handler) establishPools() (map[string]*Pool, error) {
 	basePath := ConfigDirPools
 

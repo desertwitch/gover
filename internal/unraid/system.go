@@ -3,7 +3,7 @@ package unraid
 import (
 	"fmt"
 
-	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type System struct {
@@ -12,7 +12,7 @@ type System struct {
 	Shares map[string]*Share
 }
 
-func (s *System) GetArray() filesystem.ArrayType {
+func (s *System) GetArray() storage.Array {
 	if s.Array == nil {
 		return nil
 	}
@@ -20,12 +20,12 @@ func (s *System) GetArray() filesystem.ArrayType {
 	return s.Array
 }
 
-func (s *System) GetShares() map[string]filesystem.ShareType {
+func (s *System) GetShares() map[string]storage.Share {
 	if s.Shares == nil {
 		return nil
 	}
 
-	shares := make(map[string]filesystem.ShareType)
+	shares := make(map[string]storage.Share)
 	for k, v := range s.Shares {
 		if v != nil {
 			shares[k] = v

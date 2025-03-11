@@ -5,13 +5,15 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type Moveable struct {
-	Share      ShareType
-	Source     StorageType
+	Share      storage.Share
+	Source     storage.Storage
 	SourcePath string
-	Dest       StorageType
+	Dest       storage.Storage
 	DestPath   string
 	Hardlinks  []*Moveable
 	IsHardlink bool
@@ -49,7 +51,7 @@ func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
 	}
 }
 
-func (f *Handler) GetMoveables(share ShareType, src StorageType, dst StorageType) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 	filtered := []*Moveable{}
 

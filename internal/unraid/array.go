@@ -3,7 +3,7 @@ package unraid
 import (
 	"fmt"
 
-	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type Array struct {
@@ -13,12 +13,12 @@ type Array struct {
 	ParityRunning bool
 }
 
-func (a *Array) GetDisks() map[string]filesystem.DiskType {
+func (a *Array) GetDisks() map[string]storage.Disk {
 	if a.Disks == nil {
 		return nil
 	}
 
-	disks := make(map[string]filesystem.DiskType)
+	disks := make(map[string]storage.Disk)
 	for k, v := range a.Disks {
 		if v != nil {
 			disks[k] = v

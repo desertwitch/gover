@@ -8,10 +8,11 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 	"github.com/desertwitch/gover/internal/validation"
 )
 
-func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType, disks map[string]filesystem.DiskType, deps *depPackage) ([]*filesystem.Moveable, error) {
+func enumerateShares(ctx context.Context, shares map[string]storage.Share, disks map[string]storage.Disk, deps *depPackage) ([]*filesystem.Moveable, error) {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
@@ -92,10 +93,10 @@ func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType
 	return files, nil
 }
 
-func enumerateShareWorker(ch chan<- []*filesystem.Moveable, share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) {
+func enumerateShareWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
-		if _, ok := src.(filesystem.DiskType); ok {
+		if _, ok := src.(storage.Disk); ok {
 			slog.Warn("Skipped processing array disk due to failure",
 				"err", err,
 				"share", share.GetName(),
@@ -113,7 +114,7 @@ func enumerateShareWorker(ch chan<- []*filesystem.Moveable, share filesystem.Sha
 	ch <- files
 }
 
-func enumerateShare(share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) ([]*filesystem.Moveable, error) {
+func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {
 	files, err := deps.FSHandler.GetMoveables(share, src, dst)
 	if err != nil {
 		return nil, fmt.Errorf("(main) failed to enumerate: %w", err)

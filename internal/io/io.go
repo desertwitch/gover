@@ -9,11 +9,12 @@ import (
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/queue"
+	"github.com/desertwitch/gover/internal/storage"
 	"golang.org/x/sys/unix"
 )
 
 type fsProvider interface {
-	HasEnoughFreeSpace(s filesystem.StorageType, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
 	IsFileInUse(path string) (bool, error)
 }

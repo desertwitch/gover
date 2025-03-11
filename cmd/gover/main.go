@@ -15,6 +15,7 @@ import (
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/io"
 	"github.com/desertwitch/gover/internal/queue"
+	"github.com/desertwitch/gover/internal/storage"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
@@ -33,7 +34,7 @@ func newDepPackage(fsOps *filesystem.Handler, allocOps *allocation.Handler, ioOp
 	}
 }
 
-func processSystem(ctx context.Context, wg *sync.WaitGroup, system filesystem.SystemType, deps *depPackage) {
+func processSystem(ctx context.Context, wg *sync.WaitGroup, system storage.System, deps *depPackage) {
 	defer wg.Done()
 
 	queueMan := queue.NewManager()

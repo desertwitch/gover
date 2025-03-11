@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type Manager struct {
@@ -29,7 +30,7 @@ func (b *Manager) Enqueue(items ...*filesystem.Moveable) {
 	}
 }
 
-func (b *Manager) Dequeue(target filesystem.StorageType) (*filesystem.Moveable, bool) {
+func (b *Manager) Dequeue(target storage.Storage) (*filesystem.Moveable, bool) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -40,7 +41,7 @@ func (b *Manager) Dequeue(target filesystem.StorageType) (*filesystem.Moveable, 
 	return nil, false
 }
 
-func (b *Manager) GetQueueUnsafe(target filesystem.StorageType) (*DestinationQueue, bool) {
+func (b *Manager) GetQueueUnsafe(target storage.Storage) (*DestinationQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 

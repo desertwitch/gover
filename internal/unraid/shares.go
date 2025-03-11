@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
 type Share struct {
@@ -30,7 +30,7 @@ func (s *Share) GetUseCache() string {
 	return s.UseCache
 }
 
-func (s *Share) GetCachePool() filesystem.PoolType {
+func (s *Share) GetCachePool() storage.Pool {
 	if s.CachePool == nil {
 		return nil
 	}
@@ -38,7 +38,7 @@ func (s *Share) GetCachePool() filesystem.PoolType {
 	return s.CachePool
 }
 
-func (s *Share) GetCachePool2() filesystem.PoolType {
+func (s *Share) GetCachePool2() storage.Pool {
 	if s.CachePool2 == nil {
 		return nil
 	}
@@ -62,12 +62,12 @@ func (s *Share) GetDisableCOW() bool {
 	return s.DisableCOW
 }
 
-func (s *Share) GetIncludedDisks() map[string]filesystem.DiskType {
+func (s *Share) GetIncludedDisks() map[string]storage.Disk {
 	if s.IncludedDisks == nil {
 		return nil
 	}
 
-	included := make(map[string]filesystem.DiskType)
+	included := make(map[string]storage.Disk)
 	for k, v := range s.IncludedDisks {
 		if v != nil {
 			included[k] = v
@@ -77,12 +77,12 @@ func (s *Share) GetIncludedDisks() map[string]filesystem.DiskType {
 	return included
 }
 
-func (s *Share) GetExcludedDisks() map[string]filesystem.DiskType {
+func (s *Share) GetExcludedDisks() map[string]storage.Disk {
 	if s.ExcludedDisks == nil {
 		return nil
 	}
 
-	excluded := make(map[string]filesystem.DiskType)
+	excluded := make(map[string]storage.Disk)
 	for k, v := range s.ExcludedDisks {
 		if v != nil {
 			excluded[k] = v
@@ -92,7 +92,6 @@ func (s *Share) GetExcludedDisks() map[string]filesystem.DiskType {
 	return excluded
 }
 
-// TO-DO: Refactor into establishShare() and establishShares().
 func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
 	basePath := ConfigDirShares
 

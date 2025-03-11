@@ -5,11 +5,12 @@ import (
 	"sort"
 
 	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/storage"
 )
 
-func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[string]filesystem.DiskType, excludedDisks map[string]filesystem.DiskType) (filesystem.DiskType, error) {
+func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[string]storage.Disk, excludedDisks map[string]storage.Disk) (storage.Disk, error) {
 	diskStats := make(map[string]filesystem.DiskStats)
-	disks := []filesystem.DiskType{}
+	disks := []storage.Disk{}
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
