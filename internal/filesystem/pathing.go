@@ -10,71 +10,13 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	filtered := []*Moveable{}
 
 	for _, m := range moveables {
-		existsPath, err := f.ExistsOnStorage(m)
-		if err != nil {
-			slog.Warn("Skipped job: failed establishing path existence",
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-
-			continue
-		}
-
-		// A directory is allowed to exist, that gets handled later in IO.
-		if !m.Metadata.IsDir && existsPath != "" {
-			slog.Warn("Skipped job: destination path already exists",
-				"path", existsPath,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-
-			continue
-		}
-
-		if err := establishPath(m); err != nil {
-			slog.Warn("Skipped job: cannot set destination path",
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-
+		if err := f.establishElementPath(m); err != nil {
 			continue
 		}
 
 		hardLinkFailure := false
 		for _, h := range m.Hardlinks {
-			existsPath, err := f.ExistsOnStorage(h)
-			if err != nil {
-				slog.Warn("Skipped job: failed establishing path existence for subjob",
-					"err", err,
-					"subjob", h.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				hardLinkFailure = true
-
-				break
-			}
-			if existsPath != "" {
-				slog.Warn("Skipped job: destination path already exists for subjob",
-					"path", existsPath,
-					"subjob", h.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				hardLinkFailure = true
-
-				break
-			}
-			if err := establishPath(h); err != nil {
-				slog.Warn("Skipped job: cannot set destination path for subjob",
-					"path", h.SourcePath,
-					"err", err,
-					"subjob", h.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
+			if err := f.establishSubElementPath(h, m); err != nil {
 				hardLinkFailure = true
 
 				break
@@ -86,37 +28,7 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 
 		symlinkFailure := false
 		for _, s := range m.Symlinks {
-			existsPath, err := f.ExistsOnStorage(s)
-			if err != nil {
-				slog.Warn("Skipped job: failed establishing path existence for subjob",
-					"err", err,
-					"subjob", s.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				symlinkFailure = true
-
-				break
-			}
-			if existsPath != "" {
-				slog.Warn("Skipped job: destination path already exists for subjob",
-					"path", existsPath,
-					"subjob", s.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-				symlinkFailure = true
-
-				break
-			}
-			if err := establishPath(s); err != nil {
-				slog.Warn("Skipped job: cannot set destination path for subjob",
-					"path", s.SourcePath,
-					"err", err,
-					"subjob", s.SourcePath,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
+			if err := f.establishSubElementPath(s, m); err != nil {
 				symlinkFailure = true
 
 				break
@@ -130,6 +42,79 @@ func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
 	}
 
 	return filtered, nil
+}
+
+func (f *Handler) establishElementPath(elem *Moveable) error {
+	existsPath, err := f.ExistsOnStorage(elem)
+	if err != nil {
+		slog.Warn("Skipped job: failed establishing path existence",
+			"err", err,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return err
+	}
+
+	// A directory is allowed to exist, that gets handled later in IO.
+	if !elem.Metadata.IsDir && existsPath != "" {
+		slog.Warn("Skipped job: destination path already exists",
+			"path", existsPath,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return ErrPathExistsOnDest
+	}
+
+	if err := establishPath(elem); err != nil {
+		slog.Warn("Skipped job: cannot set destination path",
+			"err", err,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return err
+	}
+
+	return nil
+}
+
+func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) error {
+	existsPath, err := f.ExistsOnStorage(subelem)
+	if err != nil {
+		slog.Warn("Skipped job: failed establishing path existence for subjob",
+			"err", err,
+			"subjob", subelem.SourcePath,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return err
+	}
+	if existsPath != "" {
+		slog.Warn("Skipped job: destination path already exists for subjob",
+			"path", existsPath,
+			"subjob", subelem.SourcePath,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return ErrPathExistsOnDest
+	}
+	if err := establishPath(subelem); err != nil {
+		slog.Warn("Skipped job: cannot set destination path for subjob",
+			"path", subelem.SourcePath,
+			"err", err,
+			"subjob", subelem.SourcePath,
+			"job", elem.SourcePath,
+			"share", elem.Share.Name,
+		)
+
+		return err
+	}
+
+	return nil
 }
 
 func establishPath(m *Moveable) error {

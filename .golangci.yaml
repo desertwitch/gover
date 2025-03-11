@@ -5,6 +5,7 @@ linters:
             - dupl
             - exhaustruct
             - nestif
+            - tenv
             - varnamelen
             - wrapcheck
             - wsl

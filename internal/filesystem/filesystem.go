@@ -54,7 +54,7 @@ func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
 
 func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst unraid.Storeable) ([]*Moveable, error) {
 	moveables := []*Moveable{}
-	preSelection := []*Moveable{}
+	filtered := []*Moveable{}
 
 	shareDir := filepath.Join(src.GetFSPath(), share.Name)
 
@@ -75,7 +75,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		if d.IsDir() {
 			isEmptyDir, err = f.IsEmptyFolder(path)
 			if err != nil {
-				slog.Warn("Failure checking directory for emptiness during walking of tree (was skipped)",
+				slog.Warn("Failure checking for emptiness during walking of directory tree (was skipped)",
 					"path", path,
 					"err", err,
 					"share", share.Name,
@@ -93,7 +93,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 				Dest:       dst,
 			}
 
-			preSelection = append(preSelection, moveable)
+			moveables = append(moveables, moveable)
 		}
 
 		return nil
@@ -102,67 +102,52 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 		return nil, fmt.Errorf("(fs) error walking %s: %w", shareDir, err)
 	}
 
-	for _, m := range preSelection {
-		metadata, err := f.getMetadata(m.SourcePath)
-		if err != nil {
-			slog.Warn("Skipped job: failed to get metadata",
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-
-			continue
-		}
-		m.Metadata = metadata
-
-		if err := f.walkParentDirs(m, shareDir); err != nil {
-			slog.Warn("Skipped job: failed to get parent folders",
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.Name,
-			)
-
-			continue
-		}
-
-		moveables = append(moveables, m)
-	}
-
-	establishSymlinks(moveables, dst)
-	establishHardlinks(moveables, dst)
-	moveables = removeInternalLinks(moveables)
-	moveables = f.removeInUseFiles(moveables)
-
-	return moveables, nil
-}
-
-func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
-	filtered := []*Moveable{}
-
 	for _, m := range moveables {
-		if !m.Metadata.IsDir {
-			if inUse, err := f.IsFileInUse(m.SourcePath); err != nil {
-				slog.Warn("Skipped job: failed to check if file is in use",
-					"err", err,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-
-				continue
-			} else if inUse {
-				slog.Warn("Skipped job: source file is in use",
-					"err", err,
-					"job", m.SourcePath,
-					"share", m.Share.Name,
-				)
-
-				continue
-			}
+		if err := f.establishMetadata(m); err != nil {
+			continue
+		}
+		if err := f.establishRelatedDirs(m, shareDir); err != nil {
+			continue
 		}
 		filtered = append(filtered, m)
 	}
 
-	return filtered
+	establishSymlinks(filtered, dst)
+	establishHardlinks(filtered, dst)
+	filtered = removeInternalLinks(filtered)
+	filtered = f.removeInUseFiles(filtered)
+
+	return filtered, nil
+}
+
+func (f *Handler) establishMetadata(m *Moveable) error {
+	metadata, err := f.getMetadata(m.SourcePath)
+	if err != nil {
+		slog.Warn("Skipped job: failed to get metadata",
+			"err", err,
+			"job", m.SourcePath,
+			"share", m.Share.Name,
+		)
+
+		return err
+	}
+	m.Metadata = metadata
+
+	return nil
+}
+
+func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
+	if err := f.walkParentDirs(m, basePath); err != nil {
+		slog.Warn("Skipped job: failed to get parent folders",
+			"err", err,
+			"job", m.SourcePath,
+			"share", m.Share.Name,
+		)
+
+		return err
+	}
+
+	return nil
 }
 
 func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
@@ -209,6 +194,35 @@ func removeInternalLinks(moveables []*Moveable) []*Moveable {
 		if !m.IsSymlink && !m.IsHardlink {
 			filtered = append(filtered, m)
 		}
+	}
+
+	return filtered
+}
+
+func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
+	filtered := []*Moveable{}
+
+	for _, m := range moveables {
+		if !m.Metadata.IsDir {
+			if inUse, err := f.IsFileInUse(m.SourcePath); err != nil {
+				slog.Warn("Skipped job: failed to check if file is in use",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
+				continue
+			} else if inUse {
+				slog.Warn("Skipped job: source file is in use",
+					"err", err,
+					"job", m.SourcePath,
+					"share", m.Share.Name,
+				)
+
+				continue
+			}
+		}
+		filtered = append(filtered, m)
 	}
 
 	return filtered

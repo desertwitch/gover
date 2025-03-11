@@ -19,6 +19,10 @@ type Metadata struct {
 	SymlinkTo  string
 }
 
+const (
+	unixBasePerms = 0o777
+)
+
 func (f *Handler) getMetadata(path string) (*Metadata, error) {
 	var stat unix.Stat_t
 
@@ -28,7 +32,7 @@ func (f *Handler) getMetadata(path string) (*Metadata, error) {
 
 	metadata := &Metadata{
 		Inode:      stat.Ino,
-		Perms:      stat.Mode & 0o777, //nolint:mnd
+		Perms:      stat.Mode & unixBasePerms,
 		UID:        stat.Uid,
 		GID:        stat.Gid,
 		AccessedAt: stat.Atim,
