@@ -2,8 +2,6 @@ package unraid
 
 import (
 	"fmt"
-
-	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
 type Array struct {
@@ -11,21 +9,6 @@ type Array struct {
 	Status        string
 	TurboSetting  string
 	ParityRunning bool
-}
-
-func (a *Array) GetDisks() map[string]storage.Disk {
-	if a.Disks == nil {
-		return nil
-	}
-
-	disks := make(map[string]storage.Disk)
-	for k, v := range a.Disks {
-		if v != nil {
-			disks[k] = v
-		}
-	}
-
-	return disks
 }
 
 // establishArray returns a pointer to an established Unraid array.
