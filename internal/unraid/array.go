@@ -2,8 +2,8 @@ package unraid
 
 import (
 	"fmt"
-	"path/filepath"
-	"regexp"
+
+	"github.com/desertwitch/gover/internal/filesystem"
 )
 
 type Array struct {
@@ -13,17 +13,19 @@ type Array struct {
 	ParityRunning bool
 }
 
-type Disk struct {
-	Name   string
-	FSPath string
-}
+func (a *Array) GetDisks() map[string]filesystem.DiskType {
+	if a.Disks == nil {
+		return nil
+	}
 
-func (d *Disk) GetName() string {
-	return d.Name
-}
+	disks := make(map[string]filesystem.DiskType)
+	for k, v := range a.Disks {
+		if v != nil {
+			disks[k] = v
+		}
+	}
 
-func (d *Disk) GetFSPath() string {
-	return d.FSPath
+	return disks
 }
 
 // establishArray returns a pointer to an established Unraid array.
@@ -43,29 +45,4 @@ func (u *Handler) establishArray(disks map[string]*Disk) (*Array, error) {
 	}
 
 	return array, nil
-}
-
-// establishDisks returns a map of pointers to established Unraid disks.
-func (u *Handler) establishDisks() (map[string]*Disk, error) {
-	basePath := BasePathMounts
-	diskPattern := regexp.MustCompile(PatternDisks)
-
-	disks := make(map[string]*Disk)
-
-	entries, err := u.FSOps.ReadDir(basePath)
-	if err != nil {
-		return nil, fmt.Errorf("(unraid-array) failed to readdir: %w", err)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() && diskPattern.MatchString(entry.Name()) {
-			disk := &Disk{
-				Name:   entry.Name(),
-				FSPath: filepath.Join(basePath, entry.Name()),
-			}
-			disks[disk.Name] = disk
-		}
-	}
-
-	return disks, nil
 }

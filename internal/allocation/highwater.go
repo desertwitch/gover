@@ -5,16 +5,15 @@ import (
 	"sort"
 
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
 const (
 	highWaterDivisor = 2
 )
 
-func (a *Handler) allocateHighWaterDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
-	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
-	disks := []*unraid.Disk{}
+func (a *Handler) allocateHighWater(m *filesystem.Moveable, includedDisks map[string]filesystem.DiskType, excludedDisks map[string]filesystem.DiskType) (filesystem.DiskType, error) {
+	diskStats := make(map[string]filesystem.DiskStats)
+	disks := []filesystem.DiskType{}
 
 	var maxDiskSize uint64
 
@@ -23,18 +22,18 @@ func (a *Handler) allocateHighWaterDisk(m *filesystem.Moveable, includedDisks ma
 			continue
 		}
 
-		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
+		stats, err := a.FSOps.GetDiskUsage(disk.GetFSPath())
 		if err != nil {
 			slog.Warn("Skipped disk for high-water consideration",
-				"disk", disk.Name,
+				"disk", disk.GetName(),
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 
 			continue
 		}
-		diskStats[disk] = stats
+		diskStats[disk.GetName()] = stats
 
 		if stats.TotalSize > maxDiskSize {
 			maxDiskSize = stats.TotalSize
@@ -51,21 +50,21 @@ func (a *Handler) allocateHighWaterDisk(m *filesystem.Moveable, includedDisks ma
 
 	for highWaterMark > 0 {
 		sort.Slice(disks, func(i, j int) bool {
-			return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
+			return diskStats[disks[i].GetName()].FreeSpace < diskStats[disks[j].GetName()].FreeSpace
 		})
 		for _, disk := range disks {
-			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
+			enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 			if err != nil {
 				slog.Warn("Skipped disk for high-water consideration",
-					"disk", disk.Name,
+					"disk", disk.GetName(),
 					"err", err,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				continue
 			}
-			if stats, found := diskStats[disk]; found && enoughSpace && stats.FreeSpace >= highWaterMark {
+			if stats, found := diskStats[disk.GetName()]; found && enoughSpace && stats.FreeSpace >= highWaterMark {
 				return disk, nil
 			}
 		}

@@ -5,51 +5,50 @@ import (
 	"sort"
 
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Handler) allocateFillUpDisk(m *filesystem.Moveable, includedDisks map[string]*unraid.Disk, excludedDisks map[string]*unraid.Disk) (*unraid.Disk, error) {
-	diskStats := make(map[*unraid.Disk]filesystem.DiskStats)
-	disks := []*unraid.Disk{}
+func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[string]filesystem.DiskType, excludedDisks map[string]filesystem.DiskType) (filesystem.DiskType, error) {
+	diskStats := make(map[string]filesystem.DiskStats)
+	disks := []filesystem.DiskType{}
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {
 			continue
 		}
 
-		stats, err := a.FSOps.GetDiskUsage(disk.FSPath)
+		stats, err := a.FSOps.GetDiskUsage(disk.GetFSPath())
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration",
-				"disk", disk.Name,
+				"disk", disk.GetName(),
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 
 			continue
 		}
-		diskStats[disk] = stats
+		diskStats[disk.GetName()] = stats
 
 		disks = append(disks, disk)
 	}
 
 	sort.Slice(disks, func(i, j int) bool {
-		return diskStats[disks[i]].FreeSpace < diskStats[disks[j]].FreeSpace
+		return diskStats[disks[i].GetName()].FreeSpace < diskStats[disks[j].GetName()].FreeSpace
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
+		enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration",
-				"disk", disk.Name,
+				"disk", disk.GetName(),
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 
 			continue
 		}
-		if enoughSpace && diskStats[disk].FreeSpace > m.Share.SpaceFloor {
+		if enoughSpace && diskStats[disk.GetName()].FreeSpace > m.Share.GetSpaceFloor() {
 			return disk, nil
 		}
 	}

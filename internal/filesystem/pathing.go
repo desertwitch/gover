@@ -50,7 +50,7 @@ func (f *Handler) establishElementPath(elem *Moveable) error {
 		slog.Warn("Skipped job: failed establishing path existence",
 			"err", err,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return err
@@ -61,7 +61,7 @@ func (f *Handler) establishElementPath(elem *Moveable) error {
 		slog.Warn("Skipped job: destination path already exists",
 			"path", existsPath,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return ErrPathExistsOnDest
@@ -71,7 +71,7 @@ func (f *Handler) establishElementPath(elem *Moveable) error {
 		slog.Warn("Skipped job: cannot set destination path",
 			"err", err,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return err
@@ -87,7 +87,7 @@ func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) err
 			"err", err,
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return err
@@ -97,7 +97,7 @@ func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) err
 			"path", existsPath,
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return ErrPathExistsOnDest
@@ -108,7 +108,7 @@ func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) err
 			"err", err,
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 
 		return err

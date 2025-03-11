@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/desertwitch/gover/internal/unraid"
 	"golang.org/x/sys/unix"
 )
 
@@ -38,9 +37,10 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 		return "", ErrNilDestination
 	}
 
-	if _, ok := m.Dest.(*unraid.Disk); ok {
-		for name, disk := range m.Share.IncludedDisks {
-			if _, exists := m.Share.ExcludedDisks[name]; exists {
+	switch dest := m.Dest.(type) {
+	case DiskType:
+		for name, disk := range m.Share.GetIncludedDisks() {
+			if _, exists := m.Share.GetExcludedDisks()[name]; exists {
 				continue
 			}
 			alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, disk)
@@ -53,10 +53,9 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 		}
 
 		return "", nil
-	}
 
-	if pool, ok := m.Dest.(*unraid.Pool); ok {
-		alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, pool)
+	case PoolType:
+		alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, dest)
 		if err != nil {
 			return "", err
 		}
@@ -65,9 +64,10 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 		}
 
 		return "", nil
-	}
 
-	return "", ErrImpossibleType
+	default:
+		return "", ErrImpossibleType
+	}
 }
 
 func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
@@ -84,7 +84,7 @@ func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func (f *Handler) HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error) {
+func (f *Handler) HasEnoughFreeSpace(s StorageType, minFree uint64, fileSize uint64) (bool, error) {
 	path := s.GetFSPath()
 
 	stats, err := f.GetDiskUsage(path)
@@ -128,7 +128,7 @@ func (f *Handler) IsFileInUse(path string) (bool, error) {
 	return false, err
 }
 
-func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate unraid.Storeable) (bool, string, error) {
+func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate StorageType) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("(fs-existson) failed to rel: %w", err)

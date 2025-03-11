@@ -10,11 +10,10 @@ import (
 	"strings"
 
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
-func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]*unraid.Disk, error) {
-	matches := make(map[int]map[string]*unraid.Disk)
+func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]filesystem.DiskType, error) {
+	matches := make(map[int]map[string]filesystem.DiskType)
 	splitExceedLvl := false
 
 	mainMatches, mainLevel, err := a.findDisksBySplitLevel(m)
@@ -24,16 +23,16 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 				"path", m.SourcePath,
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 		}
 	} else {
 		splitExceedLvl = true
 
 		if len(mainMatches) > 0 {
-			matches[mainLevel] = make(map[string]*unraid.Disk)
+			matches[mainLevel] = make(map[string]filesystem.DiskType)
 			for _, disk := range mainMatches {
-				matches[mainLevel][disk.Name] = disk
+				matches[mainLevel][disk.GetName()] = disk
 			}
 		}
 	}
@@ -47,7 +46,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 						"path", s.SourcePath,
 						"err", err,
 						"job", m.SourcePath,
-						"share", m.Share.Name,
+						"share", m.Share.GetName(),
 					)
 				}
 			} else {
@@ -55,10 +54,10 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 
 				if len(subMatches) > 0 {
 					if matches[subLevel] == nil {
-						matches[subLevel] = make(map[string]*unraid.Disk)
+						matches[subLevel] = make(map[string]filesystem.DiskType)
 					}
 					for _, disk := range subMatches {
-						matches[subLevel][disk.Name] = disk
+						matches[subLevel][disk.GetName()] = disk
 					}
 				}
 			}
@@ -85,8 +84,8 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 	return nil, ErrNotAllocatable
 }
 
-func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk, int, error) {
-	var foundDisks []*unraid.Disk
+func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]filesystem.DiskType, int, error) {
+	var foundDisks []filesystem.DiskType
 	path := filepath.Dir(m.SourcePath)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)
@@ -101,7 +100,7 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 		return nil, -1, fmt.Errorf("(alloc-splitlvl) %w: %s", ErrCalcSplitLvlZero, path)
 	}
 
-	maxLevel := m.Share.SplitLevel
+	maxLevel := m.Share.GetSplitLevel()
 
 	if splitLevel <= maxLevel {
 		return nil, -1, fmt.Errorf("(alloc-splitlvl) %w: %d < %d", ErrSplitDoesNotExceedLvl, splitLevel, maxLevel)
@@ -113,12 +112,12 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 
 		alreadyAllocated := a.getAllocatedsForSubpath(subPath)
 
-		for name, disk := range m.Share.IncludedDisks {
-			if _, exists := m.Share.ExcludedDisks[name]; exists {
+		for name, disk := range m.Share.GetIncludedDisks() {
+			if _, exists := m.Share.GetExcludedDisks()[name]; exists {
 				continue
 			}
 
-			dirToCheck := filepath.Join(disk.FSPath, subPath)
+			dirToCheck := filepath.Join(disk.GetFSPath(), subPath)
 
 			existsPhysical, err := a.FSOps.Exists(dirToCheck)
 			if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -126,22 +125,22 @@ func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]*unraid.Disk,
 					"disk", name,
 					"err", err,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				continue
 			}
 
-			_, existsAllocated := alreadyAllocated[disk.Name]
+			_, existsAllocated := alreadyAllocated[disk.GetName()]
 
 			if existsPhysical || existsAllocated {
-				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.SpaceFloor, (a.getAllocatedSpace(disk) + m.Metadata.Size))
+				enoughSpace, err := a.FSOps.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 				if err != nil {
 					slog.Warn("Skipped disk for split-level consideration",
 						"disk", name,
 						"err", err,
 						"job", m.SourcePath,
-						"share", m.Share.Name,
+						"share", m.Share.GetName(),
 					)
 
 					continue

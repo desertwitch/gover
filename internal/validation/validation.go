@@ -15,7 +15,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 
 			continue
@@ -30,7 +30,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 					"err", err,
 					"subjob", h.SourcePath,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				hardLinkFailure = true
@@ -52,7 +52,7 @@ func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable
 					"err", err,
 					"subjob", s.SourcePath,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				symlinkFailure = true

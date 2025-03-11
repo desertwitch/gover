@@ -11,6 +11,10 @@ type Pool struct {
 	FSPath string
 }
 
+func (p *Pool) IsPool() bool {
+	return true
+}
+
 func (p *Pool) GetName() string {
 	return p.Name
 }

@@ -16,11 +16,11 @@ info:
 	@file $(BINARY)
 
 mocks:
-	@find . -type d -name "mocks" -exec rm -vrf {} +
 	@mockery --config .mockery.yaml
 
 lint:
 	@golangci-lint run
 
 clean:
+	@find . -type d -name "mocks" -exec rm -vrf {} +
 	@rm -vf $(BINARY) || true

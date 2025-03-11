@@ -1,7 +1,6 @@
 package unraid
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -47,17 +46,6 @@ type configProvider interface {
 	MapKeyToUInt64(envMap map[string]string, key string) uint64
 }
 
-type Storeable interface {
-	GetName() string
-	GetFSPath() string
-}
-
-type System struct {
-	Array  *Array
-	Pools  map[string]*Pool
-	Shares map[string]*Share
-}
-
 type Handler struct {
 	FSOps     fsProvider
 	ConfigOps configProvider
@@ -68,35 +56,4 @@ func NewHandler(fsOps fsProvider, configOps configProvider) *Handler {
 		FSOps:     fsOps,
 		ConfigOps: configOps,
 	}
-}
-
-// establishSystem returns a pointer to an established Unraid system.
-func (u *Handler) EstablishSystem() (*System, error) {
-	disks, err := u.establishDisks()
-	if err != nil {
-		return nil, fmt.Errorf("(unraid) failed establishing disks: %w", err)
-	}
-
-	pools, err := u.establishPools()
-	if err != nil {
-		return nil, fmt.Errorf("(unraid) failed establishing pools: %w", err)
-	}
-
-	shares, err := u.establishShares(disks, pools)
-	if err != nil {
-		return nil, fmt.Errorf("(unraid) failed establishing shares: %w", err)
-	}
-
-	array, err := u.establishArray(disks)
-	if err != nil {
-		return nil, fmt.Errorf("(unraid) failed establishing array: %w", err)
-	}
-
-	system := &System{
-		Array:  array,
-		Pools:  pools,
-		Shares: shares,
-	}
-
-	return system, nil
 }

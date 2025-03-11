@@ -9,12 +9,11 @@ import (
 
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/queue"
-	"github.com/desertwitch/gover/internal/unraid"
 	"golang.org/x/sys/unix"
 )
 
 type fsProvider interface {
-	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s filesystem.StorageType, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
 	IsFileInUse(path string) (bool, error)
 }
@@ -104,7 +103,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 			"path", elem.DestPath,
 			"err", err,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 		q.SetSkipped(elem)
 
@@ -116,7 +115,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 	slog.Info("Processed:",
 		"path", elem.DestPath,
 		"job", elem.SourcePath,
-		"share", elem.Share.Name,
+		"share", elem.Share.GetName(),
 	)
 
 	return nil
@@ -131,7 +130,7 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 			"err", err,
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
-			"share", elem.Share.Name,
+			"share", elem.Share.GetName(),
 		)
 		q.SetSkipped(subelem)
 
@@ -149,7 +148,7 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 		"path", subelem.DestPath,
 		"subjob", subelem.SourcePath,
 		"job", elem.SourcePath,
-		"share", elem.Share.Name,
+		"share", elem.Share.GetName(),
 	)
 
 	return nil

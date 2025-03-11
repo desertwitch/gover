@@ -8,60 +8,59 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/desertwitch/gover/internal/validation"
 )
 
-func enumerateSystem(ctx context.Context, system *unraid.System, deps *depCoordinator) ([]*filesystem.Moveable, error) {
+func enumerateShares(ctx context.Context, shares map[string]filesystem.ShareType, disks map[string]filesystem.DiskType, deps *depPackage) ([]*filesystem.Moveable, error) {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
-	ch := make(chan []*filesystem.Moveable, len(system.Shares))
+	ch := make(chan []*filesystem.Moveable, len(shares))
 
 	// Primary to Secondary
-	for _, share := range system.Shares {
+	for _, share := range shares {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
 
-		if share.UseCache != "yes" || share.CachePool == nil {
+		if share.GetUseCache() != "yes" || share.GetCachePool() == nil {
 			continue
 		}
 
-		if share.CachePool2 == nil {
+		if share.GetCachePool2() == nil {
 			// Cache to Array
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.CachePool, nil, deps)
+				enumerationWorker(ch, share, share.GetCachePool(), nil, deps)
 			})
 		} else {
 			// Cache to Cache2
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.CachePool, share.CachePool2, deps)
+				enumerationWorker(ch, share, share.GetCachePool(), share.GetCachePool2(), deps)
 			})
 		}
 	}
 
 	// Secondary to Primary
-	for _, share := range system.Shares {
+	for _, share := range shares {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
 
-		if share.UseCache != "prefer" || share.CachePool == nil {
+		if share.GetUseCache() != "prefer" || share.GetCachePool() == nil {
 			continue
 		}
 
-		if share.CachePool2 == nil {
+		if share.GetCachePool2() == nil {
 			// Array to Cache
-			for _, disk := range system.Array.Disks {
+			for _, disk := range disks {
 				tasks = append(tasks, func() {
-					enumerationWorker(ch, share, disk, share.CachePool, deps)
+					enumerationWorker(ch, share, disk, share.GetCachePool(), deps)
 				})
 			}
 		} else {
 			// Cache2 to Cache
 			tasks = append(tasks, func() {
-				enumerationWorker(ch, share, share.CachePool2, share.CachePool, deps)
+				enumerationWorker(ch, share, share.GetCachePool2(), share.GetCachePool(), deps)
 			})
 		}
 	}
@@ -93,18 +92,18 @@ func enumerateSystem(ctx context.Context, system *unraid.System, deps *depCoordi
 	return files, nil
 }
 
-func enumerationWorker(ch chan<- []*filesystem.Moveable, share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *depCoordinator) {
+func enumerationWorker(ch chan<- []*filesystem.Moveable, share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) {
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
-		if _, ok := src.(*unraid.Disk); ok {
+		if _, ok := src.(filesystem.DiskType); ok {
 			slog.Warn("Skipped processing array disk due to failure",
 				"err", err,
-				"share", share.Name,
+				"share", share.GetName(),
 			)
 		} else {
 			slog.Warn("Skipped processing share due to failure",
 				"err", err,
-				"share", share.Name,
+				"share", share.GetName(),
 			)
 		}
 
@@ -114,7 +113,7 @@ func enumerationWorker(ch chan<- []*filesystem.Moveable, share *unraid.Share, sr
 	ch <- files
 }
 
-func enumerateShare(share *unraid.Share, src unraid.Storeable, dst unraid.Storeable, deps *depCoordinator) ([]*filesystem.Moveable, error) {
+func enumerateShare(share filesystem.ShareType, src filesystem.StorageType, dst filesystem.StorageType, deps *depPackage) ([]*filesystem.Moveable, error) {
 	files, err := deps.FSHandler.GetMoveables(share, src, dst)
 	if err != nil {
 		return nil, fmt.Errorf("(main) failed to enumerate: %w", err)

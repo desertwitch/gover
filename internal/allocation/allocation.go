@@ -6,34 +6,34 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
-	HasEnoughFreeSpace(s unraid.Storeable, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s filesystem.StorageType, minFree uint64, fileSize uint64) (bool, error)
 }
 
 type allocInfo struct {
 	sourcePath    string
 	sourceBase    string
-	allocatedDisk *unraid.Disk
+	allocatedDisk filesystem.DiskType
 }
 
 type Handler struct {
 	sync.RWMutex
 	FSOps                 fsProvider
 	alreadyAllocated      map[*filesystem.Moveable]*allocInfo
-	alreadyAllocatedSpace map[*unraid.Disk]uint64
+	alreadyAllocatedSpace map[string]uint64
 }
 
 func NewHandler(fsOps fsProvider) *Handler {
 	return &Handler{
 		FSOps:                 fsOps,
 		alreadyAllocated:      make(map[*filesystem.Moveable]*allocInfo),
-		alreadyAllocatedSpace: make(map[*unraid.Disk]uint64),
+		alreadyAllocatedSpace: make(map[string]uint64),
 	}
 }
 
@@ -46,7 +46,7 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 			slog.Warn("Skipped job: failed to allocate array destination",
 				"err", err,
 				"job", m.SourcePath,
-				"share", m.Share.Name,
+				"share", m.Share.GetName(),
 			)
 
 			continue
@@ -66,7 +66,7 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 					"err", err,
 					"subjob", s.SourcePath,
 					"job", m.SourcePath,
-					"share", s.Share.Name,
+					"share", s.Share.GetName(),
 				)
 				symlinkFailure = true
 
@@ -84,11 +84,11 @@ func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([
 	return filtered, nil
 }
 
-func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk, error) {
-	includedDisks := m.Share.IncludedDisks
-	excludedDisks := m.Share.ExcludedDisks
+func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (filesystem.DiskType, error) {
+	includedDisks := m.Share.GetIncludedDisks()
+	excludedDisks := m.Share.GetExcludedDisks()
 
-	if m.Share.SplitLevel >= 0 {
+	if m.Share.GetSplitLevel() >= 0 {
 		returnDisks, err := a.allocateDisksBySplitLevel(m)
 		// TO-DO: Configurable if exceeding, but non allocatable, split-levels should proceed.
 		if err != nil && !errors.Is(err, ErrSplitDoesNotExceedLvl) && !errors.Is(err, ErrNotAllocatable) {
@@ -99,9 +99,9 @@ func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 		}
 	}
 
-	switch allocationMethod := m.Share.Allocator; allocationMethod {
-	case unraid.AllocHighWater:
-		ret, err := a.allocateHighWaterDisk(m, includedDisks, excludedDisks)
+	switch allocationMethod := m.Share.GetAllocator(); allocationMethod {
+	case configuration.AllocHighWater:
+		ret, err := a.allocateHighWater(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by high water: %w", err)
 		}
@@ -110,8 +110,8 @@ func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 
 		return ret, nil
 
-	case unraid.AllocFillUp:
-		ret, err := a.allocateFillUpDisk(m, includedDisks, excludedDisks)
+	case configuration.AllocFillUp:
+		ret, err := a.allocateFillUp(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by fillup: %w", err)
 		}
@@ -120,8 +120,8 @@ func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (*unraid.Disk
 
 		return ret, nil
 
-	case unraid.AllocMostFree:
-		ret, err := a.allocateMostFreeDisk(m, includedDisks, excludedDisks)
+	case configuration.AllocMostFree:
+		ret, err := a.allocateMostFree(m, includedDisks, excludedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by mostfree: %w", err)
 		}

@@ -19,30 +19,26 @@ import (
 	"github.com/lmittmann/tint"
 )
 
-type depCoordinator struct {
-	FSHandler     *filesystem.Handler
-	UnraidHandler *unraid.Handler
-	AllocHandler  *allocation.Handler
+type depPackage struct {
+	FSHandler    *filesystem.Handler
+	AllocHandler *allocation.Handler
+	IOHandler    *io.Handler
 }
 
-func newDepCoordinator(fsOps *filesystem.Handler, unraidOps *unraid.Handler, allocOps *allocation.Handler) *depCoordinator {
-	return &depCoordinator{
-		FSHandler:     fsOps,
-		UnraidHandler: unraidOps,
-		AllocHandler:  allocOps,
+func newDepPackage(fsOps *filesystem.Handler, allocOps *allocation.Handler, ioOps *io.Handler) *depPackage {
+	return &depPackage{
+		FSHandler:    fsOps,
+		AllocHandler: allocOps,
+		IOHandler:    ioOps,
 	}
 }
 
-func processSystem(ctx context.Context, wg *sync.WaitGroup, system *unraid.System, deps *depCoordinator) {
+func processSystem(ctx context.Context, wg *sync.WaitGroup, system filesystem.SystemType, deps *depPackage) {
 	defer wg.Done()
 
-	osProvider := &filesystem.OS{}
-	unixProvider := &filesystem.Unix{}
-
 	queueMan := queue.NewManager()
-	ioOps := io.NewHandler(deps.FSHandler, osProvider, unixProvider)
 
-	files, err := enumerateSystem(ctx, system, deps)
+	files, err := enumerateShares(ctx, system.GetShares(), system.GetArray().GetDisks(), deps)
 	if err != nil {
 		return
 	}
@@ -62,7 +58,7 @@ func processSystem(ctx context.Context, wg *sync.WaitGroup, system *unraid.Syste
 			defer queueWG.Done()
 			defer func() { <-semaphore }()
 
-			ioOps.ProcessQueue(ctx, q)
+			deps.IOHandler.ProcessQueue(ctx, q)
 		}(destQueue)
 	}
 
@@ -94,10 +90,10 @@ func main() {
 
 	configOps := configuration.NewHandler(configProvider)
 	fsOps := filesystem.NewHandler(osProvider, unixProvider)
-	unraidOps := unraid.NewHandler(fsOps, configOps)
 	allocOps := allocation.NewHandler(fsOps)
+	ioOps := io.NewHandler(fsOps, osProvider, unixProvider)
 
-	deps := newDepCoordinator(fsOps, unraidOps, allocOps)
+	unraidOps := unraid.NewHandler(fsOps, configOps)
 
 	system, err := unraidOps.EstablishSystem()
 	if err != nil {
@@ -107,6 +103,8 @@ func main() {
 
 		return
 	}
+
+	deps := newDepPackage(fsOps, allocOps, ioOps)
 
 	wg.Add(1)
 	go processSystem(ctx, &wg, system, deps)

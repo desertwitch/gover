@@ -10,7 +10,7 @@ import (
 )
 
 func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error {
-	enoughSpace, err := i.FSOps.HasEnoughFreeSpace(m.Dest, m.Share.SpaceFloor, m.Metadata.Size)
+	enoughSpace, err := i.FSOps.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
 	if err != nil {
 		return fmt.Errorf("(io-file) failed to check enough space: %w", err)
 	}

@@ -5,15 +5,13 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
 type Moveable struct {
-	Share      *unraid.Share
-	Source     unraid.Storeable
+	Share      ShareType
+	Source     StorageType
 	SourcePath string
-	Dest       unraid.Storeable
+	Dest       StorageType
 	DestPath   string
 	Hardlinks  []*Moveable
 	IsHardlink bool
@@ -51,11 +49,11 @@ func NewHandler(osOps osProvider, unixOps unixProvider) *Handler {
 	}
 }
 
-func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst unraid.Storeable) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(share ShareType, src StorageType, dst StorageType) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 	filtered := []*Moveable{}
 
-	shareDir := filepath.Join(src.GetFSPath(), share.Name)
+	shareDir := filepath.Join(src.GetFSPath(), share.GetName())
 
 	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -63,7 +61,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 				slog.Warn("Failure for path during walking of directory tree (was skipped)",
 					"path", path,
 					"err", err,
-					"share", share.Name,
+					"share", share.GetName(),
 				)
 			}
 
@@ -77,7 +75,7 @@ func (f *Handler) GetMoveables(share *unraid.Share, src unraid.Storeable, dst un
 				slog.Warn("Failure checking for emptiness during walking of directory tree (was skipped)",
 					"path", path,
 					"err", err,
-					"share", share.Name,
+					"share", share.GetName(),
 				)
 
 				return nil
@@ -125,7 +123,7 @@ func (f *Handler) establishMetadata(m *Moveable) error {
 		slog.Warn("Skipped job: failed to get metadata",
 			"err", err,
 			"job", m.SourcePath,
-			"share", m.Share.Name,
+			"share", m.Share.GetName(),
 		)
 
 		return err
@@ -140,7 +138,7 @@ func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
 		slog.Warn("Skipped job: failed to get parent folders",
 			"err", err,
 			"job", m.SourcePath,
-			"share", m.Share.Name,
+			"share", m.Share.GetName(),
 		)
 
 		return err
@@ -149,7 +147,7 @@ func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
 	return nil
 }
 
-func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
+func establishSymlinks(moveables []*Moveable, dst StorageType) {
 	realFiles := make(map[string]*Moveable)
 
 	for _, m := range moveables {
@@ -171,7 +169,7 @@ func establishSymlinks(moveables []*Moveable, dst unraid.Storeable) {
 	}
 }
 
-func establishHardlinks(moveables []*Moveable, dst unraid.Storeable) {
+func establishHardlinks(moveables []*Moveable, dst StorageType) {
 	inodes := make(map[uint64]*Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
@@ -207,7 +205,7 @@ func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
 				slog.Warn("Skipped job: failed to check if file is in use",
 					"err", err,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				continue
@@ -215,7 +213,7 @@ func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
 				slog.Warn("Skipped job: source file is in use",
 					"err", err,
 					"job", m.SourcePath,
-					"share", m.Share.Name,
+					"share", m.Share.GetName(),
 				)
 
 				continue

@@ -58,7 +58,7 @@ func validateDirectory(d *filesystem.RelatedDirectory) error {
 }
 
 func validateDirRootConnection(m *filesystem.Moveable) error {
-	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.Name)
+	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.GetName())
 
 	// Special case: Moveable is an empty share folder (the base).
 	// We allow this because no directory relations will be processed (later).
@@ -74,7 +74,7 @@ func validateDirRootConnection(m *filesystem.Moveable) error {
 		return fmt.Errorf("(validation) %w: %s != %s", ErrSourceNotConnectBase, shareDirSource, m.RootDir.SourcePath)
 	}
 
-	shareDirDest := filepath.Join(m.Dest.GetFSPath(), m.Share.Name)
+	shareDirDest := filepath.Join(m.Dest.GetFSPath(), m.Share.GetName())
 	if m.RootDir.DestPath != shareDirDest {
 		return fmt.Errorf("(validation) %w: %s != %s", ErrDestNotConnectBase, shareDirDest, m.RootDir.DestPath)
 	}

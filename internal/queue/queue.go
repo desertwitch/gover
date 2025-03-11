@@ -4,17 +4,16 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/filesystem"
-	"github.com/desertwitch/gover/internal/unraid"
 )
 
 type Manager struct {
 	sync.RWMutex
-	items map[unraid.Storeable]*DestinationQueue
+	items map[string]*DestinationQueue
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		items: make(map[unraid.Storeable]*DestinationQueue),
+		items: make(map[string]*DestinationQueue),
 	}
 }
 
@@ -23,36 +22,36 @@ func (b *Manager) Enqueue(items ...*filesystem.Moveable) {
 	defer b.Unlock()
 
 	for _, item := range items {
-		if b.items[item.Dest] == nil {
-			b.items[item.Dest] = NewDestinationQueue()
+		if b.items[item.Dest.GetName()] == nil {
+			b.items[item.Dest.GetName()] = NewDestinationQueue()
 		}
-		b.items[item.Dest].Enqueue(item)
+		b.items[item.Dest.GetName()].Enqueue(item)
 	}
 }
 
-func (b *Manager) Dequeue(target unraid.Storeable) (*filesystem.Moveable, bool) {
+func (b *Manager) Dequeue(target filesystem.StorageType) (*filesystem.Moveable, bool) {
 	b.Lock()
 	defer b.Unlock()
 
-	if queue, exists := b.items[target]; exists {
+	if queue, exists := b.items[target.GetName()]; exists {
 		return queue.Dequeue()
 	}
 
 	return nil, false
 }
 
-func (b *Manager) GetQueueUnsafe(target unraid.Storeable) (*DestinationQueue, bool) {
+func (b *Manager) GetQueueUnsafe(target filesystem.StorageType) (*DestinationQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 
-	if queue, exists := b.items[target]; exists {
+	if queue, exists := b.items[target.GetName()]; exists {
 		return queue, true
 	}
 
 	return nil, false
 }
 
-func (b *Manager) GetQueuesUnsafe() map[unraid.Storeable]*DestinationQueue {
+func (b *Manager) GetQueuesUnsafe() map[string]*DestinationQueue {
 	b.RLock()
 	defer b.RUnlock()
 

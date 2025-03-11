@@ -4,6 +4,12 @@ import (
 	"strconv"
 )
 
+const (
+	AllocHighWater = "highwater"
+	AllocMostFree  = "mostfree"
+	AllocFillUp    = "fillup"
+)
+
 type genericConfigProvider interface {
 	Read(filenames ...string) (envMap map[string]string, err error)
 }
