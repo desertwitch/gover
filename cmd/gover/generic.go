@@ -17,16 +17,13 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 	defer wg.Done()
 
 	queueMan := queue.NewManager()
-
-	files, err := enumerateShares(ctx, shares, deps)
-	if err != nil {
-		return
-	}
+	files := enumerateShares(shares, deps)
 
 	queueMan.Enqueue(files...)
 	destQueues := queueMan.GetQueuesUnsafe()
 
 	var queueWG sync.WaitGroup
+
 	maxWorkers := runtime.NumCPU()
 	semaphore := make(chan struct{}, maxWorkers)
 
@@ -45,7 +42,7 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 	queueWG.Wait()
 }
 
-func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps *depPackage) ([]*filesystem.Moveable, error) {
+func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*filesystem.Moveable {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
@@ -53,10 +50,6 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 
 	// Primary to Secondary
 	for _, share := range shares {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
 		if share.GetUseCache() != "yes" || share.GetCachePool() == nil {
 			continue
 		}
@@ -76,10 +69,6 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 
 	// Secondary to Primary
 	for _, share := range shares {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
 		if share.GetUseCache() != "prefer" || share.GetCachePool() == nil {
 			continue
 		}
@@ -112,6 +101,7 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 		go func(task func()) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
+
 			task()
 		}(task)
 	}
@@ -121,12 +111,33 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 		close(ch)
 	}()
 
-	var files []*filesystem.Moveable
+	files := []*filesystem.Moveable{}
 	for f := range ch {
 		files = append(files, f...)
 	}
 
-	return files, nil
+	return files
+}
+
+func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
+	files, err := enumerateShare(share, src, dst, deps)
+	if err != nil {
+		if _, ok := src.(storage.Disk); ok {
+			slog.Warn("Skipped enumerating array disk due to failure",
+				"err", err,
+				"share", share.GetName(),
+			)
+		} else {
+			slog.Warn("Skipped enumerating share due to failure",
+				"err", err,
+				"share", share.GetName(),
+			)
+		}
+
+		return
+	}
+
+	ch <- files
 }
 
 func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {
@@ -153,25 +164,4 @@ func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storag
 	}
 
 	return files, nil
-}
-
-func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
-	files, err := enumerateShare(share, src, dst, deps)
-	if err != nil {
-		if _, ok := src.(storage.Disk); ok {
-			slog.Warn("Skipped processing array disk due to failure",
-				"err", err,
-				"share", share.GetName(),
-			)
-		} else {
-			slog.Warn("Skipped processing share due to failure",
-				"err", err,
-				"share", share.GetName(),
-			)
-		}
-
-		return
-	}
-
-	ch <- files
 }
