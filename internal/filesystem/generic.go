@@ -1,10 +1,5 @@
 package filesystem
 
-type StorageType interface {
-	GetName() string
-	GetFSPath() string
-}
-
 type SystemType interface {
 	GetArray() ArrayType
 	GetShares() map[string]ShareType
@@ -13,6 +8,12 @@ type SystemType interface {
 type ArrayType interface {
 	GetDisks() map[string]DiskType
 }
+
+type StorageType interface {
+	GetName() string
+	GetFSPath() string
+}
+
 type DiskType interface {
 	IsDisk() bool
 	GetName() string
