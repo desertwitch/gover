@@ -19,7 +19,6 @@ type Share struct {
 	DisableCOW    bool
 	IncludedDisks map[string]*Disk
 	ExcludedDisks map[string]*Disk
-	CFGFile       string
 }
 
 func (s *Share) GetName() string {
@@ -118,7 +117,6 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 
 			share := &Share{
 				Name:       nameWithoutExt,
-				CFGFile:    filePath,
 				UseCache:   u.ConfigHandler.MapKeyToString(configMap, SettingShareUseCache),
 				Allocator:  u.ConfigHandler.MapKeyToString(configMap, SettingShareAllocator),
 				DisableCOW: strings.ToLower(u.ConfigHandler.MapKeyToString(configMap, SettingShareCOW)) == "no",
