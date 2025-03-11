@@ -42,7 +42,7 @@ func processSystem(ctx context.Context, wg *sync.WaitGroup, system *unraid.Syste
 	queueMan := queue.NewManager()
 	ioOps := io.NewHandler(deps.FSHandler, osProvider, unixProvider)
 
-	files, err := enumSystem(ctx, system, deps)
+	files, err := enumerateSystem(ctx, system, deps)
 	if err != nil {
 		return
 	}
