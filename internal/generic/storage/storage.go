@@ -1,14 +1,5 @@
 package storage
 
-type System interface {
-	GetArray() Array
-	GetShares() map[string]Share
-}
-
-type Array interface {
-	GetDisks() map[string]Disk
-}
-
 type Storage interface {
 	GetName() string
 	GetFSPath() string

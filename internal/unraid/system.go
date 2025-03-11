@@ -12,14 +12,6 @@ type System struct {
 	Shares map[string]*Share
 }
 
-func (s *System) GetArray() storage.Array {
-	if s.Array == nil {
-		return nil
-	}
-
-	return s.Array
-}
-
 func (s *System) GetShares() map[string]storage.Share {
 	if s.Shares == nil {
 		return nil

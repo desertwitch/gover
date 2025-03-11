@@ -5,18 +5,15 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/desertwitch/gover/internal/adapters/unraid"
 	"github.com/desertwitch/gover/internal/generic/allocation"
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/io"
-	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
 
@@ -32,38 +29,6 @@ func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handl
 		AllocHandler: allocHandler,
 		IOHandler:    ioHandler,
 	}
-}
-
-func processSystem(ctx context.Context, wg *sync.WaitGroup, system storage.System, deps *depPackage) {
-	defer wg.Done()
-
-	queueMan := queue.NewManager()
-
-	files, err := enumerateShares(ctx, system.GetShares(), system.GetArray().GetDisks(), deps)
-	if err != nil {
-		return
-	}
-
-	queueMan.Enqueue(files...)
-	destQueues := queueMan.GetQueuesUnsafe()
-
-	var queueWG sync.WaitGroup
-	maxWorkers := runtime.NumCPU()
-	semaphore := make(chan struct{}, maxWorkers)
-
-	for _, destQueue := range destQueues {
-		semaphore <- struct{}{}
-
-		queueWG.Add(1)
-		go func(q *queue.DestinationQueue) {
-			defer queueWG.Done()
-			defer func() { <-semaphore }()
-
-			deps.IOHandler.ProcessQueue(ctx, q)
-		}(destQueue)
-	}
-
-	queueWG.Wait()
 }
 
 func main() {
@@ -108,7 +73,7 @@ func main() {
 	deps := newDepPackage(fsHandler, allocHandler, ioHandler)
 
 	wg.Add(1)
-	go processSystem(ctx, &wg, system, deps)
+	go processShares(ctx, &wg, system.GetShares(), deps)
 	wg.Wait()
 
 	if ctx.Err() != nil {
