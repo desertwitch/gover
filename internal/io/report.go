@@ -11,7 +11,7 @@ type creationReport struct {
 	HardlinksCreated []*filesystem.Moveable
 }
 
-func mergecreationReports(target, source *creationReport) {
+func mergeCreationReports(target, source *creationReport) {
 	if target == nil || source == nil {
 		return
 	}
@@ -24,7 +24,7 @@ func mergecreationReports(target, source *creationReport) {
 	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
-func addTocreationReport(p *creationReport, m *filesystem.Moveable) {
+func addToCreationReport(p *creationReport, m *filesystem.Moveable) {
 	switch {
 	case m.IsHardlink:
 		p.AnyCreated = append(p.AnyCreated, m)

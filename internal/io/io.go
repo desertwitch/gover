@@ -89,7 +89,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
 			}
 		}
 
-		mergecreationReports(batch, job)
+		mergeCreationReports(batch, job)
 	}
 
 	i.ensureTimestamps(batch)
@@ -162,8 +162,8 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 
 	defer func() {
 		if jobComplete {
-			addTocreationReport(intermediateJob, m)
-			mergecreationReports(job, intermediateJob)
+			addToCreationReport(intermediateJob, m)
+			mergeCreationReports(job, intermediateJob)
 		} else {
 			i.cleanDirectoriesAfterFailure(intermediateJob)
 		}
