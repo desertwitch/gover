@@ -8,6 +8,7 @@ SRC_DIR = ./cmd/gover
 all: $(BINARY)
 
 $(BINARY):
+	@$(MAKE) mocks
 	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
 	@$(MAKE) info
 
