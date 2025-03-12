@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -49,6 +50,16 @@ func main() {
 	go func() {
 		<-sigChan
 		cancel()
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGUSR1)
+	go func() {
+		for range c {
+			buf := make([]byte, 1<<20)
+			stacklen := runtime.Stack(buf, true)
+			os.Stderr.Write(buf[:stacklen])
+		}
 	}()
 
 	osProvider := &filesystem.OS{}

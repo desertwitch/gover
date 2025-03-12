@@ -169,11 +169,11 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		}
 	}()
 
-	if inUse, err := i.FSHandler.IsFileInUse(m.SourcePath); err != nil {
-		return fmt.Errorf("(io) failed to check src in use: %w", err)
-	} else if inUse {
-		return fmt.Errorf("(io) %w", ErrSourceFileInUse)
-	}
+	// if inUse, err := i.FSHandler.IsFileInUse(m.SourcePath); err != nil {
+	// 	return fmt.Errorf("(io) failed to check src in use: %w", err)
+	// } else if inUse {
+	// 	return fmt.Errorf("(io) %w", ErrSourceFileInUse)
+	// }
 
 	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 		return fmt.Errorf("(io) failed to ensure dir structure: %w", err)

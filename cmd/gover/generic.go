@@ -46,7 +46,7 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
-	ch := make(chan []*filesystem.Moveable, len(shares))
+	ch := make(chan []*filesystem.Moveable, 1000)
 
 	// Primary to Secondary
 	for _, share := range shares {
@@ -120,6 +120,7 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 }
 
 func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
+	slog.Info("Enumerating", "share", share.GetName(), "src", src.GetName())
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
 		if _, ok := src.(storage.Disk); ok {
@@ -138,6 +139,7 @@ func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Shar
 	}
 
 	ch <- files
+	slog.Info("Enumerating done", "share", share.GetName(), "src", src.GetName())
 }
 
 func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {

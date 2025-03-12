@@ -114,7 +114,7 @@ func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst sto
 	establishSymlinks(filtered, dst)
 	establishHardlinks(filtered, dst)
 	filtered = removeInternalLinks(filtered)
-	filtered = f.removeInUseFiles(filtered)
+	// filtered = f.removeInUseFiles(filtered)
 
 	return filtered, nil
 }
