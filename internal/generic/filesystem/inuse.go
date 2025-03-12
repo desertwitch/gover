@@ -3,6 +3,7 @@ package filesystem
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -12,9 +13,14 @@ const (
 	CheckerInterval = 5 * time.Second
 )
 
+type osReadsProvider interface {
+	ReadDir(name string) ([]os.DirEntry, error)
+	Readlink(name string) (string, error)
+}
+
 type InUseChecker struct {
 	sync.RWMutex
-	osHandler   osProvider
+	osHandler   osReadsProvider
 	inUsePaths  map[string]struct{}
 	stopUpdates chan struct{}
 }
