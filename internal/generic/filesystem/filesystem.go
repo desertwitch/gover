@@ -1,13 +1,46 @@
 package filesystem
 
 import (
+	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
+	"golang.org/x/sys/unix"
 )
+
+type osProvider interface {
+	Open(name string) (*os.File, error)
+	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
+	ReadDir(name string) ([]os.DirEntry, error)
+	Readlink(name string) (string, error)
+	Remove(name string) error
+	Rename(oldpath, newpath string) error
+	Stat(name string) (os.FileInfo, error)
+}
+
+type unixProvider interface {
+	Chmod(path string, mode uint32) error
+	Chown(path string, uid, gid int) error
+	Lchown(path string, uid, gid int) error
+	Link(oldpath, newpath string) error
+	Lstat(path string, stat *unix.Stat_t) error
+	Mkdir(path string, mode uint32) error
+	Statfs(path string, buf *unix.Statfs_t) error
+	Symlink(oldpath, newpath string) error
+	UtimesNano(path string, times []unix.Timespec) error
+}
+
+type inUseProvider interface {
+	IsInUse(path string) bool
+}
+
+type fsWalkProvider interface {
+	WalkDir(root string, fn fs.WalkDirFunc) error
+}
 
 type Moveable struct {
 	Share      storage.Share
@@ -38,17 +71,26 @@ func (m *Moveable) GetDestPath() string {
 }
 
 type Handler struct {
-	OSHandler   osProvider
-	UnixHandler unixProvider
-	FSWalker    fsWalker
+	osHandler       osProvider
+	unixHandler     unixProvider
+	inUseHandler    inUseProvider
+	fileWalkHandler fsWalkProvider
 }
 
-func NewHandler(osHandler osProvider, unixHandler unixProvider) *Handler {
-	return &Handler{
-		OSHandler:   osHandler,
-		UnixHandler: unixHandler,
-		FSWalker:    &fileWalker{},
+func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvider) (*Handler, error) {
+	inUseHandler, err := NewInUseChecker(ctx, osHandler)
+	if err != nil {
+		return nil, fmt.Errorf("(fs) failed to spawn file-in-use checker: %w", err)
 	}
+
+	fileWalkHandler := newFileWalker()
+
+	return &Handler{
+		osHandler:       osHandler,
+		unixHandler:     unixHandler,
+		inUseHandler:    inUseHandler,
+		fileWalkHandler: fileWalkHandler,
+	}, nil
 }
 
 func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
@@ -57,7 +99,7 @@ func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst sto
 
 	shareDir := filepath.Join(src.GetFSPath(), share.GetName())
 
-	err := f.FSWalker.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
+	err := f.fileWalkHandler.WalkDir(shareDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			if path != shareDir {
 				slog.Warn("Failure for path during walking of directory tree (was skipped)",
@@ -114,7 +156,7 @@ func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst sto
 	establishSymlinks(filtered, dst)
 	establishHardlinks(filtered, dst)
 	filtered = removeInternalLinks(filtered)
-	// filtered = f.removeInUseFiles(filtered)
+	filtered = f.removeInUseFiles(filtered)
 
 	return filtered, nil
 }
@@ -124,17 +166,8 @@ func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
 
 	for _, m := range moveables {
 		if !m.Metadata.IsDir {
-			if inUse, err := f.IsFileInUse(m.SourcePath); err != nil {
-				slog.Warn("Skipped job: failed to check if file is in use",
-					"err", err,
-					"job", m.SourcePath,
-					"share", m.Share.GetName(),
-				)
-
-				continue
-			} else if inUse {
+			if inUse := f.inUseHandler.IsInUse(m.SourcePath); inUse {
 				slog.Warn("Skipped job: source file is in use",
-					"err", err,
 					"job", m.SourcePath,
 					"share", m.Share.GetName(),
 				)

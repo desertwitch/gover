@@ -23,7 +23,7 @@ func (i *Handler) ensureTimestamps(batch *creationReport) {
 
 func (i *Handler) ensureTimestamp(path string, metadata *filesystem.Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
-	if err := i.UnixHandler.UtimesNano(path, ts); err != nil {
+	if err := i.unixHandler.UtimesNano(path, ts); err != nil {
 		return fmt.Errorf("(io-times) failed to utimesnano: %w", err)
 	}
 

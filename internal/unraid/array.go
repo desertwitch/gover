@@ -15,16 +15,16 @@ type Array struct {
 func (u *Handler) establishArray(disks map[string]*Disk) (*Array, error) {
 	stateFile := ArrayStateFile
 
-	configMap, err := u.ConfigHandler.ReadGeneric(stateFile)
+	configMap, err := u.configHandler.ReadGeneric(stateFile)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-array) failed to load array state file: %w", err)
 	}
 
 	array := &Array{
 		Disks:         disks,
-		Status:        u.ConfigHandler.MapKeyToString(configMap, StateArrayStatus),
-		TurboSetting:  u.ConfigHandler.MapKeyToString(configMap, StateTurboSetting),
-		ParityRunning: u.ConfigHandler.MapKeyToInt(configMap, StateParityPosition) > 0,
+		Status:        u.configHandler.MapKeyToString(configMap, StateArrayStatus),
+		TurboSetting:  u.configHandler.MapKeyToString(configMap, StateTurboSetting),
+		ParityRunning: u.configHandler.MapKeyToInt(configMap, StateParityPosition) > 0,
 	}
 
 	return array, nil

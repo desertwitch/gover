@@ -47,13 +47,13 @@ type configProvider interface {
 }
 
 type Handler struct {
-	FSHandler     fsProvider
-	ConfigHandler configProvider
+	fsHandler     fsProvider
+	configHandler configProvider
 }
 
 func NewHandler(fsHandler fsProvider, configHandler configProvider) *Handler {
 	return &Handler{
-		FSHandler:     fsHandler,
-		ConfigHandler: configHandler,
+		fsHandler:     fsHandler,
+		configHandler: configHandler,
 	}
 }

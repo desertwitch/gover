@@ -15,17 +15,17 @@ type genericConfigProvider interface {
 }
 
 type Handler struct {
-	GenericHandler genericConfigProvider
+	genericHandler genericConfigProvider
 }
 
 func NewHandler(genericHandler genericConfigProvider) *Handler {
 	return &Handler{
-		GenericHandler: genericHandler,
+		genericHandler: genericHandler,
 	}
 }
 
 func (c *Handler) ReadGeneric(filenames ...string) (map[string]string, error) {
-	return c.GenericHandler.Read(filenames...)
+	return c.genericHandler.Read(filenames...)
 }
 
 func (c *Handler) MapKeyToString(envMap map[string]string, key string) string {

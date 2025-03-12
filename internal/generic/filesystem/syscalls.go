@@ -6,28 +6,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type osProvider interface {
-	Open(name string) (*os.File, error)
-	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
-	ReadDir(name string) ([]os.DirEntry, error)
-	Readlink(name string) (string, error)
-	Remove(name string) error
-	Rename(oldpath, newpath string) error
-	Stat(name string) (os.FileInfo, error)
-}
-
-type unixProvider interface {
-	Chmod(path string, mode uint32) error
-	Chown(path string, uid, gid int) error
-	Lchown(path string, uid, gid int) error
-	Link(oldpath, newpath string) error
-	Lstat(path string, stat *unix.Stat_t) error
-	Mkdir(path string, mode uint32) error
-	Statfs(path string, buf *unix.Statfs_t) error
-	Symlink(oldpath, newpath string) error
-	UtimesNano(path string, times []unix.Timespec) error
-}
-
 type OS struct{}
 
 func (*OS) Remove(name string) error {

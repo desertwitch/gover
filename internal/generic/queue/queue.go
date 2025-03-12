@@ -63,17 +63,17 @@ type DestinationQueue struct {
 	sync.Mutex
 	head       int
 	items      []*filesystem.Moveable
-	Success    []*filesystem.Moveable
-	Skipped    []*filesystem.Moveable
-	InProgress map[*filesystem.Moveable]struct{}
+	success    []*filesystem.Moveable
+	skipped    []*filesystem.Moveable
+	inProgress map[*filesystem.Moveable]struct{}
 }
 
 func NewDestinationQueue() *DestinationQueue {
 	return &DestinationQueue{
 		items:      []*filesystem.Moveable{},
-		InProgress: make(map[*filesystem.Moveable]struct{}),
-		Success:    []*filesystem.Moveable{},
-		Skipped:    []*filesystem.Moveable{},
+		inProgress: make(map[*filesystem.Moveable]struct{}),
+		success:    []*filesystem.Moveable{},
+		skipped:    []*filesystem.Moveable{},
 	}
 }
 
@@ -103,8 +103,8 @@ func (q *DestinationQueue) SetSuccess(items ...*filesystem.Moveable) {
 	defer q.Unlock()
 
 	for _, item := range items {
-		delete(q.InProgress, item)
-		q.Success = append(q.Success, item)
+		delete(q.inProgress, item)
+		q.success = append(q.success, item)
 	}
 }
 
@@ -113,8 +113,8 @@ func (q *DestinationQueue) SetSkipped(items ...*filesystem.Moveable) {
 	defer q.Unlock()
 
 	for _, item := range items {
-		delete(q.InProgress, item)
-		q.Skipped = append(q.Skipped, item)
+		delete(q.inProgress, item)
+		q.skipped = append(q.skipped, item)
 	}
 }
 
@@ -123,6 +123,6 @@ func (q *DestinationQueue) SetProcessing(items ...*filesystem.Moveable) {
 	defer q.Unlock()
 
 	for _, item := range items {
-		q.InProgress[item] = struct{}{}
+		q.inProgress[item] = struct{}{}
 	}
 }

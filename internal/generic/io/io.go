@@ -16,7 +16,7 @@ import (
 type fsProvider interface {
 	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
-	IsFileInUse(path string) (bool, error)
+	IsInUse(path string) bool
 }
 
 type osProvider interface {
@@ -45,16 +45,16 @@ type relatedElement interface {
 
 type Handler struct {
 	sync.Mutex
-	FSHandler   fsProvider
-	OSHandler   osProvider
-	UnixHandler unixProvider
+	fsHandler   fsProvider
+	osHandler   osProvider
+	unixHandler unixProvider
 }
 
 func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProvider) *Handler {
 	return &Handler{
-		FSHandler:   fsHandler,
-		OSHandler:   osHandler,
-		UnixHandler: unixHandler,
+		fsHandler:   fsHandler,
+		osHandler:   osHandler,
+		unixHandler: unixHandler,
 	}
 }
 
@@ -169,11 +169,9 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 		}
 	}()
 
-	// if inUse, err := i.FSHandler.IsFileInUse(m.SourcePath); err != nil {
-	// 	return fmt.Errorf("(io) failed to check src in use: %w", err)
-	// } else if inUse {
-	// 	return fmt.Errorf("(io) %w", ErrSourceFileInUse)
-	// }
+	if inUse := i.fsHandler.IsInUse(m.SourcePath); inUse {
+		return fmt.Errorf("(io) %w", ErrSourceFileInUse)
+	}
 
 	if err := i.ensureDirectoryStructure(m, intermediateJob); err != nil {
 		return fmt.Errorf("(io) failed to ensure dir structure: %w", err)

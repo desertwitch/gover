@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-type fsWalker interface {
-	WalkDir(root string, fn fs.WalkDirFunc) error
-}
-
 type fileWalker struct{}
+
+func newFileWalker() *fileWalker {
+	return &fileWalker{}
+}
 
 func (*fileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)

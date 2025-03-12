@@ -43,6 +43,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
@@ -66,11 +67,19 @@ func main() {
 	unixProvider := &filesystem.Unix{}
 	configProvider := &configuration.GodotenvProvider{}
 
-	configHandler := configuration.NewHandler(configProvider)
-	fsHandler := filesystem.NewHandler(osProvider, unixProvider)
+	fsHandler, err := filesystem.NewHandler(ctx, osProvider, unixProvider)
+	if err != nil {
+		slog.Error("Failed to establish filesystem handler.",
+			"err", err,
+		)
+
+		return
+	}
+
 	allocHandler := allocation.NewHandler(fsHandler)
 	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
 
+	configHandler := configuration.NewHandler(configProvider)
 	unraidHandler := unraid.NewHandler(fsHandler, configHandler)
 
 	system, err := unraidHandler.EstablishSystem()

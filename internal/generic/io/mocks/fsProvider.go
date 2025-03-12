@@ -134,58 +134,48 @@ func (_c *FsProvider_IsEmptyFolder_Call) RunAndReturn(run func(string) (bool, er
 	return _c
 }
 
-// IsFileInUse provides a mock function with given fields: path
-func (_m *FsProvider) IsFileInUse(path string) (bool, error) {
+// IsInUse provides a mock function with given fields: path
+func (_m *FsProvider) IsInUse(path string) bool {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for IsFileInUse")
+		panic("no return value specified for IsInUse")
 	}
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (bool, error)); ok {
-		return rf(path)
-	}
 	if rf, ok := ret.Get(0).(func(string) bool); ok {
 		r0 = rf(path)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(path)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// FsProvider_IsFileInUse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsFileInUse'
-type FsProvider_IsFileInUse_Call struct {
+// FsProvider_IsInUse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsInUse'
+type FsProvider_IsInUse_Call struct {
 	*mock.Call
 }
 
-// IsFileInUse is a helper method to define mock.On call
+// IsInUse is a helper method to define mock.On call
 //   - path string
-func (_e *FsProvider_Expecter) IsFileInUse(path interface{}) *FsProvider_IsFileInUse_Call {
-	return &FsProvider_IsFileInUse_Call{Call: _e.mock.On("IsFileInUse", path)}
+func (_e *FsProvider_Expecter) IsInUse(path interface{}) *FsProvider_IsInUse_Call {
+	return &FsProvider_IsInUse_Call{Call: _e.mock.On("IsInUse", path)}
 }
 
-func (_c *FsProvider_IsFileInUse_Call) Run(run func(path string)) *FsProvider_IsFileInUse_Call {
+func (_c *FsProvider_IsInUse_Call) Run(run func(path string)) *FsProvider_IsInUse_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *FsProvider_IsFileInUse_Call) Return(_a0 bool, _a1 error) *FsProvider_IsFileInUse_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *FsProvider_IsInUse_Call) Return(_a0 bool) *FsProvider_IsInUse_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *FsProvider_IsFileInUse_Call) RunAndReturn(run func(string) (bool, error)) *FsProvider_IsFileInUse_Call {
+func (_c *FsProvider_IsInUse_Call) RunAndReturn(run func(string) bool) *FsProvider_IsInUse_Call {
 	_c.Call.Return(run)
 	return _c
 }

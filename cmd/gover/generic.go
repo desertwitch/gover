@@ -125,6 +125,8 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 }
 
 func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
+	slog.Info("Enumerating share on storage:", "src", src.GetName(), "share", share.GetName())
+
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
 		if _, ok := src.(storage.Disk); ok {
@@ -143,6 +145,8 @@ func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Shar
 	}
 
 	ch <- files
+
+	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
 }
 
 func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {

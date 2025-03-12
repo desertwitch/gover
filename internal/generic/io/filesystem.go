@@ -10,7 +10,7 @@ import (
 )
 
 func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error {
-	enoughSpace, err := i.FSHandler.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
+	enoughSpace, err := i.fsHandler.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
 	if err != nil {
 		return fmt.Errorf("(io-file) failed to check enough space: %w", err)
 	}
@@ -21,7 +21,7 @@ func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error
 	if err := i.moveFile(ctx, m); err != nil {
 		return fmt.Errorf("(io-file) failed to move file: %w", err)
 	}
-	if err := i.OSHandler.Remove(m.SourcePath); err != nil {
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
 		return fmt.Errorf("(io-file) failed to remove src after move: %w", err)
 	}
 	if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
@@ -34,14 +34,14 @@ func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error
 func (i *Handler) processDirectory(m *filesystem.Moveable) error {
 	dirExisted := false
 
-	if err := i.UnixHandler.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
+	if err := i.unixHandler.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
 		if !errors.Is(err, unix.EEXIST) {
 			return fmt.Errorf("(io-dir) failed to mkdir: %w", err)
 		}
 		dirExisted = true
 	}
 
-	if err := i.OSHandler.Remove(m.SourcePath); err != nil {
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
 		return fmt.Errorf("(io-dir) failed to remove src after move: %w", err)
 	}
 
@@ -55,10 +55,10 @@ func (i *Handler) processDirectory(m *filesystem.Moveable) error {
 }
 
 func (i *Handler) processHardlink(m *filesystem.Moveable) error {
-	if err := i.UnixHandler.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
+	if err := i.unixHandler.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 		return fmt.Errorf("(io-hardl) failed to link: %w", err)
 	}
-	if err := i.OSHandler.Remove(m.SourcePath); err != nil {
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
 		return fmt.Errorf("(io-hardl) failed to remove src after move: %w", err)
 	}
 	if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
@@ -70,16 +70,16 @@ func (i *Handler) processHardlink(m *filesystem.Moveable) error {
 
 func (i *Handler) processSymlink(m *filesystem.Moveable, internalLink bool) error {
 	if internalLink {
-		if err := i.UnixHandler.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
+		if err := i.unixHandler.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("(io-syml) failed to symlink: %w", err)
 		}
 	} else {
-		if err := i.UnixHandler.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
+		if err := i.unixHandler.Symlink(m.Metadata.SymlinkTo, m.DestPath); err != nil {
 			return fmt.Errorf("(io-syml) failed to symlink: %w", err)
 		}
 	}
 
-	if err := i.OSHandler.Remove(m.SourcePath); err != nil {
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
 		return fmt.Errorf("(io-syml) failed to remove src after move: %w", err)
 	}
 

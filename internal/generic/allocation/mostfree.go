@@ -17,7 +17,7 @@ func (a *Handler) allocateMostFree(m *filesystem.Moveable, includedDisks map[str
 			continue
 		}
 
-		stats, err := a.FSHandler.GetDiskUsage(disk.GetFSPath())
+		stats, err := a.fsHandler.GetDiskUsage(disk.GetFSPath())
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration",
 				"disk", disk.GetName(),
@@ -38,7 +38,7 @@ func (a *Handler) allocateMostFree(m *filesystem.Moveable, includedDisks map[str
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := a.FSHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
+		enoughSpace, err := a.fsHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 		if err != nil {
 			slog.Warn("Skipped disk for most-free consideration",
 				"disk", disk.GetName(),

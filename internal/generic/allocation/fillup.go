@@ -17,7 +17,7 @@ func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[strin
 			continue
 		}
 
-		stats, err := a.FSHandler.GetDiskUsage(disk.GetFSPath())
+		stats, err := a.fsHandler.GetDiskUsage(disk.GetFSPath())
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration",
 				"disk", disk.GetName(),
@@ -38,7 +38,7 @@ func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[strin
 	})
 
 	for _, disk := range disks {
-		enoughSpace, err := a.FSHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
+		enoughSpace, err := a.fsHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 		if err != nil {
 			slog.Warn("Skipped disk for fill-up consideration",
 				"disk", disk.GetName(),

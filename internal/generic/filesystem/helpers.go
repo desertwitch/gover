@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"golang.org/x/sys/unix"
@@ -18,7 +17,7 @@ type DiskStats struct {
 }
 
 func (f *Handler) Exists(path string) (bool, error) {
-	if _, err := f.OSHandler.Stat(path); err != nil {
+	if _, err := f.osHandler.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, fs.ErrNotExist
 		}
@@ -30,7 +29,7 @@ func (f *Handler) Exists(path string) (bool, error) {
 }
 
 func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
-	return f.OSHandler.ReadDir(name)
+	return f.osHandler.ReadDir(name)
 }
 
 func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
@@ -73,7 +72,7 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 
 func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	var stat unix.Statfs_t
-	if err := f.UnixHandler.Statfs(path, &stat); err != nil {
+	if err := f.unixHandler.Statfs(path, &stat); err != nil {
 		return DiskStats{}, fmt.Errorf("(fs-diskuse) failed to statfs: %w", err)
 	}
 
@@ -106,46 +105,12 @@ func (f *Handler) HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize
 }
 
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {
-	entries, err := f.OSHandler.ReadDir(path)
+	entries, err := f.osHandler.ReadDir(path)
 	if err != nil {
 		return false, fmt.Errorf("(fs-isempty) failed to readdir: %w", err)
 	}
 
 	return len(entries) == 0, nil
-}
-
-func (f *Handler) IsFileInUse(targetFile string) (bool, error) {
-	procEntries, err := f.OSHandler.ReadDir("/proc")
-	if err != nil {
-		return false, fmt.Errorf("failed to read /proc: %w", err)
-	}
-
-	for _, procEntry := range procEntries {
-		pid, err := strconv.Atoi(procEntry.Name())
-		if err != nil {
-			continue
-		}
-
-		fdPath := fmt.Sprintf("/proc/%d/fd", pid)
-		fdEntries, err := f.OSHandler.ReadDir(fdPath)
-		if err != nil {
-			continue
-		}
-
-		for _, fdEntry := range fdEntries {
-			fdLink := fmt.Sprintf("/proc/%d/fd/%s", pid, fdEntry.Name())
-			linkTarget, err := f.OSHandler.Readlink(fdLink)
-			if err != nil {
-				continue
-			}
-
-			if linkTarget == targetFile {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
 }
 
 func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate storage.Storage) (bool, string, error) {
@@ -156,7 +121,7 @@ func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate storage.St
 
 	dstPath := filepath.Join(destCandidate.GetFSPath(), relPath)
 
-	if _, err := f.OSHandler.Stat(dstPath); err != nil {
+	if _, err := f.osHandler.Stat(dstPath); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, "", nil
 		}
