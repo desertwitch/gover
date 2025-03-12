@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strconv"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"golang.org/x/sys/unix"
@@ -114,19 +114,38 @@ func (f *Handler) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *Handler) IsFileInUse(path string) (bool, error) {
-	cmd := exec.Command("lsof", path)
-
-	err := cmd.Run()
-	if err == nil {
-		return true, nil
-	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
-		return false, nil
+func (f *Handler) IsFileInUse(targetFile string) (bool, error) {
+	procEntries, err := f.OSHandler.ReadDir("/proc")
+	if err != nil {
+		return false, fmt.Errorf("failed to read /proc: %w", err)
 	}
 
-	return false, err
+	for _, procEntry := range procEntries {
+		pid, err := strconv.Atoi(procEntry.Name())
+		if err != nil {
+			continue
+		}
+
+		fdPath := fmt.Sprintf("/proc/%d/fd", pid)
+		fdEntries, err := f.OSHandler.ReadDir(fdPath)
+		if err != nil {
+			continue
+		}
+
+		for _, fdEntry := range fdEntries {
+			fdLink := fmt.Sprintf("/proc/%d/fd/%s", pid, fdEntry.Name())
+			linkTarget, err := f.OSHandler.Readlink(fdLink)
+			if err != nil {
+				continue
+			}
+
+			if linkTarget == targetFile {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate storage.Storage) (bool, string, error) {
