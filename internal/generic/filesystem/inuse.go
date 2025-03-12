@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type InUseChecker struct {
 	sync.RWMutex
 	osHandler   osReadsProvider
 	inUsePaths  map[string]struct{}
+	isUpdating  atomic.Bool
 	stopUpdates chan struct{}
 }
 
@@ -55,8 +57,15 @@ func (c *InUseChecker) IsInUse(path string) bool {
 }
 
 func (c *InUseChecker) Update() error {
+	if !c.isUpdating.CompareAndSwap(false, true) {
+		return nil
+	}
+
 	c.Lock()
-	defer c.Unlock()
+	defer func() {
+		c.Unlock()
+		c.isUpdating.Store(false)
+	}()
 
 	c.inUsePaths = make(map[string]struct{})
 
