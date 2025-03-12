@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-
-	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
 type Share struct {
@@ -29,20 +27,12 @@ func (s *Share) GetUseCache() string {
 	return s.UseCache
 }
 
-func (s *Share) GetCachePool() storage.Pool {
-	if s.CachePool == nil {
-		return nil
-	}
-
+func (s *Share) GetCachePool() *Pool {
 	return s.CachePool
 }
 
-func (s *Share) GetCachePool2() storage.Pool {
-	if s.CachePool2 == nil {
-		return nil
-	}
-
-	return s.CachePool2
+func (s *Share) GetCachePool2() *Pool {
+	return s.CachePool
 }
 
 func (s *Share) GetAllocator() string {
@@ -61,34 +51,12 @@ func (s *Share) GetDisableCOW() bool {
 	return s.DisableCOW
 }
 
-func (s *Share) GetIncludedDisks() map[string]storage.Disk {
-	if s.IncludedDisks == nil {
-		return nil
-	}
-
-	included := make(map[string]storage.Disk)
-	for k, v := range s.IncludedDisks {
-		if v != nil {
-			included[k] = v
-		}
-	}
-
-	return included
+func (s *Share) GetIncludedDisks() map[string]*Disk {
+	return s.IncludedDisks
 }
 
-func (s *Share) GetExcludedDisks() map[string]storage.Disk {
-	if s.ExcludedDisks == nil {
-		return nil
-	}
-
-	excluded := make(map[string]storage.Disk)
-	for k, v := range s.ExcludedDisks {
-		if v != nil {
-			excluded[k] = v
-		}
-	}
-
-	return excluded
+func (s *Share) GetExcludedDisks() map[string]*Disk {
+	return s.ExcludedDisks
 }
 
 func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {

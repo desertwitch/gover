@@ -1,3 +1,5 @@
+- fs: mark root dir as special for later (io) zfs-ing/cow-ing
 - io: zfs datasets
 - io: nocow for btrfs
 - pkg: configuration handling
+- pkg: progress handling to json/websocket?

@@ -13,6 +13,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/io"
+	"github.com/desertwitch/gover/internal/generic/storage"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
@@ -71,9 +72,15 @@ func main() {
 	}
 
 	deps := newDepPackage(fsHandler, allocHandler, ioHandler)
+	shares := system.GetShares()
+
+	shareAdapters := make(map[string]storage.Share, len(shares))
+	for name, share := range shares {
+		shareAdapters[name] = NewShareAdapter(share)
+	}
 
 	wg.Add(1)
-	go processShares(ctx, &wg, system.GetShares(), deps)
+	go processShares(ctx, &wg, shareAdapters, deps)
 	wg.Wait()
 
 	if ctx.Err() != nil {

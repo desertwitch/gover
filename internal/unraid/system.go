@@ -2,8 +2,6 @@ package unraid
 
 import (
 	"fmt"
-
-	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
 type System struct {
@@ -12,34 +10,12 @@ type System struct {
 	Shares map[string]*Share
 }
 
-func (s *System) GetPools() map[string]storage.Pool {
-	if s.Pools == nil {
-		return nil
-	}
-
-	pools := make(map[string]storage.Pool)
-	for k, v := range s.Pools {
-		if v != nil {
-			pools[k] = v
-		}
-	}
-
-	return pools
+func (s *System) GetPools() map[string]*Pool {
+	return s.Pools
 }
 
-func (s *System) GetShares() map[string]storage.Share {
-	if s.Shares == nil {
-		return nil
-	}
-
-	shares := make(map[string]storage.Share)
-	for k, v := range s.Shares {
-		if v != nil {
-			shares[k] = v
-		}
-	}
-
-	return shares
+func (s *System) GetShares() map[string]*Share {
+	return s.Shares
 }
 
 // establishSystem returns a pointer to an established Unraid system.
