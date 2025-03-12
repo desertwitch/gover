@@ -91,20 +91,25 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 		}
 	}
 
-	maxWorkers := runtime.NumCPU()
-	semaphore := make(chan struct{}, maxWorkers)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	for _, task := range tasks {
-		semaphore <- struct{}{}
+		maxWorkers := runtime.NumCPU()
+		semaphore := make(chan struct{}, maxWorkers)
 
-		wg.Add(1)
-		go func(task func()) {
-			defer wg.Done()
-			defer func() { <-semaphore }()
+		for _, task := range tasks {
+			semaphore <- struct{}{}
 
-			task()
-		}(task)
-	}
+			wg.Add(1)
+			go func(task func()) {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				task()
+			}(task)
+		}
+	}()
 
 	go func() {
 		wg.Wait()
@@ -120,7 +125,6 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 }
 
 func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
-	slog.Info("Enumerating", "share", share.GetName(), "src", src.GetName())
 	files, err := enumerateShare(share, src, dst, deps)
 	if err != nil {
 		if _, ok := src.(storage.Disk); ok {
@@ -139,7 +143,6 @@ func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Shar
 	}
 
 	ch <- files
-	slog.Info("Enumerating done", "share", share.GetName(), "src", src.GetName())
 }
 
 func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {
