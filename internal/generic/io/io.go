@@ -97,18 +97,24 @@ func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
 }
 
 func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
-	q.SetProcessing(elem)
+	t := q.SetProcessing(elem)
 
-	if err := i.processMoveable(ctx, elem, job); err != nil {
+	if err := i.processMoveable(ctx, elem, t, job); err != nil {
 		slog.Warn("Skipped job: failure during processing",
 			"path", elem.DestPath,
 			"err", err,
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
+
+		t.SetError(err)
 		q.SetSkipped(elem)
 
 		return err
+	}
+
+	if !t.IsDone() {
+		t.End()
 	}
 
 	q.SetSuccess(elem)
@@ -123,9 +129,9 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 }
 
 func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
-	q.SetProcessing(subelem)
+	t := q.SetProcessing(subelem)
 
-	if err := i.processMoveable(ctx, subelem, job); err != nil {
+	if err := i.processMoveable(ctx, subelem, t, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
 			"path", subelem.DestPath,
 			"err", err,
@@ -133,9 +139,15 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
+
+		t.SetError(err)
 		q.SetSkipped(subelem)
 
 		return err
+	}
+
+	if !t.IsDone() {
+		t.End()
 	}
 
 	q.SetSuccess(subelem)
@@ -155,7 +167,7 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 	return nil
 }
 
-func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *creationReport) error {
+func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, t *queue.TransferInfo, job *creationReport) error {
 	var jobComplete bool
 
 	intermediateJob := &creationReport{}
@@ -178,7 +190,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, j
 	}
 
 	if !m.Metadata.IsDir && !m.IsHardlink && !m.IsSymlink && !m.Metadata.IsSymlink {
-		if err := i.processFile(ctx, m); err != nil {
+		if err := i.processFile(ctx, m, t); err != nil {
 			return fmt.Errorf("(io) failed to process file: %w", err)
 		}
 		jobComplete = true

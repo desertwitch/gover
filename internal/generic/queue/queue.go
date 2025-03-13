@@ -60,20 +60,20 @@ func (b *Manager) GetQueuesUnsafe() map[string]*DestinationQueue {
 }
 
 type DestinationQueue struct {
-	sync.Mutex
+	sync.RWMutex
 	head       int
 	items      []*filesystem.Moveable
-	success    []*filesystem.Moveable
-	skipped    []*filesystem.Moveable
-	inProgress map[*filesystem.Moveable]struct{}
+	inProgress map[*filesystem.Moveable]*TransferInfo
+	success    map[*filesystem.Moveable]*TransferInfo
+	skipped    map[*filesystem.Moveable]*TransferInfo
 }
 
 func NewDestinationQueue() *DestinationQueue {
 	return &DestinationQueue{
 		items:      []*filesystem.Moveable{},
-		inProgress: make(map[*filesystem.Moveable]struct{}),
-		success:    []*filesystem.Moveable{},
-		skipped:    []*filesystem.Moveable{},
+		inProgress: make(map[*filesystem.Moveable]*TransferInfo),
+		success:    make(map[*filesystem.Moveable]*TransferInfo),
+		skipped:    make(map[*filesystem.Moveable]*TransferInfo),
 	}
 }
 
@@ -98,31 +98,30 @@ func (q *DestinationQueue) Dequeue() (*filesystem.Moveable, bool) {
 	return item, true
 }
 
-func (q *DestinationQueue) SetSuccess(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetSuccess(item *filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
-	for _, item := range items {
-		delete(q.inProgress, item)
-		q.success = append(q.success, item)
-	}
+	transferInfo := q.inProgress[item]
+	delete(q.inProgress, item)
+	q.success[item] = transferInfo
 }
 
-func (q *DestinationQueue) SetSkipped(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetSkipped(item *filesystem.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
-	for _, item := range items {
-		delete(q.inProgress, item)
-		q.skipped = append(q.skipped, item)
-	}
+	transferInfo := q.inProgress[item]
+	delete(q.inProgress, item)
+	q.skipped[item] = transferInfo
 }
 
-func (q *DestinationQueue) SetProcessing(items ...*filesystem.Moveable) {
+func (q *DestinationQueue) SetProcessing(item *filesystem.Moveable) *TransferInfo {
 	q.Lock()
 	defer q.Unlock()
 
-	for _, item := range items {
-		q.inProgress[item] = struct{}{}
-	}
+	transferInfo := &TransferInfo{}
+	q.inProgress[item] = transferInfo
+
+	return transferInfo
 }
