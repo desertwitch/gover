@@ -16,7 +16,6 @@ import (
 	"github.com/desertwitch/gover/internal/generic/io"
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"github.com/desertwitch/gover/internal/unraid"
-	"github.com/dustin/go-humanize"
 	"github.com/lmittmann/tint"
 )
 
@@ -68,9 +67,9 @@ func main() {
 		}
 	}()
 
-	memChan := make(chan uint64, 1)
-	wg.Add(1)
-	go memoryMonitor(ctx, &wg, memChan)
+	// memChan := make(chan uint64, 1)
+	// wg.Add(1)
+	// go memoryMonitor(ctx, &wg, memChan)
 
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
@@ -112,7 +111,7 @@ func main() {
 	go processShares(ctx, &wg, shareAdapters, deps)
 	wg.Wait()
 
-	slog.Info("Memory consumption peaked at:", "maxAlloc", humanize.Bytes(<-memChan))
+	// slog.Info("Memory consumption peaked at:", "maxAlloc", humanize.Bytes(<-memChan))
 
 	if ctx.Err() != nil {
 		os.Exit(1)
