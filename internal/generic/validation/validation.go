@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/util"
 )
 
 func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	filtered, err := util.ConcurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *filesystem.Moveable) bool {
+	filtered := []*filesystem.Moveable{}
+
+	for _, m := range moveables {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,
@@ -19,7 +23,7 @@ func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([
 				"share", m.Share.GetName(),
 			)
 
-			return false
+			continue
 		}
 
 		hardLinkFailure := false
@@ -41,7 +45,7 @@ func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([
 		}
 
 		if hardLinkFailure {
-			return false
+			continue
 		}
 
 		symlinkFailure := false
@@ -63,13 +67,10 @@ func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([
 		}
 
 		if symlinkFailure {
-			return false
+			continue
 		}
 
-		return true
-	})
-	if err != nil {
-		return nil, err
+		filtered = append(filtered, m)
 	}
 
 	return filtered, nil
