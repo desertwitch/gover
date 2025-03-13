@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/util"
 	"golang.org/x/sys/unix"
 )
 
@@ -95,7 +96,6 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 
 func (f *Handler) GetMoveables(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
 	moveables := []*Moveable{}
-	filtered := []*Moveable{}
 
 	shareDir := filepath.Join(src.GetFSPath(), share.GetName())
 
@@ -144,24 +144,26 @@ func (f *Handler) GetMoveables(ctx context.Context, share storage.Share, src sto
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("(fs) error walking %s: %w", shareDir, err)
+		return nil, fmt.Errorf("(fs) failed walking: %w", err)
 	}
 
-	for _, m := range moveables {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+	filtered, err := util.ConcurrentFilterSlice(ctx, moveables, func(m *Moveable) bool {
 		if err := f.establishMetadata(m); err != nil {
-			continue
+			return false
 		}
 		if err := f.establishRelatedDirs(m, shareDir); err != nil {
-			continue
+			return false
 		}
-		filtered = append(filtered, m)
+
+		return true
+	})
+	if err != nil {
+		return nil, fmt.Errorf("(fs) failed relating metadata: %w", err)
 	}
 
 	establishSymlinks(filtered, dst)
 	establishHardlinks(filtered, dst)
+
 	filtered = removeInternalLinks(filtered)
 	filtered = f.removeInUseFiles(filtered)
 

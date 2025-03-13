@@ -32,10 +32,10 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 	semaphore := make(chan struct{}, maxWorkers)
 
 	for _, destQueue := range destQueues {
-		semaphore <- struct{}{}
-
-		if ctx.Err() != nil {
-			break
+		select {
+		case <-ctx.Done():
+			return
+		case semaphore <- struct{}{}:
 		}
 
 		queueWG.Add(1)
@@ -108,10 +108,10 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 		semaphore := make(chan struct{}, maxWorkers)
 
 		for _, task := range tasks {
-			semaphore <- struct{}{}
-
-			if ctx.Err() != nil {
-				break
+			select {
+			case <-ctx.Done():
+				return
+			case semaphore <- struct{}{}:
 			}
 
 			wg.Add(1)
@@ -157,7 +157,11 @@ func shareEnumerationWorker(ctx context.Context, ch chan<- []*filesystem.Moveabl
 		return
 	}
 
-	ch <- files
+	select {
+	case <-ctx.Done():
+		return
+	case ch <- files:
+	}
 
 	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
 }

@@ -111,7 +111,7 @@ func main() {
 	go processShares(ctx, &wg, shareAdapters, deps)
 	wg.Wait()
 
-	// slog.Info("Memory consumption peaked at:", "maxAlloc", humanize.Bytes(<-memChan))
+	// slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024))
 
 	if ctx.Err() != nil {
 		os.Exit(1)
