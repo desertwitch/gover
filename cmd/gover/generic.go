@@ -13,6 +13,10 @@ import (
 	"github.com/desertwitch/gover/internal/generic/validation"
 )
 
+const (
+	EnumSliceMax = 1000
+)
+
 func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]storage.Share, deps *depPackage) {
 	defer wg.Done()
 
@@ -51,7 +55,7 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps 
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
-	ch := make(chan []*filesystem.Moveable, 1000)
+	ch := make(chan []*filesystem.Moveable, EnumSliceMax)
 
 	// Primary to Secondary
 	for _, share := range shares {

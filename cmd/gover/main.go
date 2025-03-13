@@ -19,6 +19,10 @@ import (
 	"github.com/lmittmann/tint"
 )
 
+const (
+	stackTraceBufMax = 1 << 24
+)
+
 type depPackage struct {
 	FSHandler    *filesystem.Handler
 	AllocHandler *allocation.Handler
@@ -53,11 +57,11 @@ func main() {
 		cancel()
 	}()
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGUSR1)
+	sigChan2 := make(chan os.Signal, 1)
+	signal.Notify(sigChan2, syscall.SIGUSR1)
 	go func() {
-		for range c {
-			buf := make([]byte, 1<<20)
+		for range sigChan2 {
+			buf := make([]byte, stackTraceBufMax)
 			stacklen := runtime.Stack(buf, true)
 			os.Stderr.Write(buf[:stacklen])
 		}
