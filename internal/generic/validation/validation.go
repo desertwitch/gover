@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/util"
 )
 
 func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	filtered, err := util.ConcurrentFilterSlice(ctx, moveables, func(m *filesystem.Moveable) bool {
+	filtered, err := util.ConcurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *filesystem.Moveable) bool {
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"runtime"
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
@@ -41,7 +42,7 @@ func NewHandler(fsHandler fsProvider) *Handler {
 }
 
 func (a *Handler) AllocateArrayDestinations(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	filtered, err := util.ConcurrentFilterSlice(ctx, moveables, func(m *filesystem.Moveable) bool {
+	filtered, err := util.ConcurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *filesystem.Moveable) bool {
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",

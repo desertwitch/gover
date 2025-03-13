@@ -2,11 +2,10 @@ package util
 
 import (
 	"context"
-	"runtime"
 	"sync"
 )
 
-func ConcurrentFilterSlice[T any](ctx context.Context, items []T, filterFunc func(T) bool) ([]T, error) {
+func ConcurrentFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filterFunc func(T) bool) ([]T, error) {
 	var wg sync.WaitGroup
 
 	ch := make(chan T, len(items))
@@ -15,7 +14,6 @@ func ConcurrentFilterSlice[T any](ctx context.Context, items []T, filterFunc fun
 	go func() {
 		defer wg.Done()
 
-		maxWorkers := runtime.NumCPU()
 		semaphore := make(chan struct{}, maxWorkers)
 
 		for _, item := range items {

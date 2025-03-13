@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"github.com/desertwitch/gover/internal/generic/util"
@@ -147,7 +148,7 @@ func (f *Handler) GetMoveables(ctx context.Context, share storage.Share, src sto
 		return nil, fmt.Errorf("(fs) failed walking: %w", err)
 	}
 
-	filtered, err := util.ConcurrentFilterSlice(ctx, moveables, func(m *Moveable) bool {
+	filtered, err := util.ConcurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *Moveable) bool {
 		if err := f.establishMetadata(m); err != nil {
 			return false
 		}
