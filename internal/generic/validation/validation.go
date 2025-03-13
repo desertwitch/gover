@@ -1,16 +1,21 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 )
 
-func ValidateMoveables(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+func ValidateMoveables(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	filtered := []*filesystem.Moveable{}
 
 	for _, m := range moveables {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,

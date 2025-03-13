@@ -9,8 +9,8 @@ type ShareAdapter struct {
 	*unraid.Share
 }
 
-func NewShareAdapter(original *unraid.Share) *ShareAdapter {
-	return &ShareAdapter{Share: original}
+func NewShareAdapter(unraidShare *unraid.Share) *ShareAdapter {
+	return &ShareAdapter{unraidShare}
 }
 
 func (s *ShareAdapter) GetCachePool() storage.Pool {

@@ -93,7 +93,7 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 	}, nil
 }
 
-func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 	filtered := []*Moveable{}
 
@@ -110,6 +110,10 @@ func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst sto
 			}
 
 			return nil
+		}
+
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 
 		isEmptyDir := false
@@ -144,6 +148,9 @@ func (f *Handler) GetMoveables(share storage.Share, src storage.Storage, dst sto
 	}
 
 	for _, m := range moveables {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		if err := f.establishMetadata(m); err != nil {
 			continue
 		}

@@ -17,7 +17,7 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 	defer wg.Done()
 
 	queueMan := queue.NewManager()
-	files := enumerateShares(shares, deps)
+	files := enumerateShares(ctx, shares, deps)
 
 	queueMan.Enqueue(files...)
 	destQueues := queueMan.GetQueuesUnsafe()
@@ -29,6 +29,10 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 
 	for _, destQueue := range destQueues {
 		semaphore <- struct{}{}
+
+		if ctx.Err() != nil {
+			break
+		}
 
 		queueWG.Add(1)
 		go func(q *queue.DestinationQueue) {
@@ -42,7 +46,8 @@ func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]st
 	queueWG.Wait()
 }
 
-func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*filesystem.Moveable {
+//nolint:funlen
+func enumerateShares(ctx context.Context, shares map[string]storage.Share, deps *depPackage) []*filesystem.Moveable {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
@@ -57,12 +62,12 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 		if share.GetCachePool2() == nil {
 			// Cache to Array
 			tasks = append(tasks, func() {
-				shareEnumerationWorker(ch, share, share.GetCachePool(), nil, deps)
+				shareEnumerationWorker(ctx, ch, share, share.GetCachePool(), nil, deps)
 			})
 		} else {
 			// Cache to Cache2
 			tasks = append(tasks, func() {
-				shareEnumerationWorker(ch, share, share.GetCachePool(), share.GetCachePool2(), deps)
+				shareEnumerationWorker(ctx, ch, share, share.GetCachePool(), share.GetCachePool2(), deps)
 			})
 		}
 	}
@@ -80,13 +85,13 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 					continue
 				}
 				tasks = append(tasks, func() {
-					shareEnumerationWorker(ch, share, disk, share.GetCachePool(), deps)
+					shareEnumerationWorker(ctx, ch, share, disk, share.GetCachePool(), deps)
 				})
 			}
 		} else {
 			// Cache2 to Cache
 			tasks = append(tasks, func() {
-				shareEnumerationWorker(ch, share, share.GetCachePool2(), share.GetCachePool(), deps)
+				shareEnumerationWorker(ctx, ch, share, share.GetCachePool2(), share.GetCachePool(), deps)
 			})
 		}
 	}
@@ -100,6 +105,10 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 
 		for _, task := range tasks {
 			semaphore <- struct{}{}
+
+			if ctx.Err() != nil {
+				break
+			}
 
 			wg.Add(1)
 			go func(task func()) {
@@ -124,10 +133,10 @@ func enumerateShares(shares map[string]storage.Share, deps *depPackage) []*files
 	return files
 }
 
-func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
+func shareEnumerationWorker(ctx context.Context, ch chan<- []*filesystem.Moveable, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) {
 	slog.Info("Enumerating share on storage:", "src", src.GetName(), "share", share.GetName())
 
-	files, err := enumerateShare(share, src, dst, deps)
+	files, err := enumerateShare(ctx, share, src, dst, deps)
 	if err != nil {
 		if _, ok := src.(storage.Disk); ok {
 			slog.Warn("Skipped enumerating array disk due to failure",
@@ -149,25 +158,25 @@ func shareEnumerationWorker(ch chan<- []*filesystem.Moveable, share storage.Shar
 	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
 }
 
-func enumerateShare(share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {
-	files, err := deps.FSHandler.GetMoveables(share, src, dst)
+func enumerateShare(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage, deps *depPackage) ([]*filesystem.Moveable, error) {
+	files, err := deps.FSHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
 		return nil, fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
 	if dst == nil {
-		files, err = deps.AllocHandler.AllocateArrayDestinations(files)
+		files, err = deps.AllocHandler.AllocateArrayDestinations(ctx, files)
 		if err != nil {
 			return nil, fmt.Errorf("(main) failed to allocate: %w", err)
 		}
 	}
 
-	files, err = deps.FSHandler.EstablishPaths(files)
+	files, err = deps.FSHandler.EstablishPaths(ctx, files)
 	if err != nil {
 		return nil, fmt.Errorf("(main) failed to establish paths: %w", err)
 	}
 
-	files, err = validation.ValidateMoveables(files)
+	files, err = validation.ValidateMoveables(ctx, files)
 	if err != nil {
 		return nil, fmt.Errorf("(main) failed to validate: %w", err)
 	}

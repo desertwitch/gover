@@ -1,15 +1,20 @@
 package filesystem
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 )
 
-func (f *Handler) EstablishPaths(moveables []*Moveable) ([]*Moveable, error) {
+func (f *Handler) EstablishPaths(ctx context.Context, moveables []*Moveable) ([]*Moveable, error) {
 	filtered := []*Moveable{}
 
 	for _, m := range moveables {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		if err := f.establishElementPath(m); err != nil {
 			continue
 		}

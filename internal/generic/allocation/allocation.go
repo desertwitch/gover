@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -38,10 +39,14 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (a *Handler) AllocateArrayDestinations(moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
+func (a *Handler) AllocateArrayDestinations(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
 	filtered := []*filesystem.Moveable{}
 
 	for _, m := range moveables {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
