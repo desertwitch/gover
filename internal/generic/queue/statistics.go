@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -78,14 +79,15 @@ func (t *TransferInfo) SetError(err error) {
 	t.Error = err
 }
 
-func (t *TransferInfo) Update(additionalBytes uint64) {
+func (t *TransferInfo) Update(totalBytesRead uint64) {
 	t.Lock()
 	defer t.Unlock()
 
 	now := time.Now()
 	elapsed := now.Sub(t.StartTime)
 
-	t.BytesTransferred += additionalBytes
+	additionalBytes := totalBytesRead - t.BytesTransferred
+	t.BytesTransferred = totalBytesRead
 
 	if elapsed < time.Second {
 		return
@@ -95,12 +97,20 @@ func (t *TransferInfo) Update(additionalBytes uint64) {
 		t.Percentage = float64(t.BytesTransferred) / float64(t.BytesTotal) * 100 //nolint:mnd
 	}
 
-	instantRate := float64(additionalBytes) / elapsed.Seconds()
+	instantRate := float64(t.BytesTransferred) / elapsed.Seconds()
+
 	if t.TransferRate == 0 {
 		t.TransferRate = instantRate
 	} else {
 		t.TransferRate = 0.7*t.TransferRate + 0.3*instantRate //nolint:mnd
 	}
+
+	slog.Debug("Transfer calculation",
+		"instantRate_MBps", instantRate/1024/1024,
+		"weightedRate_MBps", t.TransferRate/1024/1024,
+		"bytesTransferred", t.BytesTransferred,
+		"newBytes", additionalBytes,
+		"elapsed_sec", elapsed.Seconds())
 
 	if t.TransferRate > 0 && t.BytesTransferred < t.BytesTotal {
 		bytesRemaining := t.BytesTotal - t.BytesTransferred

@@ -67,9 +67,8 @@ func main() {
 		}
 	}()
 
-	// memChan := make(chan uint64, 1)
-	// wg.Add(1)
-	// go memoryMonitor(ctx, &wg, memChan)
+	memChan := make(chan uint64, 1)
+	go memoryMonitor(ctx, memChan)
 
 	osProvider := &filesystem.OS{}
 	unixProvider := &filesystem.Unix{}
@@ -111,7 +110,8 @@ func main() {
 	go processShares(ctx, &wg, shareAdapters, deps)
 	wg.Wait()
 
-	// slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024))
+	cancel()
+	slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024)) //nolint:mnd
 
 	if ctx.Err() != nil {
 		os.Exit(1)

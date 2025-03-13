@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -11,8 +10,7 @@ const (
 	memoryMonitorInterval = 100 * time.Millisecond
 )
 
-func memoryMonitor(ctx context.Context, wg *sync.WaitGroup, ch chan<- uint64) {
-	defer wg.Done()
+func memoryMonitor(ctx context.Context, ch chan<- uint64) {
 	defer close(ch)
 
 	var maxAlloc uint64
