@@ -21,17 +21,15 @@ type osReadsProvider interface {
 
 type InUseChecker struct {
 	sync.RWMutex
-	osHandler   osReadsProvider
-	inUsePaths  map[string]struct{}
-	isUpdating  atomic.Bool
-	stopUpdates chan struct{}
+	osHandler  osReadsProvider
+	inUsePaths map[string]struct{}
+	isUpdating atomic.Bool
 }
 
 func NewInUseChecker(ctx context.Context, osHandler osProvider) (*InUseChecker, error) {
 	checker := &InUseChecker{
-		osHandler:   osHandler,
-		inUsePaths:  make(map[string]struct{}),
-		stopUpdates: make(chan struct{}),
+		osHandler:  osHandler,
+		inUsePaths: make(map[string]struct{}),
 	}
 
 	if err := checker.Update(); err != nil {
@@ -101,10 +99,6 @@ func (c *InUseChecker) Update() error {
 	return nil
 }
 
-func (c *InUseChecker) Stop() {
-	close(c.stopUpdates)
-}
-
 func (c *InUseChecker) periodicUpdate(ctx context.Context) {
 	ticker := time.NewTicker(CheckerInterval)
 	defer ticker.Stop()
@@ -112,8 +106,6 @@ func (c *InUseChecker) periodicUpdate(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
-		case <-c.stopUpdates:
 			return
 		case <-ticker.C:
 			_ = c.Update()
