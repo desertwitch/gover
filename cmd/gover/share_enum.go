@@ -83,7 +83,7 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 
 	wg.Wait()
 
-	return queueMan.EnumerationManager.GetItems(), nil
+	return queueMan.EnumerationQueue.GetItems(), nil
 }
 
 func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) {
@@ -114,7 +114,7 @@ func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage,
 		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
-	q := queueMan.EnumerationManager.NewQueue()
+	q := queueMan.EnumerationQueue
 	q.Enqueue(files...)
 
 	if dst == nil {
