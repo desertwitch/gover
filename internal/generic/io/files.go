@@ -20,7 +20,6 @@ type contextReader struct {
 	ctx        context.Context
 	reader     io.Reader
 	stats      *queue.TransferInfo
-	bytesRead  uint64
 	lastUpdate time.Time
 }
 
@@ -32,11 +31,9 @@ func (cr *contextReader) Read(p []byte) (int, error) {
 		n, err := cr.reader.Read(p)
 
 		if n > 0 {
-			cr.bytesRead += uint64(n)
-
 			now := time.Now()
-			if now.Sub(cr.lastUpdate) >= 500*time.Millisecond {
-				cr.stats.Update(cr.bytesRead)
+			if now.Sub(cr.lastUpdate) >= 100*time.Millisecond {
+				cr.stats.Update(uint64(n))
 				cr.lastUpdate = now
 			}
 		}
