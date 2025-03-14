@@ -1,21 +1,21 @@
 package schema
 
-type RelatedDirectory struct {
+type Directory struct {
 	SourcePath string
 	DestPath   string
 	Metadata   *Metadata
-	Parent     *RelatedDirectory
-	Child      *RelatedDirectory
+	Parent     *Directory
+	Child      *Directory
 }
 
-func (d *RelatedDirectory) GetMetadata() *Metadata {
+func (d *Directory) GetMetadata() *Metadata {
 	return d.Metadata
 }
 
-func (d *RelatedDirectory) GetSourcePath() string {
+func (d *Directory) GetSourcePath() string {
 	return d.SourcePath
 }
 
-func (d *RelatedDirectory) GetDestPath() string {
+func (d *Directory) GetDestPath() string {
 	return d.DestPath
 }

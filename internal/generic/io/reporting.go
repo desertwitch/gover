@@ -4,40 +4,40 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-type creationReport struct {
-	AnyCreated       []relatedElement
-	DirsCreated      []*schema.RelatedDirectory
-	DirsProcessed    []*schema.RelatedDirectory
+type ioReport struct {
+	AnyCreated       []fsElement
+	DirsCreated      []*schema.Directory
+	DirsWalked       []*schema.Directory
 	MoveablesCreated []*schema.Moveable
 	SymlinksCreated  []*schema.Moveable
 	HardlinksCreated []*schema.Moveable
 }
 
-func mergeCreationReports(target, source *creationReport) {
+func mergeIOReports(target, source *ioReport) {
 	if target == nil || source == nil {
 		return
 	}
 
 	target.AnyCreated = append(target.AnyCreated, source.AnyCreated...)
 	target.DirsCreated = append(target.DirsCreated, source.DirsCreated...)
-	target.DirsProcessed = append(target.DirsProcessed, source.DirsProcessed...)
+	target.DirsWalked = append(target.DirsWalked, source.DirsWalked...)
 	target.HardlinksCreated = append(target.HardlinksCreated, source.HardlinksCreated...)
 	target.MoveablesCreated = append(target.MoveablesCreated, source.MoveablesCreated...)
 	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
-func addToCreationReport(p *creationReport, m *schema.Moveable) {
+func addToIOReport(r *ioReport, m *schema.Moveable) {
 	switch {
 	case m.IsHardlink:
-		p.AnyCreated = append(p.AnyCreated, m)
-		p.HardlinksCreated = append(p.HardlinksCreated, m)
+		r.AnyCreated = append(r.AnyCreated, m)
+		r.HardlinksCreated = append(r.HardlinksCreated, m)
 
 	case m.IsSymlink || m.Metadata.IsSymlink:
-		p.AnyCreated = append(p.AnyCreated, m)
-		p.SymlinksCreated = append(p.SymlinksCreated, m)
+		r.AnyCreated = append(r.AnyCreated, m)
+		r.SymlinksCreated = append(r.SymlinksCreated, m)
 
 	default:
-		p.AnyCreated = append(p.AnyCreated, m)
-		p.MoveablesCreated = append(p.MoveablesCreated, m)
+		r.AnyCreated = append(r.AnyCreated, m)
+		r.MoveablesCreated = append(r.MoveablesCreated, m)
 	}
 }

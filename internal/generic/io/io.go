@@ -39,7 +39,7 @@ type ioTargetQueue interface {
 	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
 }
 
-type relatedElement interface {
+type fsElement interface {
 	GetDestPath() string
 	GetMetadata() *schema.Metadata
 	GetSourcePath() string
@@ -61,10 +61,10 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 }
 
 func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
-	batch := &creationReport{}
+	batch := &ioReport{}
 
 	q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
-		job := &creationReport{}
+		job := &ioReport{}
 
 		if err := i.processQueueElement(ctx, m, job); err != nil {
 			return false
@@ -82,7 +82,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 			}
 		}
 
-		mergeCreationReports(batch, job)
+		mergeIOReports(batch, job)
 
 		return true
 	}, false)
@@ -91,7 +91,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	i.cleanDirectoryStructure(batch)
 }
 
-func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable, job *creationReport) error {
+func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable, job *ioReport) error {
 	if err := i.processMoveable(ctx, elem, job); err != nil {
 		slog.Warn("Skipped job: failure during processing",
 			"path", elem.DestPath,
@@ -112,7 +112,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable
 	return nil
 }
 
-func (i *Handler) processQueueSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *creationReport) error {
+func (i *Handler) processQueueSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *ioReport) error {
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
 			"path", subelem.DestPath,
@@ -140,15 +140,15 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *schema.Mo
 	return nil
 }
 
-func (i *Handler) processMoveable(ctx context.Context, m *schema.Moveable, job *creationReport) error {
+func (i *Handler) processMoveable(ctx context.Context, m *schema.Moveable, job *ioReport) error {
 	var jobComplete bool
 
-	intermediateJob := &creationReport{}
+	intermediateJob := &ioReport{}
 
 	defer func() {
 		if jobComplete {
-			addToCreationReport(intermediateJob, m)
-			mergeCreationReports(job, intermediateJob)
+			addToIOReport(intermediateJob, m)
+			mergeIOReports(job, intermediateJob)
 		} else {
 			i.cleanDirectoriesAfterFailure(intermediateJob)
 		}

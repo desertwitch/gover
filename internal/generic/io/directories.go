@@ -10,7 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *creationReport) error {
+func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *ioReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -21,7 +21,7 @@ func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *creationRepo
 
 			job.AnyCreated = append(job.AnyCreated, dir)
 			job.DirsCreated = append(job.DirsCreated, dir)
-			job.DirsProcessed = append(job.DirsProcessed, dir)
+			job.DirsWalked = append(job.DirsWalked, dir)
 
 			if err := i.ensurePermissions(dir.DestPath, dir.Metadata); err != nil {
 				return fmt.Errorf("(io-ensuredirs) failed permissioning: %w", err)
@@ -29,7 +29,7 @@ func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *creationRepo
 		} else if err != nil {
 			return fmt.Errorf("(io-ensuredirs) failed to stat (existence): %w", err)
 		} else {
-			job.DirsProcessed = append(job.DirsProcessed, dir)
+			job.DirsWalked = append(job.DirsWalked, dir)
 		}
 
 		dir = dir.Child
@@ -38,14 +38,14 @@ func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *creationRepo
 	return nil
 }
 
-func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
-	sort.Slice(batch.DirsProcessed, func(i, j int) bool {
-		return calculateDirectoryDepth(batch.DirsProcessed[i]) > calculateDirectoryDepth(batch.DirsProcessed[j])
+func (i *Handler) cleanDirectoryStructure(batch *ioReport) {
+	sort.Slice(batch.DirsWalked, func(i, j int) bool {
+		return calculateDirectoryDepth(batch.DirsWalked[i]) > calculateDirectoryDepth(batch.DirsWalked[j])
 	})
 
 	removed := make(map[string]struct{})
 
-	for _, dir := range batch.DirsProcessed {
+	for _, dir := range batch.DirsWalked {
 		if _, alreadyRemoved := removed[dir.SourcePath]; alreadyRemoved {
 			continue
 		}
@@ -85,7 +85,7 @@ func (i *Handler) cleanDirectoryStructure(batch *creationReport) {
 	}
 }
 
-func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
+func (i *Handler) cleanDirectoriesAfterFailure(job *ioReport) {
 	sort.Slice(job.DirsCreated, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsCreated[i]) > calculateDirectoryDepth(job.DirsCreated[j])
 	})
@@ -128,7 +128,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
 	}
 }
 
-func calculateDirectoryDepth(dir *schema.RelatedDirectory) int {
+func calculateDirectoryDepth(dir *schema.Directory) int {
 	depth := 0
 	for dir != nil {
 		dir = dir.Parent

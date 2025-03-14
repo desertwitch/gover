@@ -25,7 +25,7 @@ func validateDirectories(m *schema.Moveable) error {
 	return nil
 }
 
-func validateDirectory(d *schema.RelatedDirectory) error {
+func validateDirectory(d *schema.Directory) error {
 	if d.Metadata == nil {
 		return fmt.Errorf("(validation) %w", ErrNoRelatedMetadata)
 	}

@@ -13,7 +13,7 @@ type Moveable struct {
 	IsSymlink  bool
 	SymlinkTo  *Moveable
 	Metadata   *Metadata
-	RootDir    *RelatedDirectory
+	RootDir    *Directory
 }
 
 func (m *Moveable) GetMetadata() *Metadata {

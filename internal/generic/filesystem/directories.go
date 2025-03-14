@@ -35,14 +35,14 @@ func (f *Handler) establishRelatedDirs(m *schema.Moveable, basePath string) erro
 }
 
 func (f *Handler) walkParentDirs(m *schema.Moveable, basePath string) error {
-	var prevElement *schema.RelatedDirectory
+	var prevElement *schema.Directory
 	path := m.SourcePath
 
 	for path != basePath && path != "/" && path != "." {
 		path = filepath.Dir(path)
 
 		if strings.HasPrefix(path, basePath) {
-			thisElement := &schema.RelatedDirectory{
+			thisElement := &schema.Directory{
 				SourcePath: path,
 			}
 
