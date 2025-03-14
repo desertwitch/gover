@@ -6,11 +6,10 @@ import (
 	"fmt"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"golang.org/x/sys/unix"
 )
 
-func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable, t *queue.TransferInfo) error {
+func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error {
 	enoughSpace, err := i.fsHandler.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
 	if err != nil {
 		return fmt.Errorf("(io-file) failed to check enough space: %w", err)
@@ -19,7 +18,7 @@ func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable, t *qu
 		return fmt.Errorf("(io-file) %w", ErrNotEnoughSpace)
 	}
 
-	if err := i.moveFile(ctx, m, t); err != nil {
+	if err := i.moveFile(ctx, m); err != nil {
 		return fmt.Errorf("(io-file) failed to move file: %w", err)
 	}
 	if err := i.osHandler.Remove(m.SourcePath); err != nil {

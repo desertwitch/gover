@@ -8,19 +8,15 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"time"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/zeebo/blake3"
 )
 
 //nolint:containedctx
 type contextReader struct {
-	ctx        context.Context
-	reader     io.Reader
-	stats      *queue.TransferInfo
-	lastUpdate time.Time
+	ctx    context.Context
+	reader io.Reader
 }
 
 func (cr *contextReader) Read(p []byte) (int, error) {
@@ -28,21 +24,11 @@ func (cr *contextReader) Read(p []byte) (int, error) {
 	case <-cr.ctx.Done():
 		return 0, context.Canceled
 	default:
-		n, err := cr.reader.Read(p)
-
-		if n > 0 {
-			now := time.Now()
-			if now.Sub(cr.lastUpdate) >= 100*time.Millisecond {
-				cr.stats.Update(uint64(n))
-				cr.lastUpdate = now
-			}
-		}
-
-		return n, err
+		return cr.reader.Read(p)
 	}
 }
 
-func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable, t *queue.TransferInfo) error {
+func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
 	var transferComplete bool
 
 	srcFile, err := i.osHandler.Open(m.SourcePath)
@@ -68,15 +54,10 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable, t *queue
 	dstHasher := blake3.New()
 
 	ctxReader := &contextReader{
-		ctx:        ctx,
-		reader:     io.TeeReader(srcFile, srcHasher),
-		stats:      t,
-		lastUpdate: time.Now(),
+		ctx:    ctx,
+		reader: io.TeeReader(srcFile, srcHasher),
 	}
-
 	multiWriter := io.MultiWriter(dstFile, dstHasher)
-
-	t.Start(m.Metadata.Size)
 
 	if _, err := io.Copy(multiWriter, ctxReader); err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -107,7 +88,6 @@ func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable, t *queue
 		return fmt.Errorf("(io-movefile) failed to rename tmp file to dst file: %w", err)
 	}
 
-	t.End()
 	transferComplete = true
 
 	return nil
