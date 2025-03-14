@@ -9,11 +9,11 @@ import (
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"github.com/desertwitch/gover/internal/generic/validation"
 )
 
-func enumerateShares(ctx context.Context, shares map[string]storage.Share, queueMan *queue.Manager, deps *depPackage) ([]*filesystem.Moveable, error) {
+func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) ([]*filesystem.Moveable, error) {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}
@@ -87,11 +87,11 @@ func enumerateShares(ctx context.Context, shares map[string]storage.Share, queue
 	return queueMan.EnumerationManager.GetItems(), nil
 }
 
-func shareEnumerationWorker(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage, queueMan *queue.Manager, deps *depPackage) {
+func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) {
 	slog.Info("Enumerating share on storage:", "src", src.GetName(), "share", share.GetName())
 
 	if err := enumerateShare(ctx, share, src, dst, queueMan, deps); err != nil {
-		if _, ok := src.(storage.Disk); ok {
+		if _, ok := src.(schema.Disk); ok {
 			slog.Warn("Skipped enumerating array disk due to failure",
 				"err", err,
 				"share", share.GetName(),
@@ -109,7 +109,7 @@ func shareEnumerationWorker(ctx context.Context, share storage.Share, src storag
 	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
 }
 
-func enumerateShare(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage, queueMan *queue.Manager, deps *depPackage) error {
+func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) error {
 	files, err := deps.FSHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
 		return fmt.Errorf("(main) failed to enumerate: %w", err)

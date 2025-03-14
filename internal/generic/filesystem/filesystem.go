@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
 
@@ -44,10 +44,10 @@ type fsWalkProvider interface {
 }
 
 type Moveable struct {
-	Share      storage.Share
-	Source     storage.Storage
+	Share      schema.Share
+	Source     schema.Storage
 	SourcePath string
-	Dest       storage.Storage
+	Dest       schema.Storage
 	DestPath   string
 	Hardlinks  []*Moveable
 	IsHardlink bool
@@ -94,7 +94,7 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 	}, nil
 }
 
-func (f *Handler) GetMoveables(ctx context.Context, share storage.Share, src storage.Storage, dst storage.Storage) ([]*Moveable, error) {
+func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) ([]*Moveable, error) {
 	moveables := []*Moveable{}
 
 	shareDir := filepath.Join(src.GetFSPath(), share.GetName())

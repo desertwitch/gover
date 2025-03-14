@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]storage.Disk {
+func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]schema.Disk {
 	a.RLock()
 	defer a.RUnlock()
 
-	found := make(map[string]storage.Disk)
+	found := make(map[string]schema.Disk)
 
 	for _, allocInfo := range a.alreadyAllocated {
 		checkPath := filepath.Join(allocInfo.sourceBase, subPath)
@@ -24,14 +24,14 @@ func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]storage.Dis
 	return found
 }
 
-func (a *Handler) getAllocatedSpace(disk storage.Disk) uint64 {
+func (a *Handler) getAllocatedSpace(disk schema.Disk) uint64 {
 	a.RLock()
 	defer a.RUnlock()
 
 	return a.alreadyAllocatedSpace[disk.GetName()]
 }
 
-func (a *Handler) addAllocated(m *filesystem.Moveable, dst storage.Disk) {
+func (a *Handler) addAllocated(m *filesystem.Moveable, dst schema.Disk) {
 	a.Lock()
 	defer a.Unlock()
 
@@ -44,7 +44,7 @@ func (a *Handler) addAllocated(m *filesystem.Moveable, dst storage.Disk) {
 	a.alreadyAllocated[m] = allocInfo
 }
 
-func (a *Handler) addAllocatedSpace(disk storage.Disk, size uint64) {
+func (a *Handler) addAllocatedSpace(disk schema.Disk, size uint64) {
 	a.Lock()
 	defer a.Unlock()
 

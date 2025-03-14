@@ -16,7 +16,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/io"
 	"github.com/desertwitch/gover/internal/generic/pathing"
 	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
@@ -41,7 +41,7 @@ func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handl
 	}
 }
 
-func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]storage.Share, queueMan *queue.Manager, deps *depPackage) {
+func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) {
 	defer wg.Done()
 
 	files, err := enumerateShares(ctx, shares, queueMan, deps)
@@ -121,7 +121,7 @@ func main() {
 	shares := system.GetShares()
 	queueMan := queue.NewManager()
 
-	shareAdapters := make(map[string]storage.Share, len(shares))
+	shareAdapters := make(map[string]schema.Share, len(shares))
 	for name, share := range shares {
 		shareAdapters[name] = NewShareAdapter(share)
 	}

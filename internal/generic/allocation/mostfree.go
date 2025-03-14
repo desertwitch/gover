@@ -5,12 +5,12 @@ import (
 	"sort"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (a *Handler) allocateMostFree(m *filesystem.Moveable, includedDisks map[string]storage.Disk, excludedDisks map[string]storage.Disk) (storage.Disk, error) {
+func (a *Handler) allocateMostFree(m *filesystem.Moveable, includedDisks map[string]schema.Disk, excludedDisks map[string]schema.Disk) (schema.Disk, error) {
 	diskStats := make(map[string]filesystem.DiskStats)
-	disks := []storage.Disk{}
+	disks := []schema.Disk{}
 
 	for name, disk := range includedDisks {
 		if _, exists := excludedDisks[name]; exists {

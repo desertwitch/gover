@@ -5,16 +5,16 @@ import (
 	"sort"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 const (
 	highWaterDivisor = 2
 )
 
-func (a *Handler) allocateHighWater(m *filesystem.Moveable, includedDisks map[string]storage.Disk, excludedDisks map[string]storage.Disk) (storage.Disk, error) {
+func (a *Handler) allocateHighWater(m *filesystem.Moveable, includedDisks map[string]schema.Disk, excludedDisks map[string]schema.Disk) (schema.Disk, error) {
 	diskStats := make(map[string]filesystem.DiskStats)
-	disks := []storage.Disk{}
+	disks := []schema.Disk{}
 
 	var maxDiskSize uint64
 

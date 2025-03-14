@@ -10,13 +10,13 @@ import (
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
-	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
 }
 
 type enumerationQueue interface {
@@ -26,7 +26,7 @@ type enumerationQueue interface {
 type allocInfo struct {
 	sourcePath    string
 	sourceBase    string
-	allocatedDisk storage.Disk
+	allocatedDisk schema.Disk
 }
 
 type Handler struct {
@@ -91,7 +91,7 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQu
 	return nil
 }
 
-func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (storage.Disk, error) {
+func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (schema.Disk, error) {
 	includedDisks := m.Share.GetIncludedDisks()
 	excludedDisks := m.Share.GetExcludedDisks()
 

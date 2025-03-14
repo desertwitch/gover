@@ -1,4 +1,4 @@
-package storage
+package schema
 
 type Storage interface {
 	GetName() string

@@ -8,12 +8,12 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
 
 type fsProvider interface {
-	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
+	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
 	IsEmptyFolder(path string) (bool, error)
 	IsInUse(path string) bool
 }

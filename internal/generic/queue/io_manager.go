@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type IOManager struct {
@@ -30,7 +30,7 @@ func (b *IOManager) Enqueue(items ...*filesystem.Moveable) {
 	}
 }
 
-func (b *IOManager) GetQueueUnsafe(target storage.Storage) (*IOTargetQueue, bool) {
+func (b *IOManager) GetQueueUnsafe(target schema.Storage) (*IOTargetQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 

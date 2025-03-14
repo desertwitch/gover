@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/storage"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
 
@@ -40,7 +40,7 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 	}
 
 	switch dest := m.Dest.(type) {
-	case storage.Disk:
+	case schema.Disk:
 		for name, disk := range m.Share.GetIncludedDisks() {
 			if _, exists := m.Share.GetExcludedDisks()[name]; exists {
 				continue
@@ -56,7 +56,7 @@ func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
 
 		return "", nil
 
-	case storage.Pool:
+	case schema.Pool:
 		alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, dest)
 		if err != nil {
 			return "", err
@@ -86,7 +86,7 @@ func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-func (f *Handler) HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error) {
+func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
 	path := s.GetFSPath()
 
 	stats, err := f.GetDiskUsage(path)
@@ -115,7 +115,7 @@ func (f *Handler) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate storage.Storage) (bool, string, error) {
+func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate schema.Storage) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("(fs-existson) failed to rel: %w", err)
