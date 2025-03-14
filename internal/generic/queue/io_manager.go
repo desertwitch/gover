@@ -3,7 +3,6 @@ package queue
 import (
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
@@ -18,7 +17,7 @@ func NewIOManager() *IOManager {
 	}
 }
 
-func (b *IOManager) Enqueue(items ...*filesystem.Moveable) {
+func (b *IOManager) Enqueue(items ...*schema.Moveable) {
 	b.Lock()
 	defer b.Unlock()
 

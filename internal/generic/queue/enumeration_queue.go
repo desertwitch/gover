@@ -4,25 +4,25 @@ import (
 	"context"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type EnumerationQueue struct {
 	sync.Mutex
 	head       int
-	items      []*filesystem.Moveable
-	success    []*filesystem.Moveable
-	skipped    []*filesystem.Moveable
-	inProgress map[*filesystem.Moveable]struct{}
+	items      []*schema.Moveable
+	success    []*schema.Moveable
+	skipped    []*schema.Moveable
+	inProgress map[*schema.Moveable]struct{}
 }
 
 func NewEnumerationQueue() *EnumerationQueue {
 	return &EnumerationQueue{
 		head:       0,
-		items:      []*filesystem.Moveable{},
-		success:    []*filesystem.Moveable{},
-		skipped:    []*filesystem.Moveable{},
-		inProgress: make(map[*filesystem.Moveable]struct{}),
+		items:      []*schema.Moveable{},
+		success:    []*schema.Moveable{},
+		skipped:    []*schema.Moveable{},
+		inProgress: make(map[*schema.Moveable]struct{}),
 	}
 }
 
@@ -30,33 +30,33 @@ func (q *EnumerationQueue) ResetQueue() {
 	q.Lock()
 	defer q.Unlock()
 
-	q.items = make([]*filesystem.Moveable, len(q.success))
+	q.items = make([]*schema.Moveable, len(q.success))
 	copy(q.items, q.success)
 
 	q.head = 0
-	q.success = []*filesystem.Moveable{}
-	q.skipped = []*filesystem.Moveable{}
-	q.inProgress = make(map[*filesystem.Moveable]struct{})
+	q.success = []*schema.Moveable{}
+	q.skipped = []*schema.Moveable{}
+	q.inProgress = make(map[*schema.Moveable]struct{})
 }
 
-func (q *EnumerationQueue) GetItems() []*filesystem.Moveable {
+func (q *EnumerationQueue) GetItems() []*schema.Moveable {
 	q.Lock()
 	defer q.Unlock()
 
-	result := make([]*filesystem.Moveable, len(q.items))
+	result := make([]*schema.Moveable, len(q.items))
 	copy(result, q.items)
 
 	return result
 }
 
-func (q *EnumerationQueue) Enqueue(items ...*filesystem.Moveable) {
+func (q *EnumerationQueue) Enqueue(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
 	q.items = append(q.items, items...)
 }
 
-func (q *EnumerationQueue) Dequeue() (*filesystem.Moveable, bool) {
+func (q *EnumerationQueue) Dequeue() (*schema.Moveable, bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -70,7 +70,7 @@ func (q *EnumerationQueue) Dequeue() (*filesystem.Moveable, bool) {
 	return item, true
 }
 
-func (q *EnumerationQueue) SetSuccess(items ...*filesystem.Moveable) {
+func (q *EnumerationQueue) SetSuccess(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -80,7 +80,7 @@ func (q *EnumerationQueue) SetSuccess(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) SetSkipped(items ...*filesystem.Moveable) {
+func (q *EnumerationQueue) SetSkipped(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -90,7 +90,7 @@ func (q *EnumerationQueue) SetSkipped(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) SetProcessing(items ...*filesystem.Moveable) {
+func (q *EnumerationQueue) SetProcessing(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -99,10 +99,10 @@ func (q *EnumerationQueue) SetProcessing(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+func (q *EnumerationQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
 	return processQueue(ctx, q, processFunc, resetQueueAfter)
 }
 
-func (q *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+func (q *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
 	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc, resetQueueAfter)
 }

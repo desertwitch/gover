@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
@@ -31,7 +30,7 @@ func (a *Handler) getAllocatedSpace(disk schema.Disk) uint64 {
 	return a.alreadyAllocatedSpace[disk.GetName()]
 }
 
-func (a *Handler) addAllocated(m *filesystem.Moveable, dst schema.Disk) {
+func (a *Handler) addAllocated(m *schema.Moveable, dst schema.Disk) {
 	a.Lock()
 	defer a.Unlock()
 

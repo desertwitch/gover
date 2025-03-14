@@ -20,7 +20,7 @@ type fsProvider interface {
 }
 
 type enumerationQueue interface {
-	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
 }
 
 type allocInfo struct {
@@ -32,20 +32,20 @@ type allocInfo struct {
 type Handler struct {
 	sync.RWMutex
 	fsHandler             fsProvider
-	alreadyAllocated      map[*filesystem.Moveable]*allocInfo
+	alreadyAllocated      map[*schema.Moveable]*allocInfo
 	alreadyAllocatedSpace map[string]uint64
 }
 
 func NewHandler(fsHandler fsProvider) *Handler {
 	return &Handler{
 		fsHandler:             fsHandler,
-		alreadyAllocated:      make(map[*filesystem.Moveable]*allocInfo),
+		alreadyAllocated:      make(map[*schema.Moveable]*allocInfo),
 		alreadyAllocatedSpace: make(map[string]uint64),
 	}
 }
 
 func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQueue) error {
-	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *filesystem.Moveable) bool {
+	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) bool {
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
@@ -91,7 +91,7 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQu
 	return nil
 }
 
-func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (schema.Disk, error) {
+func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) {
 	includedDisks := m.Share.GetIncludedDisks()
 	excludedDisks := m.Share.GetExcludedDisks()
 

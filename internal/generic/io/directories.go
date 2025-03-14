@@ -7,10 +7,10 @@ import (
 	"log/slog"
 	"sort"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (i *Handler) ensureDirectoryStructure(m *filesystem.Moveable, job *creationReport) error {
+func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *creationReport) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -128,7 +128,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *creationReport) {
 	}
 }
 
-func calculateDirectoryDepth(dir *filesystem.RelatedDirectory) int {
+func calculateDirectoryDepth(dir *schema.RelatedDirectory) int {
 	depth := 0
 	for dir != nil {
 		dir = dir.Parent

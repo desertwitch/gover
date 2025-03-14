@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,7 +21,7 @@ func (i *Handler) ensureTimestamps(batch *creationReport) {
 	}
 }
 
-func (i *Handler) ensureTimestamp(path string, metadata *filesystem.Metadata) error {
+func (i *Handler) ensureTimestamp(path string, metadata *schema.Metadata) error {
 	ts := []unix.Timespec{metadata.AccessedAt, metadata.ModifiedAt}
 	if err := i.unixHandler.UtimesNano(path, ts); err != nil {
 		return fmt.Errorf("(io-times) failed to utimesnano: %w", err)

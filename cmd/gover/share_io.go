@@ -5,11 +5,11 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/queue"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func ioProcessFiles(ctx context.Context, files []*filesystem.Moveable, queueMan *queue.Manager, deps *depPackage) error {
+func ioProcessFiles(ctx context.Context, files []*schema.Moveable, queueMan *queue.Manager, deps *depPackage) error {
 	queueMan.IOManager.Enqueue(files...)
 
 	queues := queueMan.IOManager.GetQueuesUnsafe()

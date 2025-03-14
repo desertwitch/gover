@@ -2,8 +2,8 @@ package filesystem
 
 import "github.com/desertwitch/gover/internal/generic/schema"
 
-func establishSymlinks(moveables []*Moveable, dst schema.Storage) {
-	realFiles := make(map[string]*Moveable)
+func establishSymlinks(moveables []*schema.Moveable, dst schema.Storage) {
+	realFiles := make(map[string]*schema.Moveable)
 
 	for _, m := range moveables {
 		if !m.IsHardlink && !m.Metadata.IsSymlink {
@@ -24,8 +24,8 @@ func establishSymlinks(moveables []*Moveable, dst schema.Storage) {
 	}
 }
 
-func establishHardlinks(moveables []*Moveable, dst schema.Storage) {
-	inodes := make(map[uint64]*Moveable)
+func establishHardlinks(moveables []*schema.Moveable, dst schema.Storage) {
+	inodes := make(map[uint64]*schema.Moveable)
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
 			m.IsHardlink = true
@@ -39,8 +39,8 @@ func establishHardlinks(moveables []*Moveable, dst schema.Storage) {
 	}
 }
 
-func removeInternalLinks(moveables []*Moveable) []*Moveable {
-	var filtered []*Moveable
+func removeInternalLinks(moveables []*schema.Moveable) []*schema.Moveable {
+	var filtered []*schema.Moveable
 
 	for _, m := range moveables {
 		if !m.IsSymlink && !m.IsHardlink {

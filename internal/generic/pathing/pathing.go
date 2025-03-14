@@ -6,15 +6,15 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type fsProvider interface {
-	ExistsOnStorage(m *filesystem.Moveable) (string, error)
+	ExistsOnStorage(m *schema.Moveable) (string, error)
 }
 
 type enumerationQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
 }
 
 type Handler struct {
@@ -28,7 +28,7 @@ func NewHandler(fsHandler fsProvider) *Handler {
 }
 
 func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error {
-	q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
+	q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
 		if err := f.establishElementPath(m); err != nil {
 			return false
 		}
@@ -63,7 +63,7 @@ func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error 
 	return nil
 }
 
-func (f *Handler) establishElementPath(elem *filesystem.Moveable) error {
+func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	existsPath, err := f.fsHandler.ExistsOnStorage(elem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence",
@@ -99,7 +99,7 @@ func (f *Handler) establishElementPath(elem *filesystem.Moveable) error {
 	return nil
 }
 
-func (f *Handler) establishSubElementPath(subelem *filesystem.Moveable, elem *filesystem.Moveable) error {
+func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema.Moveable) error {
 	existsPath, err := f.fsHandler.ExistsOnStorage(subelem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence for subjob",
@@ -136,7 +136,7 @@ func (f *Handler) establishSubElementPath(subelem *filesystem.Moveable, elem *fi
 	return nil
 }
 
-func establishPath(m *filesystem.Moveable) error {
+func establishPath(m *schema.Moveable) error {
 	if m.Dest == nil {
 		return fmt.Errorf("(pathing) %w", ErrNilDestination)
 	}
@@ -158,7 +158,7 @@ func establishPath(m *filesystem.Moveable) error {
 	return nil
 }
 
-func establishRelatedDirPaths(m *filesystem.Moveable) error {
+func establishRelatedDirPaths(m *schema.Moveable) error {
 	dir := m.RootDir
 
 	for dir != nil {

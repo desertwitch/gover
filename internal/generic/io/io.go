@@ -7,7 +7,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
@@ -37,12 +36,12 @@ type unixProvider interface {
 }
 
 type ioTargetQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
 }
 
 type relatedElement interface {
 	GetDestPath() string
-	GetMetadata() *filesystem.Metadata
+	GetMetadata() *schema.Metadata
 	GetSourcePath() string
 }
 
@@ -64,7 +63,7 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	batch := &creationReport{}
 
-	q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
+	q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
 		job := &creationReport{}
 
 		if err := i.processQueueElement(ctx, m, job); err != nil {
@@ -92,7 +91,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	i.cleanDirectoryStructure(batch)
 }
 
-func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Moveable, job *creationReport) error {
+func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable, job *creationReport) error {
 	if err := i.processMoveable(ctx, elem, job); err != nil {
 		slog.Warn("Skipped job: failure during processing",
 			"path", elem.DestPath,
@@ -113,7 +112,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 	return nil
 }
 
-func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, job *creationReport) error {
+func (i *Handler) processQueueSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *creationReport) error {
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
 			"path", subelem.DestPath,
@@ -141,7 +140,7 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 	return nil
 }
 
-func (i *Handler) processMoveable(ctx context.Context, m *filesystem.Moveable, job *creationReport) error {
+func (i *Handler) processMoveable(ctx context.Context, m *schema.Moveable, job *creationReport) error {
 	var jobComplete bool
 
 	intermediateJob := &creationReport{}

@@ -3,7 +3,7 @@ package queue
 import (
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type EnumerationManager struct {
@@ -17,11 +17,11 @@ func NewEnumerationManager() *EnumerationManager {
 	}
 }
 
-func (e *EnumerationManager) GetItems() []*filesystem.Moveable {
+func (e *EnumerationManager) GetItems() []*schema.Moveable {
 	e.Lock()
 	defer e.Unlock()
 
-	files := []*filesystem.Moveable{}
+	files := []*schema.Moveable{}
 
 	for _, q := range e.queues {
 		files = append(files, q.GetItems()...)

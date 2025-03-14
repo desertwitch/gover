@@ -4,24 +4,24 @@ import (
 	"context"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type IOTargetQueue struct {
 	sync.Mutex
 	head       int
-	items      []*filesystem.Moveable
-	success    []*filesystem.Moveable
-	skipped    []*filesystem.Moveable
-	inProgress map[*filesystem.Moveable]struct{}
+	items      []*schema.Moveable
+	success    []*schema.Moveable
+	skipped    []*schema.Moveable
+	inProgress map[*schema.Moveable]struct{}
 }
 
 func NewIOTargetQueue() *IOTargetQueue {
 	return &IOTargetQueue{
-		items:      []*filesystem.Moveable{},
-		inProgress: make(map[*filesystem.Moveable]struct{}),
-		success:    []*filesystem.Moveable{},
-		skipped:    []*filesystem.Moveable{},
+		items:      []*schema.Moveable{},
+		inProgress: make(map[*schema.Moveable]struct{}),
+		success:    []*schema.Moveable{},
+		skipped:    []*schema.Moveable{},
 	}
 }
 
@@ -29,23 +29,23 @@ func (q *IOTargetQueue) ResetQueue() {
 	q.Lock()
 	defer q.Unlock()
 
-	q.items = make([]*filesystem.Moveable, len(q.success))
+	q.items = make([]*schema.Moveable, len(q.success))
 	copy(q.items, q.success)
 
 	q.head = 0
-	q.success = []*filesystem.Moveable{}
-	q.skipped = []*filesystem.Moveable{}
-	q.inProgress = make(map[*filesystem.Moveable]struct{})
+	q.success = []*schema.Moveable{}
+	q.skipped = []*schema.Moveable{}
+	q.inProgress = make(map[*schema.Moveable]struct{})
 }
 
-func (q *IOTargetQueue) Enqueue(items ...*filesystem.Moveable) {
+func (q *IOTargetQueue) Enqueue(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
 	q.items = append(q.items, items...)
 }
 
-func (q *IOTargetQueue) Dequeue() (*filesystem.Moveable, bool) {
+func (q *IOTargetQueue) Dequeue() (*schema.Moveable, bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -59,7 +59,7 @@ func (q *IOTargetQueue) Dequeue() (*filesystem.Moveable, bool) {
 	return item, true
 }
 
-func (q *IOTargetQueue) SetSuccess(items ...*filesystem.Moveable) {
+func (q *IOTargetQueue) SetSuccess(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -69,7 +69,7 @@ func (q *IOTargetQueue) SetSuccess(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *IOTargetQueue) SetSkipped(items ...*filesystem.Moveable) {
+func (q *IOTargetQueue) SetSkipped(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -79,7 +79,7 @@ func (q *IOTargetQueue) SetSkipped(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *IOTargetQueue) SetProcessing(items ...*filesystem.Moveable) {
+func (q *IOTargetQueue) SetProcessing(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -88,10 +88,10 @@ func (q *IOTargetQueue) SetProcessing(items ...*filesystem.Moveable) {
 	}
 }
 
-func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
 	return processQueue(ctx, q, processFunc, resetQueueAfter)
 }
 
-func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
 	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc, resetQueueAfter)
 }

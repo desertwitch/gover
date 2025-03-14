@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func validateBasicAttributes(m *filesystem.Moveable) error {
+func validateBasicAttributes(m *schema.Moveable) error {
 	if m.Share == nil {
 		return fmt.Errorf("(validation) %w", ErrNoShareInfo)
 	}
@@ -44,7 +44,7 @@ func validateBasicAttributes(m *filesystem.Moveable) error {
 	return nil
 }
 
-func validateLinks(m *filesystem.Moveable) error {
+func validateLinks(m *schema.Moveable) error {
 	if m.IsHardlink {
 		if m.HardlinkTo == nil {
 			return fmt.Errorf("(validation) %w", ErrNoHardlinkTarget)

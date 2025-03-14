@@ -87,8 +87,8 @@ func main() {
 	memChan := make(chan uint64, 1)
 	go memoryMonitor(ctx, memChan)
 
-	osProvider := &filesystem.OS{}
-	unixProvider := &filesystem.Unix{}
+	osProvider := &schema.OS{}
+	unixProvider := &schema.Unix{}
 	configProvider := &configuration.GodotenvProvider{}
 
 	fsHandler, err := filesystem.NewHandler(ctx, osProvider, unixProvider)

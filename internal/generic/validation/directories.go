@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func validateDirectories(m *filesystem.Moveable) error {
+func validateDirectories(m *schema.Moveable) error {
 	dir := m.RootDir
 
 	for dir != nil {
@@ -25,7 +25,7 @@ func validateDirectories(m *filesystem.Moveable) error {
 	return nil
 }
 
-func validateDirectory(d *filesystem.RelatedDirectory) error {
+func validateDirectory(d *schema.RelatedDirectory) error {
 	if d.Metadata == nil {
 		return fmt.Errorf("(validation) %w", ErrNoRelatedMetadata)
 	}
@@ -57,7 +57,7 @@ func validateDirectory(d *filesystem.RelatedDirectory) error {
 	return nil
 }
 
-func validateDirRootConnection(m *filesystem.Moveable) error {
+func validateDirRootConnection(m *schema.Moveable) error {
 	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.GetName())
 
 	// Special case: Moveable is an empty share folder (the base).

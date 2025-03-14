@@ -7,13 +7,12 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 	"github.com/desertwitch/gover/internal/generic/validation"
 )
 
-func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) ([]*filesystem.Moveable, error) {
+func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) ([]*schema.Moveable, error) {
 	var wg sync.WaitGroup
 
 	tasks := []func(){}

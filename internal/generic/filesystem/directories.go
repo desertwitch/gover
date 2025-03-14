@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type fileWalker struct{}
@@ -18,27 +20,7 @@ func (*fileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
 }
 
-type RelatedDirectory struct {
-	SourcePath string
-	DestPath   string
-	Metadata   *Metadata
-	Parent     *RelatedDirectory
-	Child      *RelatedDirectory
-}
-
-func (d *RelatedDirectory) GetMetadata() *Metadata {
-	return d.Metadata
-}
-
-func (d *RelatedDirectory) GetSourcePath() string {
-	return d.SourcePath
-}
-
-func (d *RelatedDirectory) GetDestPath() string {
-	return d.DestPath
-}
-
-func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
+func (f *Handler) establishRelatedDirs(m *schema.Moveable, basePath string) error {
 	if err := f.walkParentDirs(m, basePath); err != nil {
 		slog.Warn("Skipped job: failed to get parent folders",
 			"err", err,
@@ -52,15 +34,15 @@ func (f *Handler) establishRelatedDirs(m *Moveable, basePath string) error {
 	return nil
 }
 
-func (f *Handler) walkParentDirs(m *Moveable, basePath string) error {
-	var prevElement *RelatedDirectory
+func (f *Handler) walkParentDirs(m *schema.Moveable, basePath string) error {
+	var prevElement *schema.RelatedDirectory
 	path := m.SourcePath
 
 	for path != basePath && path != "/" && path != "." {
 		path = filepath.Dir(path)
 
 		if strings.HasPrefix(path, basePath) {
-			thisElement := &RelatedDirectory{
+			thisElement := &schema.RelatedDirectory{
 				SourcePath: path,
 			}
 

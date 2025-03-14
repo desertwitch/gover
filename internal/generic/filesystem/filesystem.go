@@ -43,34 +43,6 @@ type fsWalkProvider interface {
 	WalkDir(root string, fn fs.WalkDirFunc) error
 }
 
-type Moveable struct {
-	Share      schema.Share
-	Source     schema.Storage
-	SourcePath string
-	Dest       schema.Storage
-	DestPath   string
-	Hardlinks  []*Moveable
-	IsHardlink bool
-	HardlinkTo *Moveable
-	Symlinks   []*Moveable
-	IsSymlink  bool
-	SymlinkTo  *Moveable
-	Metadata   *Metadata
-	RootDir    *RelatedDirectory
-}
-
-func (m *Moveable) GetMetadata() *Metadata {
-	return m.Metadata
-}
-
-func (m *Moveable) GetSourcePath() string {
-	return m.SourcePath
-}
-
-func (m *Moveable) GetDestPath() string {
-	return m.DestPath
-}
-
 type Handler struct {
 	osHandler       osProvider
 	unixHandler     unixProvider
@@ -94,8 +66,8 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 	}, nil
 }
 
-func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) ([]*Moveable, error) {
-	moveables := []*Moveable{}
+func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) ([]*schema.Moveable, error) {
+	moveables := []*schema.Moveable{}
 
 	shareDir := filepath.Join(src.GetFSPath(), share.GetName())
 
@@ -131,7 +103,7 @@ func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src sche
 		}
 
 		if !d.IsDir() || (d.IsDir() && isEmptyDir) {
-			moveable := &Moveable{
+			moveable := &schema.Moveable{
 				Share:      share,
 				Source:     src,
 				SourcePath: path,
@@ -147,7 +119,7 @@ func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src sche
 		return nil, fmt.Errorf("(fs) failed walking: %w", err)
 	}
 
-	filtered, err := concurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *Moveable) bool {
+	filtered, err := concurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *schema.Moveable) bool {
 		if err := f.establishMetadata(m); err != nil {
 			return false
 		}
@@ -170,8 +142,8 @@ func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src sche
 	return filtered, nil
 }
 
-func (f *Handler) removeInUseFiles(moveables []*Moveable) []*Moveable {
-	filtered := []*Moveable{}
+func (f *Handler) removeInUseFiles(moveables []*schema.Moveable) []*schema.Moveable {
+	filtered := []*schema.Moveable{}
 
 	for _, m := range moveables {
 		if !m.Metadata.IsDir {

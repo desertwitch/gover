@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type enumerationQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
 }
 
 func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
-	if err := q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
+	if err := q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,
@@ -76,7 +76,7 @@ func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
 	return nil
 }
 
-func validateMoveable(m *filesystem.Moveable) error {
+func validateMoveable(m *schema.Moveable) error {
 	if err := validateBasicAttributes(m); err != nil {
 		return fmt.Errorf("(validation) %w", err)
 	}

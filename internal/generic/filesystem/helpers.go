@@ -34,7 +34,7 @@ func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
 	return f.osHandler.ReadDir(name)
 }
 
-func (f *Handler) ExistsOnStorage(m *Moveable) (string, error) {
+func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
 	if m.Dest == nil {
 		return "", ErrNilDestination
 	}
@@ -115,7 +115,7 @@ func (f *Handler) IsEmptyFolder(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func (f *Handler) existsOnStorageCandidate(m *Moveable, destCandidate schema.Storage) (bool, string, error) {
+func (f *Handler) existsOnStorageCandidate(m *schema.Moveable, destCandidate schema.Storage) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
 		return false, "", fmt.Errorf("(fs-existson) failed to rel: %w", err)

@@ -4,27 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
-
-type Metadata struct {
-	Inode      uint64
-	Perms      uint32
-	UID        uint32
-	GID        uint32
-	AccessedAt unix.Timespec
-	ModifiedAt unix.Timespec
-	Size       uint64
-	IsDir      bool
-	IsSymlink  bool
-	SymlinkTo  string
-}
 
 const (
 	unixBasePerms = 0o777
 )
 
-func (f *Handler) establishMetadata(m *Moveable) error {
+func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	metadata, err := f.getMetadata(m.SourcePath)
 	if err != nil {
 		slog.Warn("Skipped job: failed to get metadata",
@@ -40,14 +28,14 @@ func (f *Handler) establishMetadata(m *Moveable) error {
 	return nil
 }
 
-func (f *Handler) getMetadata(path string) (*Metadata, error) {
+func (f *Handler) getMetadata(path string) (*schema.Metadata, error) {
 	var stat unix.Stat_t
 
 	if err := f.unixHandler.Lstat(path, &stat); err != nil {
 		return nil, fmt.Errorf("(fs-metadata) failed to lstat: %w", err)
 	}
 
-	metadata := &Metadata{
+	metadata := &schema.Metadata{
 		Inode:      stat.Ino,
 		Perms:      stat.Mode & unixBasePerms,
 		UID:        stat.Uid,

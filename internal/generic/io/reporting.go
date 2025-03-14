@@ -1,14 +1,16 @@
 package io
 
-import "github.com/desertwitch/gover/internal/generic/filesystem"
+import (
+	"github.com/desertwitch/gover/internal/generic/schema"
+)
 
 type creationReport struct {
 	AnyCreated       []relatedElement
-	DirsCreated      []*filesystem.RelatedDirectory
-	DirsProcessed    []*filesystem.RelatedDirectory
-	MoveablesCreated []*filesystem.Moveable
-	SymlinksCreated  []*filesystem.Moveable
-	HardlinksCreated []*filesystem.Moveable
+	DirsCreated      []*schema.RelatedDirectory
+	DirsProcessed    []*schema.RelatedDirectory
+	MoveablesCreated []*schema.Moveable
+	SymlinksCreated  []*schema.Moveable
+	HardlinksCreated []*schema.Moveable
 }
 
 func mergeCreationReports(target, source *creationReport) {
@@ -24,7 +26,7 @@ func mergeCreationReports(target, source *creationReport) {
 	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
-func addToCreationReport(p *creationReport, m *filesystem.Moveable) {
+func addToCreationReport(p *creationReport, m *schema.Moveable) {
 	switch {
 	case m.IsHardlink:
 		p.AnyCreated = append(p.AnyCreated, m)

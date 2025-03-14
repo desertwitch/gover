@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]schema.Disk, error) {
+func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]schema.Disk, error) {
 	matches := make(map[int]map[string]schema.Disk)
 	splitExceedLvl := false
 
@@ -85,7 +84,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *filesystem.Moveable) (map[string]
 	return nil, ErrNotAllocatable
 }
 
-func (a *Handler) findDisksBySplitLevel(m *filesystem.Moveable) ([]schema.Disk, int, error) {
+func (a *Handler) findDisksBySplitLevel(m *schema.Moveable) ([]schema.Disk, int, error) {
 	var foundDisks []schema.Disk
 	path := filepath.Dir(m.SourcePath)
 

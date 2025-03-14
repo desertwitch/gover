@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
 
-func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error {
+func (i *Handler) processFile(ctx context.Context, m *schema.Moveable) error {
 	enoughSpace, err := i.fsHandler.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
 	if err != nil {
 		return fmt.Errorf("(io-file) failed to check enough space: %w", err)
@@ -31,7 +31,7 @@ func (i *Handler) processFile(ctx context.Context, m *filesystem.Moveable) error
 	return nil
 }
 
-func (i *Handler) processDirectory(m *filesystem.Moveable) error {
+func (i *Handler) processDirectory(m *schema.Moveable) error {
 	dirExisted := false
 
 	if err := i.unixHandler.Mkdir(m.DestPath, m.Metadata.Perms); err != nil {
@@ -54,7 +54,7 @@ func (i *Handler) processDirectory(m *filesystem.Moveable) error {
 	return nil
 }
 
-func (i *Handler) processHardlink(m *filesystem.Moveable) error {
+func (i *Handler) processHardlink(m *schema.Moveable) error {
 	if err := i.unixHandler.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 		return fmt.Errorf("(io-hardl) failed to link: %w", err)
 	}
@@ -68,7 +68,7 @@ func (i *Handler) processHardlink(m *filesystem.Moveable) error {
 	return nil
 }
 
-func (i *Handler) processSymlink(m *filesystem.Moveable, internalLink bool) error {
+func (i *Handler) processSymlink(m *schema.Moveable, internalLink bool) error {
 	if internalLink {
 		if err := i.unixHandler.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
 			return fmt.Errorf("(io-syml) failed to symlink: %w", err)

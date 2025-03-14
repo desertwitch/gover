@@ -8,7 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (a *Handler) allocateFillUp(m *filesystem.Moveable, includedDisks map[string]schema.Disk, excludedDisks map[string]schema.Disk) (schema.Disk, error) {
+func (a *Handler) allocateFillUp(m *schema.Moveable, includedDisks map[string]schema.Disk, excludedDisks map[string]schema.Disk) (schema.Disk, error) {
 	diskStats := make(map[string]filesystem.DiskStats)
 	disks := []schema.Disk{}
 

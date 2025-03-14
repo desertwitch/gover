@@ -9,7 +9,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/schema"
 	"github.com/zeebo/blake3"
 )
 
@@ -28,7 +28,7 @@ func (cr *contextReader) Read(p []byte) (int, error) {
 	}
 }
 
-func (i *Handler) moveFile(ctx context.Context, m *filesystem.Moveable) error {
+func (i *Handler) moveFile(ctx context.Context, m *schema.Moveable) error {
 	var transferComplete bool
 
 	srcFile, err := i.osHandler.Open(m.SourcePath)
