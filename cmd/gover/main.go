@@ -14,6 +14,8 @@ import (
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
 	"github.com/desertwitch/gover/internal/generic/io"
+	"github.com/desertwitch/gover/internal/generic/pathing"
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
@@ -24,16 +26,31 @@ const (
 )
 
 type depPackage struct {
-	FSHandler    *filesystem.Handler
-	AllocHandler *allocation.Handler
-	IOHandler    *io.Handler
+	FSHandler      *filesystem.Handler
+	AllocHandler   *allocation.Handler
+	PathingHandler *pathing.Handler
+	IOHandler      *io.Handler
 }
 
-func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, ioHandler *io.Handler) *depPackage {
+func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, pathingHandler *pathing.Handler, ioHandler *io.Handler) *depPackage {
 	return &depPackage{
-		FSHandler:    fsHandler,
-		AllocHandler: allocHandler,
-		IOHandler:    ioHandler,
+		FSHandler:      fsHandler,
+		AllocHandler:   allocHandler,
+		PathingHandler: pathingHandler,
+		IOHandler:      ioHandler,
+	}
+}
+
+func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]storage.Share, queueMan *queue.Manager, deps *depPackage) {
+	defer wg.Done()
+
+	files, err := enumerateShares(ctx, shares, queueMan, deps)
+	if err != nil {
+		return
+	}
+
+	if err := ioProcessFiles(ctx, files, queueMan, deps); err != nil {
+		return
 	}
 }
 
@@ -85,6 +102,7 @@ func main() {
 	}
 
 	allocHandler := allocation.NewHandler(fsHandler)
+	pathingHandler := pathing.NewHandler(fsHandler)
 	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
 
 	configHandler := configuration.NewHandler(configProvider)
@@ -99,8 +117,10 @@ func main() {
 		return
 	}
 
-	deps := newDepPackage(fsHandler, allocHandler, ioHandler)
+	deps := newDepPackage(fsHandler, allocHandler, pathingHandler, ioHandler)
+
 	shares := system.GetShares()
+	queueMan := queue.NewManager()
 
 	shareAdapters := make(map[string]storage.Share, len(shares))
 	for name, share := range shares {
@@ -108,7 +128,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go processShares(ctx, &wg, shareAdapters, deps)
+	go processShares(ctx, &wg, shareAdapters, queueMan, deps)
 	wg.Wait()
 
 	// slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024))

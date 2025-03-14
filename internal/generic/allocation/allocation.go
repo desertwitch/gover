@@ -10,8 +10,8 @@ import (
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/storage"
-	"github.com/desertwitch/gover/internal/generic/util"
 )
 
 type fsProvider interface {
@@ -41,8 +41,8 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (a *Handler) AllocateArrayDestinations(ctx context.Context, moveables []*filesystem.Moveable) ([]*filesystem.Moveable, error) {
-	filtered, err := util.ConcurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *filesystem.Moveable) bool {
+func (a *Handler) AllocateArrayDestinations(ctx context.Context, q *queue.EnumerationQueue) error {
+	if err := queue.ConcurrentProcess(ctx, runtime.NumCPU(), q, func(m *filesystem.Moveable) bool {
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
@@ -81,12 +81,11 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, moveables []*fi
 		}
 
 		return true
-	})
-	if err != nil {
-		return nil, err
+	}, true); err != nil {
+		return err
 	}
 
-	return filtered, nil
+	return nil
 }
 
 func (a *Handler) allocateArrayDestination(m *filesystem.Moveable) (storage.Disk, error) {

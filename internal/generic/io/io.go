@@ -61,44 +61,35 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
 	batch := &creationReport{}
 
-	for {
-		if ctx.Err() != nil {
-			break
-		}
-
-		m, ok := q.Dequeue()
-		if !ok {
-			break
-		}
-
+	queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
 		job := &creationReport{}
 
-		if err := i.processQueueElement(ctx, m, q, job); err != nil {
-			continue
+		if err := i.processQueueElement(ctx, m, job); err != nil {
+			return false
 		}
 
 		for _, h := range m.Hardlinks {
-			if err := i.processQueueSubElement(ctx, h, m, q, job); err != nil {
+			if err := i.processQueueSubElement(ctx, h, m, job); err != nil {
 				continue
 			}
 		}
 
 		for _, s := range m.Symlinks {
-			if err := i.processQueueSubElement(ctx, s, m, q, job); err != nil {
+			if err := i.processQueueSubElement(ctx, s, m, job); err != nil {
 				continue
 			}
 		}
 
 		mergeCreationReports(batch, job)
-	}
+
+		return true
+	}, false)
 
 	i.ensureTimestamps(batch)
 	i.cleanDirectoryStructure(batch)
 }
 
-func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
-	q.SetProcessing(elem)
-
+func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Moveable, job *creationReport) error {
 	if err := i.processMoveable(ctx, elem, job); err != nil {
 		slog.Warn("Skipped job: failure during processing",
 			"path", elem.DestPath,
@@ -106,12 +97,9 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
-		q.SetSkipped(elem)
 
 		return err
 	}
-
-	q.SetSuccess(elem)
 
 	slog.Info("Processed:",
 		"path", elem.DestPath,
@@ -122,9 +110,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *filesystem.Move
 	return nil
 }
 
-func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, q *queue.DestinationQueue, job *creationReport) error {
-	q.SetProcessing(subelem)
-
+func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesystem.Moveable, elem *filesystem.Moveable, job *creationReport) error {
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
 			"path", subelem.DestPath,
@@ -133,12 +119,9 @@ func (i *Handler) processQueueSubElement(ctx context.Context, subelem *filesyste
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
-		q.SetSkipped(subelem)
 
 		return err
 	}
-
-	q.SetSuccess(subelem)
 
 	linkType := "hardlink"
 	if subelem.IsSymlink || subelem.Metadata.IsSymlink {

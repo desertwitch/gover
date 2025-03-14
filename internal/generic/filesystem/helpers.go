@@ -1,11 +1,13 @@
 package filesystem
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"golang.org/x/sys/unix"
@@ -138,4 +140,55 @@ func handleSize(size int64) uint64 {
 	}
 
 	return uint64(size)
+}
+
+func concurrentFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filterFunc func(T) bool) ([]T, error) {
+	var wg sync.WaitGroup
+
+	ch := make(chan T, len(items))
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		semaphore := make(chan struct{}, maxWorkers)
+
+		for _, item := range items {
+			select {
+			case <-ctx.Done():
+				return
+			case semaphore <- struct{}{}:
+			}
+
+			wg.Add(1)
+			go func(item T) {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				if filterFunc(item) {
+					select {
+					case <-ctx.Done():
+						return
+					case ch <- item:
+					}
+				}
+			}(item)
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	filtered := []T{}
+	for item := range ch {
+		filtered = append(filtered, item)
+	}
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	return filtered, nil
 }

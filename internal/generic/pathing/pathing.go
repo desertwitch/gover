@@ -1,22 +1,33 @@
-package filesystem
+package pathing
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
 	"path/filepath"
+
+	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/queue"
 )
 
-func (f *Handler) EstablishPaths(ctx context.Context, moveables []*Moveable) ([]*Moveable, error) {
-	filtered := []*Moveable{}
+type fsProvider interface {
+	ExistsOnStorage(m *filesystem.Moveable) (string, error)
+}
 
-	for _, m := range moveables {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+type Handler struct {
+	fsHandler fsProvider
+}
 
+func NewHandler(fsHandler fsProvider) *Handler {
+	return &Handler{
+		fsHandler: fsHandler,
+	}
+}
+
+func (f *Handler) EstablishPaths(ctx context.Context, q *queue.EnumerationQueue) error {
+	queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
 		if err := f.establishElementPath(m); err != nil {
-			continue
+			return false
 		}
 
 		hardLinkFailure := false
@@ -28,7 +39,7 @@ func (f *Handler) EstablishPaths(ctx context.Context, moveables []*Moveable) ([]
 			}
 		}
 		if hardLinkFailure {
-			continue
+			return false
 		}
 
 		symlinkFailure := false
@@ -40,17 +51,17 @@ func (f *Handler) EstablishPaths(ctx context.Context, moveables []*Moveable) ([]
 			}
 		}
 		if symlinkFailure {
-			continue
+			return false
 		}
 
-		filtered = append(filtered, m)
-	}
+		return true
+	}, true)
 
-	return filtered, nil
+	return nil
 }
 
-func (f *Handler) establishElementPath(elem *Moveable) error {
-	existsPath, err := f.ExistsOnStorage(elem)
+func (f *Handler) establishElementPath(elem *filesystem.Moveable) error {
+	existsPath, err := f.fsHandler.ExistsOnStorage(elem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence",
 			"err", err,
@@ -85,8 +96,8 @@ func (f *Handler) establishElementPath(elem *Moveable) error {
 	return nil
 }
 
-func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) error {
-	existsPath, err := f.ExistsOnStorage(subelem)
+func (f *Handler) establishSubElementPath(subelem *filesystem.Moveable, elem *filesystem.Moveable) error {
+	existsPath, err := f.fsHandler.ExistsOnStorage(subelem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence for subjob",
 			"err", err,
@@ -122,35 +133,35 @@ func (f *Handler) establishSubElementPath(subelem *Moveable, elem *Moveable) err
 	return nil
 }
 
-func establishPath(m *Moveable) error {
+func establishPath(m *filesystem.Moveable) error {
 	if m.Dest == nil {
-		return fmt.Errorf("(fs-paths) %w", ErrNilDestination)
+		return fmt.Errorf("(pathing) %w", ErrNilDestination)
 	}
 
 	if !filepath.IsAbs(m.SourcePath) {
-		return fmt.Errorf("(fs-paths) %w: %s", ErrSourceIsRelative, m.SourcePath)
+		return fmt.Errorf("(pathing) %w: %s", ErrSourceIsRelative, m.SourcePath)
 	}
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
-		return fmt.Errorf("(fs-paths) failed to rel: %w", err)
+		return fmt.Errorf("(pathing) failed to rel: %w", err)
 	}
 	m.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 
 	if err := establishRelatedDirPaths(m); err != nil {
-		return fmt.Errorf("(fs-paths) failed related dir pathing: %w", err)
+		return fmt.Errorf("(pathing) failed related dir pathing: %w", err)
 	}
 
 	return nil
 }
 
-func establishRelatedDirPaths(m *Moveable) error {
+func establishRelatedDirPaths(m *filesystem.Moveable) error {
 	dir := m.RootDir
 
 	for dir != nil {
 		relPath, err := filepath.Rel(m.Source.GetFSPath(), dir.SourcePath)
 		if err != nil {
-			return fmt.Errorf("(fs-dirpaths) failed to rel: %w", err)
+			return fmt.Errorf("(pathing-dirs) failed to rel: %w", err)
 		}
 		dir.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 		dir = dir.Child
