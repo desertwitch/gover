@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 )
 
 type fsProvider interface {
 	ExistsOnStorage(m *filesystem.Moveable) (string, error)
+}
+
+type enumerationQueue interface {
+	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
 }
 
 type Handler struct {
@@ -24,8 +27,8 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (f *Handler) EstablishPaths(ctx context.Context, q *queue.EnumerationQueue) error {
-	queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
+func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error {
+	q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
 		if err := f.establishElementPath(m); err != nil {
 			return false
 		}

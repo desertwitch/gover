@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
@@ -85,4 +86,12 @@ func (q *IOTargetQueue) SetProcessing(items ...*filesystem.Moveable) {
 	for _, item := range items {
 		q.inProgress[item] = struct{}{}
 	}
+}
+
+func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+	return processQueue(ctx, q, processFunc, resetQueueAfter)
+}
+
+func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error {
+	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc, resetQueueAfter)
 }

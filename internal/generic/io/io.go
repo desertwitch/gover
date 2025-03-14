@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/storage"
 	"golang.org/x/sys/unix"
 )
@@ -37,6 +36,10 @@ type unixProvider interface {
 	UtimesNano(path string, times []unix.Timespec) error
 }
 
+type ioTargetQueue interface {
+	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+}
+
 type relatedElement interface {
 	GetDestPath() string
 	GetMetadata() *filesystem.Metadata
@@ -58,10 +61,10 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q *queue.IOTargetQueue) {
+func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	batch := &creationReport{}
 
-	queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
+	q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
 		job := &creationReport{}
 
 		if err := i.processQueueElement(ctx, m, job); err != nil {

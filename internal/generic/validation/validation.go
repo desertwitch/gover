@@ -6,11 +6,14 @@ import (
 	"log/slog"
 
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 )
 
-func ValidateMoveables(ctx context.Context, q *queue.EnumerationQueue) error {
-	if err := queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
+type enumerationQueue interface {
+	DequeueAndProcess(ctx context.Context, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
+}
+
+func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
+	if err := q.DequeueAndProcess(ctx, func(m *filesystem.Moveable) bool {
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,

@@ -13,7 +13,7 @@ type queueProvider[T any] interface {
 	ResetQueue()
 }
 
-func Process[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
+func processQueue[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
 	if resetQueueAfter {
 		defer queue.ResetQueue()
 	}
@@ -44,7 +44,7 @@ func Process[T any](ctx context.Context, queue queueProvider[T], processFunc fun
 	return nil
 }
 
-func ConcurrentProcess[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
+func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
 	if resetQueueAfter {
 		defer queue.ResetQueue()
 	}

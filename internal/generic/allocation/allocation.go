@@ -10,7 +10,6 @@ import (
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/storage"
 )
 
@@ -18,6 +17,10 @@ type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(path string) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s storage.Storage, minFree uint64, fileSize uint64) (bool, error)
+}
+
+type enumerationQueue interface {
+	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*filesystem.Moveable) bool, resetQueueAfter bool) error
 }
 
 type allocInfo struct {
@@ -41,8 +44,8 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (a *Handler) AllocateArrayDestinations(ctx context.Context, q *queue.EnumerationQueue) error {
-	if err := queue.ConcurrentProcess(ctx, runtime.NumCPU(), q, func(m *filesystem.Moveable) bool {
+func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQueue) error {
+	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *filesystem.Moveable) bool {
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
