@@ -27,7 +27,7 @@ func ioProcessFiles(ctx context.Context, files []*filesystem.Moveable, queueMan 
 		}
 
 		queueWG.Add(1)
-		go func(q *queue.DestinationQueue) {
+		go func(q *queue.IOTargetQueue) {
 			defer queueWG.Done()
 			defer func() { <-semaphore }()
 

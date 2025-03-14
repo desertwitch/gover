@@ -58,7 +58,7 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q *queue.DestinationQueue) {
+func (i *Handler) ProcessQueue(ctx context.Context, q *queue.IOTargetQueue) {
 	batch := &creationReport{}
 
 	queue.Process(ctx, q, func(m *filesystem.Moveable) bool {
