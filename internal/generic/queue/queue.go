@@ -13,7 +13,6 @@ type Manager struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		Mode:             0,
 		EnumerationQueue: NewEnumerationQueue(),
 		IOManager:        NewIOManager(),
 	}

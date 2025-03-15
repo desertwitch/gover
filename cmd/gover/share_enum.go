@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime"
-	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
@@ -13,9 +12,7 @@ import (
 )
 
 func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) ([]*schema.Moveable, error) {
-	var wg sync.WaitGroup
-
-	tasks := []func(){}
+	tasker := queue.NewTaskManager()
 
 	// Primary to Secondary
 	for _, share := range shares {
@@ -25,12 +22,12 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 
 		if share.GetCachePool2() == nil {
 			// Cache to Array
-			tasks = append(tasks, func() {
+			tasker.Add(func() {
 				shareEnumerationWorker(ctx, share, share.GetCachePool(), nil, queueMan, deps)
 			})
 		} else {
 			// Cache to Cache2
-			tasks = append(tasks, func() {
+			tasker.Add(func() {
 				shareEnumerationWorker(ctx, share, share.GetCachePool(), share.GetCachePool2(), queueMan, deps)
 			})
 		}
@@ -48,40 +45,21 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 				if _, exists := share.GetExcludedDisks()[name]; exists {
 					continue
 				}
-				tasks = append(tasks, func() {
+				tasker.Add(func() {
 					shareEnumerationWorker(ctx, share, disk, share.GetCachePool(), queueMan, deps)
 				})
 			}
 		} else {
 			// Cache2 to Cache
-			tasks = append(tasks, func() {
+			tasker.Add(func() {
 				shareEnumerationWorker(ctx, share, share.GetCachePool2(), share.GetCachePool(), queueMan, deps)
 			})
 		}
 	}
 
-	maxWorkers := runtime.NumCPU()
-	semaphore := make(chan struct{}, maxWorkers)
-
-	for _, task := range tasks {
-		select {
-		case <-ctx.Done():
-			wg.Wait()
-
-			return nil, ctx.Err()
-		case semaphore <- struct{}{}:
-		}
-
-		wg.Add(1)
-		go func(task func()) {
-			defer wg.Done()
-			defer func() { <-semaphore }()
-
-			task()
-		}(task)
+	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
+		return nil, err
 	}
-
-	wg.Wait()
 
 	return queueMan.EnumerationQueue.GetItems(), nil
 }
@@ -109,12 +87,13 @@ func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.
 }
 
 func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) error {
+	q := queueMan.EnumerationQueue
+
 	files, err := deps.FSHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
 		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
-	q := queueMan.EnumerationQueue
 	q.Enqueue(files...)
 
 	if dst == nil {
