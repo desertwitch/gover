@@ -46,6 +46,11 @@ func NewHandler(fsHandler fsProvider) *Handler {
 
 func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQueue) error {
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) bool {
+		if m.Dest != nil {
+			// If a destination is already set, allocation is not needed, return as success.
+			return true
+		}
+
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",

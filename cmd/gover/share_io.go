@@ -15,9 +15,13 @@ func ioProcessFiles(ctx context.Context, files []*schema.Moveable, queueMan *que
 	queues := queueMan.IOManager.GetQueuesUnsafe()
 
 	for _, q := range queues {
-		tasker.Add(func() {
-			deps.IOHandler.ProcessQueue(ctx, q)
-		})
+		tasker.Add(
+			func(q *queue.IOTargetQueue) func() {
+				return func() {
+					deps.IOHandler.ProcessQueue(ctx, q)
+				}
+			}(q),
+		)
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {

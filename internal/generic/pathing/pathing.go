@@ -68,6 +68,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence",
 			"err", err,
+			"dst", elem.Dest.GetName(),
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
@@ -79,6 +80,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	if !elem.Metadata.IsDir && existsPath != "" {
 		slog.Warn("Skipped job: destination path already exists",
 			"path", existsPath,
+			"dst", elem.Dest.GetName(),
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
@@ -89,6 +91,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	if err := establishPath(elem); err != nil {
 		slog.Warn("Skipped job: cannot set destination path",
 			"err", err,
+			"dst", elem.Dest.GetName(),
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
 		)
@@ -104,6 +107,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence for subjob",
 			"err", err,
+			"dst", subelem.Dest.GetName(),
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
@@ -114,6 +118,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 	if existsPath != "" {
 		slog.Warn("Skipped job: destination path already exists for subjob",
 			"path", existsPath,
+			"dst", subelem.Dest.GetName(),
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),
@@ -123,8 +128,8 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 	}
 	if err := establishPath(subelem); err != nil {
 		slog.Warn("Skipped job: cannot set destination path for subjob",
-			"path", subelem.SourcePath,
 			"err", err,
+			"dst", subelem.Dest.GetName(),
 			"subjob", subelem.SourcePath,
 			"job", elem.SourcePath,
 			"share", elem.Share.GetName(),

@@ -22,14 +22,22 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 
 		if share.GetCachePool2() == nil {
 			// Cache to Array
-			tasker.Add(func() {
-				shareEnumerationWorker(ctx, share, share.GetCachePool(), nil, queueMan, deps)
-			})
+			tasker.Add(
+				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
+					return func() {
+						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+					}
+				}(share, share.GetCachePool(), nil),
+			)
 		} else {
 			// Cache to Cache2
-			tasker.Add(func() {
-				shareEnumerationWorker(ctx, share, share.GetCachePool(), share.GetCachePool2(), queueMan, deps)
-			})
+			tasker.Add(
+				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
+					return func() {
+						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+					}
+				}(share, share.GetCachePool(), share.GetCachePool2()),
+			)
 		}
 	}
 
@@ -45,15 +53,23 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 				if _, exists := share.GetExcludedDisks()[name]; exists {
 					continue
 				}
-				tasker.Add(func() {
-					shareEnumerationWorker(ctx, share, disk, share.GetCachePool(), queueMan, deps)
-				})
+				tasker.Add(
+					func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
+						return func() {
+							shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+						}
+					}(share, disk, share.GetCachePool()),
+				)
 			}
 		} else {
 			// Cache2 to Cache
-			tasker.Add(func() {
-				shareEnumerationWorker(ctx, share, share.GetCachePool2(), share.GetCachePool(), queueMan, deps)
-			})
+			tasker.Add(
+				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
+					return func() {
+						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+					}
+				}(share, share.GetCachePool2(), share.GetCachePool()),
+			)
 		}
 	}
 
@@ -96,10 +112,8 @@ func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage,
 
 	q.Enqueue(files...)
 
-	if dst == nil {
-		if err = deps.AllocHandler.AllocateArrayDestinations(ctx, q); err != nil {
-			return fmt.Errorf("(main) failed to allocate: %w", err)
-		}
+	if err = deps.AllocHandler.AllocateArrayDestinations(ctx, q); err != nil {
+		return fmt.Errorf("(main) failed to allocate: %w", err)
 	}
 
 	if err := deps.PathingHandler.EstablishPaths(ctx, q); err != nil {
