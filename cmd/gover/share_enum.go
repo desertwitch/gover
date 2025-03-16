@@ -104,6 +104,7 @@ func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.
 
 func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) error {
 	q := queueMan.EnumerationManager.NewQueue()
+	queueMan.EnumerationManager.SetQueuePhase(q, "initializing")
 
 	files, err := deps.FSHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
@@ -113,18 +114,23 @@ func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage,
 	q.Enqueue(files...)
 
 	if dst == nil {
+		queueMan.EnumerationManager.SetQueuePhase(q, "allocating")
 		if err = deps.AllocHandler.AllocateArrayDestinations(ctx, q); err != nil {
 			return fmt.Errorf("(main) failed to allocate: %w", err)
 		}
 	}
 
+	queueMan.EnumerationManager.SetQueuePhase(q, "pathing")
 	if err := deps.PathingHandler.EstablishPaths(ctx, q); err != nil {
 		return fmt.Errorf("(main) failed to establish paths: %w", err)
 	}
 
+	queueMan.EnumerationManager.SetQueuePhase(q, "validating")
 	if err := validation.ValidateMoveables(ctx, q); err != nil {
 		return fmt.Errorf("(main) failed to validate: %w", err)
 	}
+
+	queueMan.EnumerationManager.SetQueuePhase(q, "waiting for IO")
 
 	return nil
 }

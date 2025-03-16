@@ -8,12 +8,12 @@ import (
 
 type EnumerationManager struct {
 	sync.Mutex
-	queues map[*EnumerationQueue]struct{}
+	queues map[*EnumerationQueue]string
 }
 
 func NewEnumerationManager() *EnumerationManager {
 	return &EnumerationManager{
-		queues: make(map[*EnumerationQueue]struct{}),
+		queues: make(map[*EnumerationQueue]string),
 	}
 }
 
@@ -35,9 +35,18 @@ func (e *EnumerationManager) NewQueue() *EnumerationQueue {
 	defer e.Unlock()
 
 	q := NewEnumerationQueue()
-	e.queues[q] = struct{}{}
+	e.queues[q] = ""
 
 	return q
+}
+
+func (e *EnumerationManager) SetQueuePhase(q *EnumerationQueue, phase string) {
+	e.Lock()
+	defer e.Unlock()
+
+	if _, exists := e.queues[q]; exists {
+		e.queues[q] = phase
+	}
 }
 
 func (e *EnumerationManager) DestroyQueue(q *EnumerationQueue) {
@@ -53,5 +62,5 @@ func (e *EnumerationManager) DestroyQueues() {
 	e.Lock()
 	defer e.Unlock()
 
-	e.queues = make(map[*EnumerationQueue]struct{})
+	e.queues = make(map[*EnumerationQueue]string)
 }
