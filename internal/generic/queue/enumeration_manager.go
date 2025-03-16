@@ -8,7 +8,7 @@ import (
 
 type EnumerationManager struct {
 	sync.Mutex
-	queues map[*EnumerationQueue]string
+	queues map[*EnumerationQueue]string // map[*EnumerationQueue]queueStage
 }
 
 func NewEnumerationManager() *EnumerationManager {
