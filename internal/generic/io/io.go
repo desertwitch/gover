@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 	"golang.org/x/sys/unix"
 )
@@ -36,7 +37,7 @@ type unixProvider interface {
 }
 
 type ioTargetQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type fsElement interface {
@@ -63,11 +64,11 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	batch := &ioReport{}
 
-	q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
+	q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		job := &ioReport{}
 
 		if err := i.processQueueElement(ctx, m, job); err != nil {
-			return false
+			return queue.DecisionSkipped
 		}
 
 		for _, h := range m.Hardlinks {
@@ -84,7 +85,7 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 
 		mergeIOReports(batch, job)
 
-		return true
+		return queue.DecisionSuccess
 	}, false)
 
 	i.ensureTimestamps(batch)

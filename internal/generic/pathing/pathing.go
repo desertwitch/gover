@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
@@ -14,7 +15,7 @@ type fsProvider interface {
 }
 
 type enumerationQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type Handler struct {
@@ -28,9 +29,9 @@ func NewHandler(fsHandler fsProvider) *Handler {
 }
 
 func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error {
-	q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
+	q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		if err := f.establishElementPath(m); err != nil {
-			return false
+			return queue.DecisionSkipped
 		}
 
 		hardLinkFailure := false
@@ -42,7 +43,7 @@ func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error 
 			}
 		}
 		if hardLinkFailure {
-			return false
+			return queue.DecisionSkipped
 		}
 
 		symlinkFailure := false
@@ -54,10 +55,10 @@ func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error 
 			}
 		}
 		if symlinkFailure {
-			return false
+			return queue.DecisionSkipped
 		}
 
-		return true
+		return queue.DecisionSuccess
 	}, true)
 
 	return nil

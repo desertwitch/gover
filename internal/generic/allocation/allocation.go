@@ -10,6 +10,7 @@ import (
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
@@ -20,7 +21,7 @@ type fsProvider interface {
 }
 
 type enumerationQueue interface {
-	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type allocInfo struct {
@@ -45,12 +46,7 @@ func NewHandler(fsHandler fsProvider) *Handler {
 }
 
 func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQueue) error {
-	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) bool {
-		if m.Dest != nil {
-			// If a destination is already set, allocation is not needed, return as success.
-			return true
-		}
-
+	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		dest, err := a.allocateArrayDestination(m)
 		if err != nil {
 			slog.Warn("Skipped job: failed to allocate array destination",
@@ -59,7 +55,7 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQu
 				"share", m.Share.GetName(),
 			)
 
-			return false
+			return queue.DecisionSkipped
 		}
 		m.Dest = dest
 
@@ -85,10 +81,10 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQu
 			s.Dest = dest
 		}
 		if symlinkFailure {
-			return false
+			return queue.DecisionSkipped
 		}
 
-		return true
+		return queue.DecisionSuccess
 	}, true); err != nil {
 		return err
 	}

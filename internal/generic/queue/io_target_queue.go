@@ -42,7 +42,12 @@ func (q *IOTargetQueue) Enqueue(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
-	q.items = append(q.items, items...)
+	for _, item := range items {
+		if _, exists := q.inProgress[item]; exists {
+			delete(q.inProgress, item)
+		}
+		q.items = append(q.items, item)
+	}
 }
 
 func (q *IOTargetQueue) Dequeue() (*schema.Moveable, bool) {
@@ -57,6 +62,17 @@ func (q *IOTargetQueue) Dequeue() (*schema.Moveable, bool) {
 	q.head++
 
 	return item, true
+}
+
+func (q *IOTargetQueue) HasRemainingItems() bool {
+	q.Lock()
+	defer q.Unlock()
+
+	if q.head >= len(q.items) {
+		return false
+	}
+
+	return true
 }
 
 func (q *IOTargetQueue) SetSuccess(items ...*schema.Moveable) {
@@ -88,10 +104,10 @@ func (q *IOTargetQueue) SetProcessing(items ...*schema.Moveable) {
 	}
 }
 
-func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
+func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
 	return processQueue(ctx, q, processFunc, resetQueueAfter)
 }
 
-func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
+func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
 	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc, resetQueueAfter)
 }

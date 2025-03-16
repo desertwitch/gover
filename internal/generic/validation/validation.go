@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type enumerationQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
-	if err := q.DequeueAndProcess(ctx, func(m *schema.Moveable) bool {
+	if err := q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		if err := validateMoveable(m); err != nil {
 			slog.Warn("Skipped job: failed pre-move validation",
 				"err", err,
@@ -21,7 +22,7 @@ func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
 				"share", m.Share.GetName(),
 			)
 
-			return false
+			return queue.DecisionSkipped
 		}
 
 		hardLinkFailure := false
@@ -43,7 +44,7 @@ func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
 		}
 
 		if hardLinkFailure {
-			return false
+			return queue.DecisionSkipped
 		}
 
 		symlinkFailure := false
@@ -65,10 +66,10 @@ func ValidateMoveables(ctx context.Context, q enumerationQueue) error {
 		}
 
 		if symlinkFailure {
-			return false
+			return queue.DecisionSkipped
 		}
 
-		return true
+		return queue.DecisionSuccess
 	}, true); err != nil {
 		return err
 	}

@@ -5,15 +5,23 @@ import (
 	"sync"
 )
 
+const (
+	DecisionRequeue = -1
+	DecisionSkipped = 0
+	DecisionSuccess = 1
+)
+
 type queueProvider[T any] interface {
 	Dequeue() (T, bool)
-	SetSuccess(items ...T)
-	SetSkipped(items ...T)
-	SetProcessing(items ...T)
+	Enqueue(items ...T)
+	HasRemainingItems() bool
 	ResetQueue()
+	SetProcessing(items ...T)
+	SetSkipped(items ...T)
+	SetSuccess(items ...T)
 }
 
-func processQueue[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
+func processQueue[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) int, resetQueueAfter bool) error {
 	if resetQueueAfter {
 		defer queue.ResetQueue()
 	}
@@ -30,10 +38,15 @@ func processQueue[T any](ctx context.Context, queue queueProvider[T], processFun
 
 		queue.SetProcessing(item)
 
-		if success := processFunc(item); success {
-			queue.SetSuccess(item)
-		} else {
+		switch processFunc(item) {
+		case DecisionRequeue:
+			queue.Enqueue(item)
+
+		case DecisionSkipped:
 			queue.SetSkipped(item)
+
+		case DecisionSuccess:
+			queue.SetSuccess(item)
 		}
 	}
 
@@ -44,7 +57,7 @@ func processQueue[T any](ctx context.Context, queue queueProvider[T], processFun
 	return nil
 }
 
-func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) bool, resetQueueAfter bool) error {
+func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) int, resetQueueAfter bool) error {
 	if resetQueueAfter {
 		defer queue.ResetQueue()
 	}
@@ -53,6 +66,7 @@ func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue qu
 
 	semaphore := make(chan struct{}, maxWorkers)
 
+LOOP:
 	for {
 		select {
 		case <-ctx.Done():
@@ -76,10 +90,15 @@ func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue qu
 
 			queue.SetProcessing(item)
 
-			if success := processFunc(item); success {
-				queue.SetSuccess(item)
-			} else {
+			switch processFunc(item) {
+			case DecisionRequeue:
+				queue.Enqueue(item)
+
+			case DecisionSkipped:
 				queue.SetSkipped(item)
+
+			case DecisionSuccess:
+				queue.SetSuccess(item)
 			}
 		}(item)
 	}
@@ -88,6 +107,11 @@ func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue qu
 
 	if ctx.Err() != nil {
 		return ctx.Err()
+	}
+
+	if queue.HasRemainingItems() {
+		// In case item(s) were requeued but all workers have already left.
+		goto LOOP
 	}
 
 	return nil
