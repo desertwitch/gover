@@ -23,7 +23,7 @@ func (_m *EnumerationQueue) EXPECT() *EnumerationQueue_Expecter {
 }
 
 // DequeueAndProcessConc provides a mock function with given fields: ctx, maxWorkers, processFunc, resetQueueAfter
-func (_m *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
+func (_m *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
 	ret := _m.Called(ctx, maxWorkers, processFunc, resetQueueAfter)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorker
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, func(*schema.Moveable) bool, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int, func(*schema.Moveable) int, bool) error); ok {
 		r0 = rf(ctx, maxWorkers, processFunc, resetQueueAfter)
 	} else {
 		r0 = ret.Error(0)
@@ -48,15 +48,15 @@ type EnumerationQueue_DequeueAndProcessConc_Call struct {
 // DequeueAndProcessConc is a helper method to define mock.On call
 //   - ctx context.Context
 //   - maxWorkers int
-//   - processFunc func(*schema.Moveable) bool
+//   - processFunc func(*schema.Moveable) int
 //   - resetQueueAfter bool
 func (_e *EnumerationQueue_Expecter) DequeueAndProcessConc(ctx interface{}, maxWorkers interface{}, processFunc interface{}, resetQueueAfter interface{}) *EnumerationQueue_DequeueAndProcessConc_Call {
 	return &EnumerationQueue_DequeueAndProcessConc_Call{Call: _e.mock.On("DequeueAndProcessConc", ctx, maxWorkers, processFunc, resetQueueAfter)}
 }
 
-func (_c *EnumerationQueue_DequeueAndProcessConc_Call) Run(run func(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) bool, resetQueueAfter bool)) *EnumerationQueue_DequeueAndProcessConc_Call {
+func (_c *EnumerationQueue_DequeueAndProcessConc_Call) Run(run func(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool)) *EnumerationQueue_DequeueAndProcessConc_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int), args[2].(func(*schema.Moveable) bool), args[3].(bool))
+		run(args[0].(context.Context), args[1].(int), args[2].(func(*schema.Moveable) int), args[3].(bool))
 	})
 	return _c
 }
@@ -66,7 +66,7 @@ func (_c *EnumerationQueue_DequeueAndProcessConc_Call) Return(_a0 error) *Enumer
 	return _c
 }
 
-func (_c *EnumerationQueue_DequeueAndProcessConc_Call) RunAndReturn(run func(context.Context, int, func(*schema.Moveable) bool, bool) error) *EnumerationQueue_DequeueAndProcessConc_Call {
+func (_c *EnumerationQueue_DequeueAndProcessConc_Call) RunAndReturn(run func(context.Context, int, func(*schema.Moveable) int, bool) error) *EnumerationQueue_DequeueAndProcessConc_Call {
 	_c.Call.Return(run)
 	return _c
 }

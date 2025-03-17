@@ -16,11 +16,7 @@ import (
 
 type fsProvider interface {
 	Exists(path string) (bool, error)
-	GetDiskUsage(path string) (filesystem.DiskStats, error)
-}
-
-type usageProvider interface {
-	GetDiskUsage(storage schema.Storage) (filesystem.DiskStats, error)
+	GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
 }
 
@@ -39,7 +35,6 @@ type Handler struct {
 	fsHandler             fsProvider
 	alreadyAllocated      map[*schema.Moveable]allocInfo
 	alreadyAllocatedSpace map[string]uint64
-	usageHandler          usageProvider
 }
 
 func NewHandler(fsHandler fsProvider) *Handler {
@@ -47,7 +42,6 @@ func NewHandler(fsHandler fsProvider) *Handler {
 		fsHandler:             fsHandler,
 		alreadyAllocated:      make(map[*schema.Moveable]allocInfo),
 		alreadyAllocatedSpace: make(map[string]uint64),
-		usageHandler:          NewDiskUsageCacher(fsHandler),
 	}
 }
 

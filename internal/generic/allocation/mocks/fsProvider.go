@@ -78,9 +78,9 @@ func (_c *FsProvider_Exists_Call) RunAndReturn(run func(string) (bool, error)) *
 	return _c
 }
 
-// GetDiskUsage provides a mock function with given fields: path
-func (_m *FsProvider) GetDiskUsage(path string) (filesystem.DiskStats, error) {
-	ret := _m.Called(path)
+// GetDiskUsage provides a mock function with given fields: s
+func (_m *FsProvider) GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error) {
+	ret := _m.Called(s)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDiskUsage")
@@ -88,17 +88,17 @@ func (_m *FsProvider) GetDiskUsage(path string) (filesystem.DiskStats, error) {
 
 	var r0 filesystem.DiskStats
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (filesystem.DiskStats, error)); ok {
-		return rf(path)
+	if rf, ok := ret.Get(0).(func(schema.Storage) (filesystem.DiskStats, error)); ok {
+		return rf(s)
 	}
-	if rf, ok := ret.Get(0).(func(string) filesystem.DiskStats); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(schema.Storage) filesystem.DiskStats); ok {
+		r0 = rf(s)
 	} else {
 		r0 = ret.Get(0).(filesystem.DiskStats)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(path)
+	if rf, ok := ret.Get(1).(func(schema.Storage) error); ok {
+		r1 = rf(s)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -112,14 +112,14 @@ type FsProvider_GetDiskUsage_Call struct {
 }
 
 // GetDiskUsage is a helper method to define mock.On call
-//   - path string
-func (_e *FsProvider_Expecter) GetDiskUsage(path interface{}) *FsProvider_GetDiskUsage_Call {
-	return &FsProvider_GetDiskUsage_Call{Call: _e.mock.On("GetDiskUsage", path)}
+//   - s schema.Storage
+func (_e *FsProvider_Expecter) GetDiskUsage(s interface{}) *FsProvider_GetDiskUsage_Call {
+	return &FsProvider_GetDiskUsage_Call{Call: _e.mock.On("GetDiskUsage", s)}
 }
 
-func (_c *FsProvider_GetDiskUsage_Call) Run(run func(path string)) *FsProvider_GetDiskUsage_Call {
+func (_c *FsProvider_GetDiskUsage_Call) Run(run func(s schema.Storage)) *FsProvider_GetDiskUsage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(schema.Storage))
 	})
 	return _c
 }
@@ -129,7 +129,7 @@ func (_c *FsProvider_GetDiskUsage_Call) Return(_a0 filesystem.DiskStats, _a1 err
 	return _c
 }
 
-func (_c *FsProvider_GetDiskUsage_Call) RunAndReturn(run func(string) (filesystem.DiskStats, error)) *FsProvider_GetDiskUsage_Call {
+func (_c *FsProvider_GetDiskUsage_Call) RunAndReturn(run func(schema.Storage) (filesystem.DiskStats, error)) *FsProvider_GetDiskUsage_Call {
 	_c.Call.Return(run)
 	return _c
 }

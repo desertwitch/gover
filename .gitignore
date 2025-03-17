@@ -1,6 +1,7 @@
 /.VSCodeCounter
+/*.prof
 /build.sh
 /gover
 /gpgstart
-/vendor
 /report.txt
+/vendor

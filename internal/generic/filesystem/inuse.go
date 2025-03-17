@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	CheckerInterval = 5 * time.Second
+	CheckerInterval = 3 * time.Second
 )
 
 type osReadsProvider interface {
@@ -39,10 +39,6 @@ func NewInUseChecker(ctx context.Context, osHandler osProvider) (*InUseChecker, 
 	go checker.periodicUpdate(ctx)
 
 	return checker, nil
-}
-
-func (f *Handler) IsInUse(path string) bool {
-	return f.inUseHandler.IsInUse(path)
 }
 
 func (c *InUseChecker) IsInUse(path string) bool {

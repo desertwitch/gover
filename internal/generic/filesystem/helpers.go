@@ -10,12 +10,31 @@ import (
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/schema"
-	"golang.org/x/sys/unix"
 )
 
-type DiskStats struct {
-	TotalSize uint64
-	FreeSpace uint64
+func (f *Handler) IsInUse(path string) bool {
+	return f.inUseHandler.IsInUse(path)
+}
+
+func (f *Handler) GetDiskUsage(s schema.Storage) (DiskStats, error) {
+	return f.diskStatHandler.GetDiskUsage(s)
+}
+
+func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
+	return f.diskStatHandler.HasEnoughFreeSpace(s, minFree, fileSize)
+}
+
+func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
+	return f.osHandler.ReadDir(name)
+}
+
+func (f *Handler) IsEmptyFolder(path string) (bool, error) {
+	entries, err := f.osHandler.ReadDir(path)
+	if err != nil {
+		return false, fmt.Errorf("(fs-isempty) failed to readdir: %w", err)
+	}
+
+	return len(entries) == 0, nil
 }
 
 func (f *Handler) Exists(path string) (bool, error) {
@@ -28,10 +47,6 @@ func (f *Handler) Exists(path string) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
-	return f.osHandler.ReadDir(name)
 }
 
 func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
@@ -72,49 +87,6 @@ func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
 	}
 }
 
-func (f *Handler) GetDiskUsage(path string) (DiskStats, error) {
-	var stat unix.Statfs_t
-	if err := f.unixHandler.Statfs(path, &stat); err != nil {
-		return DiskStats{}, fmt.Errorf("(fs-diskuse) failed to statfs: %w", err)
-	}
-
-	stats := DiskStats{
-		TotalSize: stat.Blocks * handleSize(stat.Bsize),
-		FreeSpace: stat.Bavail * handleSize(stat.Bsize),
-	}
-
-	return stats, nil
-}
-
-func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
-	path := s.GetFSPath()
-
-	stats, err := f.GetDiskUsage(path)
-	if err != nil {
-		return false, fmt.Errorf("(fs-enoughfree) failed to get usage: %w", err)
-	}
-
-	requiredFree := minFree
-	if minFree <= fileSize {
-		requiredFree = fileSize
-	}
-
-	if stats.FreeSpace > requiredFree {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (f *Handler) IsEmptyFolder(path string) (bool, error) {
-	entries, err := f.osHandler.ReadDir(path)
-	if err != nil {
-		return false, fmt.Errorf("(fs-isempty) failed to readdir: %w", err)
-	}
-
-	return len(entries) == 0, nil
-}
-
 func (f *Handler) existsOnStorageCandidate(m *schema.Moveable, destCandidate schema.Storage) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {
@@ -142,7 +114,7 @@ func handleSize(size int64) uint64 {
 	return uint64(size)
 }
 
-func concurrentFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filterFunc func(T) bool) ([]T, error) {
+func concFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filterFunc func(T) bool) ([]T, error) {
 	var wg sync.WaitGroup
 
 	ch := make(chan T, len(items))

@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"flag"
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/pprof"
 	"sync"
 	"syscall"
 	"time"
@@ -24,6 +27,8 @@ import (
 const (
 	stackTraceBufMax = 1 << 24
 )
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 type depPackage struct {
 	FSHandler      *filesystem.Handler
@@ -61,6 +66,16 @@ func main() {
 			TimeFormat: time.Kitchen,
 		}),
 	))
+
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
@@ -133,8 +148,4 @@ func main() {
 	cancel()
 
 	slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024))
-
-	if ctx.Err() != nil {
-		os.Exit(1)
-	}
 }

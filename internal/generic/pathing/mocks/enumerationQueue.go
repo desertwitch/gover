@@ -23,17 +23,17 @@ func (_m *EnumerationQueue) EXPECT() *EnumerationQueue_Expecter {
 	return &EnumerationQueue_Expecter{mock: &_m.Mock}
 }
 
-// DequeueAndProcess provides a mock function with given fields: ctx, processFunc, resetQueueAfter
-func (_m *EnumerationQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool) error {
-	ret := _m.Called(ctx, processFunc, resetQueueAfter)
+// DequeueAndProcessConc provides a mock function with given fields: ctx, maxWorkers, processFunc, resetQueueAfter
+func (_m *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
+	ret := _m.Called(ctx, maxWorkers, processFunc, resetQueueAfter)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DequeueAndProcess")
+		panic("no return value specified for DequeueAndProcessConc")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, func(*schema.Moveable) bool, bool) error); ok {
-		r0 = rf(ctx, processFunc, resetQueueAfter)
+	if rf, ok := ret.Get(0).(func(context.Context, int, func(*schema.Moveable) int, bool) error); ok {
+		r0 = rf(ctx, maxWorkers, processFunc, resetQueueAfter)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -41,32 +41,33 @@ func (_m *EnumerationQueue) DequeueAndProcess(ctx context.Context, processFunc f
 	return r0
 }
 
-// EnumerationQueue_DequeueAndProcess_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DequeueAndProcess'
-type EnumerationQueue_DequeueAndProcess_Call struct {
+// EnumerationQueue_DequeueAndProcessConc_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DequeueAndProcessConc'
+type EnumerationQueue_DequeueAndProcessConc_Call struct {
 	*mock.Call
 }
 
-// DequeueAndProcess is a helper method to define mock.On call
+// DequeueAndProcessConc is a helper method to define mock.On call
 //   - ctx context.Context
-//   - processFunc func(*schema.Moveable) bool
+//   - maxWorkers int
+//   - processFunc func(*schema.Moveable) int
 //   - resetQueueAfter bool
-func (_e *EnumerationQueue_Expecter) DequeueAndProcess(ctx interface{}, processFunc interface{}, resetQueueAfter interface{}) *EnumerationQueue_DequeueAndProcess_Call {
-	return &EnumerationQueue_DequeueAndProcess_Call{Call: _e.mock.On("DequeueAndProcess", ctx, processFunc, resetQueueAfter)}
+func (_e *EnumerationQueue_Expecter) DequeueAndProcessConc(ctx interface{}, maxWorkers interface{}, processFunc interface{}, resetQueueAfter interface{}) *EnumerationQueue_DequeueAndProcessConc_Call {
+	return &EnumerationQueue_DequeueAndProcessConc_Call{Call: _e.mock.On("DequeueAndProcessConc", ctx, maxWorkers, processFunc, resetQueueAfter)}
 }
 
-func (_c *EnumerationQueue_DequeueAndProcess_Call) Run(run func(ctx context.Context, processFunc func(*schema.Moveable) bool, resetQueueAfter bool)) *EnumerationQueue_DequeueAndProcess_Call {
+func (_c *EnumerationQueue_DequeueAndProcessConc_Call) Run(run func(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool)) *EnumerationQueue_DequeueAndProcessConc_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(func(*schema.Moveable) bool), args[2].(bool))
+		run(args[0].(context.Context), args[1].(int), args[2].(func(*schema.Moveable) int), args[3].(bool))
 	})
 	return _c
 }
 
-func (_c *EnumerationQueue_DequeueAndProcess_Call) Return(_a0 error) *EnumerationQueue_DequeueAndProcess_Call {
+func (_c *EnumerationQueue_DequeueAndProcessConc_Call) Return(_a0 error) *EnumerationQueue_DequeueAndProcessConc_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *EnumerationQueue_DequeueAndProcess_Call) RunAndReturn(run func(context.Context, func(*schema.Moveable) bool, bool) error) *EnumerationQueue_DequeueAndProcess_Call {
+func (_c *EnumerationQueue_DequeueAndProcessConc_Call) RunAndReturn(run func(context.Context, int, func(*schema.Moveable) int, bool) error) *EnumerationQueue_DequeueAndProcessConc_Call {
 	_c.Call.Return(run)
 	return _c
 }

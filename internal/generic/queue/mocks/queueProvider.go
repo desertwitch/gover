@@ -74,6 +74,97 @@ func (_c *QueueProvider_Dequeue_Call[T]) RunAndReturn(run func() (T, bool)) *Que
 	return _c
 }
 
+// Enqueue provides a mock function with given fields: items
+func (_m *QueueProvider[T]) Enqueue(items ...T) {
+	_va := make([]interface{}, len(items))
+	for _i := range items {
+		_va[_i] = items[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// QueueProvider_Enqueue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Enqueue'
+type QueueProvider_Enqueue_Call[T any] struct {
+	*mock.Call
+}
+
+// Enqueue is a helper method to define mock.On call
+//   - items ...T
+func (_e *QueueProvider_Expecter[T]) Enqueue(items ...interface{}) *QueueProvider_Enqueue_Call[T] {
+	return &QueueProvider_Enqueue_Call[T]{Call: _e.mock.On("Enqueue",
+		append([]interface{}{}, items...)...)}
+}
+
+func (_c *QueueProvider_Enqueue_Call[T]) Run(run func(items ...T)) *QueueProvider_Enqueue_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]T, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(T)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *QueueProvider_Enqueue_Call[T]) Return() *QueueProvider_Enqueue_Call[T] {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *QueueProvider_Enqueue_Call[T]) RunAndReturn(run func(...T)) *QueueProvider_Enqueue_Call[T] {
+	_c.Run(run)
+	return _c
+}
+
+// HasRemainingItems provides a mock function with no fields
+func (_m *QueueProvider[T]) HasRemainingItems() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasRemainingItems")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// QueueProvider_HasRemainingItems_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasRemainingItems'
+type QueueProvider_HasRemainingItems_Call[T any] struct {
+	*mock.Call
+}
+
+// HasRemainingItems is a helper method to define mock.On call
+func (_e *QueueProvider_Expecter[T]) HasRemainingItems() *QueueProvider_HasRemainingItems_Call[T] {
+	return &QueueProvider_HasRemainingItems_Call[T]{Call: _e.mock.On("HasRemainingItems")}
+}
+
+func (_c *QueueProvider_HasRemainingItems_Call[T]) Run(run func()) *QueueProvider_HasRemainingItems_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *QueueProvider_HasRemainingItems_Call[T]) Return(_a0 bool) *QueueProvider_HasRemainingItems_Call[T] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *QueueProvider_HasRemainingItems_Call[T]) RunAndReturn(run func() bool) *QueueProvider_HasRemainingItems_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ResetQueue provides a mock function with no fields
 func (_m *QueueProvider[T]) ResetQueue() {
 	_m.Called()

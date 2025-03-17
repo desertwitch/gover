@@ -43,11 +43,17 @@ type fsWalkProvider interface {
 	WalkDir(root string, fn fs.WalkDirFunc) error
 }
 
+type diskStatProvider interface {
+	GetDiskUsage(storage schema.Storage) (DiskStats, error)
+	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
+}
+
 type Handler struct {
 	osHandler       osProvider
 	unixHandler     unixProvider
 	inUseHandler    inUseProvider
 	fileWalkHandler fsWalkProvider
+	diskStatHandler diskStatProvider
 }
 
 func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvider) (*Handler, error) {
@@ -57,12 +63,14 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 	}
 
 	fileWalkHandler := newFileWalker()
+	diskStatHandler := NewDiskUsageCacher(ctx, unixHandler)
 
 	return &Handler{
 		osHandler:       osHandler,
 		unixHandler:     unixHandler,
 		inUseHandler:    inUseHandler,
 		fileWalkHandler: fileWalkHandler,
+		diskStatHandler: diskStatHandler,
 	}, nil
 }
 
@@ -119,7 +127,7 @@ func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src sche
 		return nil, fmt.Errorf("(fs) failed walking: %w", err)
 	}
 
-	filtered, err := concurrentFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *schema.Moveable) bool {
+	filtered, err := concFilterSlice(ctx, runtime.NumCPU(), moveables, func(m *schema.Moveable) bool {
 		if err := f.establishMetadata(m); err != nil {
 			return false
 		}
