@@ -180,4 +180,12 @@ func establishSignalHandlers(cancel context.CancelFunc) {
 			os.Stderr.Write(buf[:stacklen])
 		}
 	}()
+
+	sigChan3 := make(chan os.Signal, 1)
+	signal.Notify(sigChan3, syscall.SIGUSR2)
+	go func() {
+		for range sigChan3 {
+			runtime.GC()
+		}
+	}()
 }
