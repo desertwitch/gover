@@ -11,7 +11,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/validation"
 )
 
-func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) ([]*schema.Moveable, error) {
+func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Share) ([]*schema.Moveable, error) {
 	tasker := queue.NewTaskManager()
 
 	// Primary to Secondary
@@ -25,7 +25,7 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+						_ = app.enumerateShare(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), nil),
 			)
@@ -34,7 +34,7 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+						_ = app.enumerateShare(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), share.GetCachePool2()),
 			)
@@ -56,7 +56,7 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 				tasker.Add(
 					func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 						return func() {
-							shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+							_ = app.enumerateShare(ctx, share, src, dst)
 						}
 					}(share, disk, share.GetCachePool()),
 				)
@@ -66,7 +66,7 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						shareEnumerationWorker(ctx, share, src, dst, queueMan, deps)
+						_ = app.enumerateShare(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool2(), share.GetCachePool()),
 			)
@@ -77,13 +77,13 @@ func enumerateShares(ctx context.Context, shares map[string]schema.Share, queueM
 		return nil, err
 	}
 
-	return queueMan.EnumerationManager.GetItems(), nil
+	return app.queueManager.EnumerationManager.GetItems(), nil
 }
 
-func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) {
+func (app *App) enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
 	slog.Info("Enumerating share on storage:", "src", src.GetName(), "share", share.GetName())
 
-	if err := enumerateShare(ctx, share, src, dst, queueMan, deps); err != nil {
+	if err := app.enumerateShareTask(ctx, share, src, dst); err != nil {
 		if _, ok := src.(schema.Disk); ok {
 			slog.Warn("Skipped enumerating array disk due to failure",
 				"err", err,
@@ -96,19 +96,22 @@ func shareEnumerationWorker(ctx context.Context, share schema.Share, src schema.
 			)
 		}
 
-		return
+		return err
 	}
 
 	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
+
+	return nil
 }
 
-func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage, queueMan *queue.Manager, deps *depPackage) error {
-	q := queueMan.EnumerationManager.NewQueue()
-	queueMan.EnumerationManager.SetQueuePhase(q, "initializing")
+func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
+	q := app.queueManager.EnumerationManager.NewQueue()
 
-	files, err := deps.FSHandler.GetMoveables(ctx, share, src, dst)
+	app.queueManager.EnumerationManager.SetQueuePhase(q, "initializing")
+
+	files, err := app.fsHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
-		queueMan.EnumerationManager.DestroyQueue(q)
+		app.queueManager.EnumerationManager.DestroyQueue(q)
 
 		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
@@ -116,29 +119,29 @@ func enumerateShare(ctx context.Context, share schema.Share, src schema.Storage,
 	q.Enqueue(files...)
 
 	if dst == nil {
-		queueMan.EnumerationManager.SetQueuePhase(q, "allocating")
-		if err = deps.AllocHandler.AllocateArrayDestinations(ctx, q); err != nil {
-			queueMan.EnumerationManager.DestroyQueue(q)
+		app.queueManager.EnumerationManager.SetQueuePhase(q, "allocating")
+		if err = app.allocHandler.AllocateArrayDestinations(ctx, q); err != nil {
+			app.queueManager.EnumerationManager.DestroyQueue(q)
 
 			return fmt.Errorf("(main) failed to allocate: %w", err)
 		}
 	}
 
-	queueMan.EnumerationManager.SetQueuePhase(q, "pathing")
-	if err := deps.PathingHandler.EstablishPaths(ctx, q); err != nil {
-		queueMan.EnumerationManager.DestroyQueue(q)
+	app.queueManager.EnumerationManager.SetQueuePhase(q, "pathing")
+	if err := app.pathingHandler.EstablishPaths(ctx, q); err != nil {
+		app.queueManager.EnumerationManager.DestroyQueue(q)
 
 		return fmt.Errorf("(main) failed to establish paths: %w", err)
 	}
 
-	queueMan.EnumerationManager.SetQueuePhase(q, "validating")
+	app.queueManager.EnumerationManager.SetQueuePhase(q, "validating")
 	if err := validation.ValidateMoveables(ctx, q); err != nil {
-		queueMan.EnumerationManager.DestroyQueue(q)
+		app.queueManager.EnumerationManager.DestroyQueue(q)
 
 		return fmt.Errorf("(main) failed to validate: %w", err)
 	}
 
-	queueMan.EnumerationManager.SetQueuePhase(q, "waiting for IO")
+	app.queueManager.EnumerationManager.SetQueuePhase(q, "waiting for IO")
 
 	return nil
 }

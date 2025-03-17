@@ -8,17 +8,17 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func ioProcessFiles(ctx context.Context, files []*schema.Moveable, queueMan *queue.Manager, deps *depPackage) error {
+func (app *App) ioProcessFiles(ctx context.Context, files []*schema.Moveable) error {
 	tasker := queue.NewTaskManager()
 
-	queueMan.IOManager.Enqueue(files...)
-	queues := queueMan.IOManager.GetQueuesUnsafe()
+	app.queueManager.IOManager.Enqueue(files...)
+	queues := app.queueManager.IOManager.GetQueuesUnsafe()
 
 	for _, q := range queues {
 		tasker.Add(
 			func(q *queue.IOTargetQueue) func() {
 				return func() {
-					deps.IOHandler.ProcessQueue(ctx, q)
+					app.ioHandler.ProcessQueue(ctx, q)
 				}
 			}(q),
 		)

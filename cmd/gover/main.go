@@ -33,33 +33,35 @@ var (
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
 
-type depPackage struct {
-	FSHandler      *filesystem.Handler
-	AllocHandler   *allocation.Handler
-	PathingHandler *pathing.Handler
-	IOHandler      *io.Handler
+type App struct {
+	fsHandler      *filesystem.Handler
+	allocHandler   *allocation.Handler
+	pathingHandler *pathing.Handler
+	ioHandler      *io.Handler
+	queueManager   *queue.Manager
 }
 
-func newDepPackage(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, pathingHandler *pathing.Handler, ioHandler *io.Handler) *depPackage {
-	return &depPackage{
-		FSHandler:      fsHandler,
-		AllocHandler:   allocHandler,
-		PathingHandler: pathingHandler,
-		IOHandler:      ioHandler,
+func NewApp(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, pathingHandler *pathing.Handler, ioHandler *io.Handler, queueManager *queue.Manager) *App {
+	return &App{
+		fsHandler:      fsHandler,
+		allocHandler:   allocHandler,
+		pathingHandler: pathingHandler,
+		ioHandler:      ioHandler,
+		queueManager:   queueManager,
 	}
 }
 
-func processShares(ctx context.Context, wg *sync.WaitGroup, shares map[string]schema.Share, queueMan *queue.Manager, deps *depPackage) {
-	defer wg.Done()
-
-	files, err := enumerateShares(ctx, shares, queueMan, deps)
+func (app *App) ProcessShares(ctx context.Context, shares map[string]schema.Share) error {
+	files, err := app.enumerateShares(ctx, shares)
 	if err != nil {
-		return
+		return err
 	}
 
-	if err := ioProcessFiles(ctx, files, queueMan, deps); err != nil {
-		return
+	if err := app.ioProcessFiles(ctx, files); err != nil {
+		return err
 	}
+
+	return nil
 }
 
 func main() {
@@ -70,6 +72,68 @@ func main() {
 		}),
 	))
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	memObserver := NewMemoryObserver(ctx)
+	defer memObserver.Stop()
+
+	defer func() {
+		slog.Info("Memory consumption peaked at:", "maxAlloc", (memObserver.GetMaxAlloc() / 1024 / 1024))
+	}()
+
+	establishProfilers()
+	establishSignalHandlers(cancel)
+
+	osProvider := &schema.OS{}
+	unixProvider := &schema.Unix{}
+	configProvider := &configuration.GodotenvProvider{}
+
+	fsHandler, err := filesystem.NewHandler(ctx, osProvider, unixProvider)
+	if err != nil {
+		slog.Error("Failed to establish filesystem handler.",
+			"err", err,
+		)
+
+		return
+	}
+
+	allocHandler := allocation.NewHandler(fsHandler)
+	pathingHandler := pathing.NewHandler(fsHandler)
+	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
+	configHandler := configuration.NewHandler(configProvider)
+	unraidHandler := unraid.NewHandler(fsHandler, configHandler)
+
+	system, err := unraidHandler.EstablishSystem()
+	if err != nil {
+		slog.Error("Failed to establish (parts of) the Unraid system.",
+			"err", err,
+		)
+
+		return
+	}
+
+	shares := system.GetShares()
+	queueManager := queue.NewManager()
+
+	shareAdapters := make(map[string]schema.Share, len(shares))
+	for name, share := range shares {
+		shareAdapters[name] = NewShareAdapter(share)
+	}
+
+	app := NewApp(fsHandler, allocHandler, pathingHandler, ioHandler, queueManager)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_ = app.ProcessShares(ctx, shareAdapters)
+	}()
+	wg.Wait()
+}
+
+func establishProfilers() {
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -96,12 +160,9 @@ func main() {
 			}
 		}()
 	}
+}
 
-	var wg sync.WaitGroup
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func establishSignalHandlers(cancel context.CancelFunc) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
@@ -119,54 +180,4 @@ func main() {
 			os.Stderr.Write(buf[:stacklen])
 		}
 	}()
-
-	memChan := make(chan uint64, 1)
-	go memoryMonitor(ctx, memChan)
-
-	osProvider := &schema.OS{}
-	unixProvider := &schema.Unix{}
-	configProvider := &configuration.GodotenvProvider{}
-
-	fsHandler, err := filesystem.NewHandler(ctx, osProvider, unixProvider)
-	if err != nil {
-		slog.Error("Failed to establish filesystem handler.",
-			"err", err,
-		)
-
-		return
-	}
-
-	allocHandler := allocation.NewHandler(fsHandler)
-	pathingHandler := pathing.NewHandler(fsHandler)
-	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
-
-	configHandler := configuration.NewHandler(configProvider)
-	unraidHandler := unraid.NewHandler(fsHandler, configHandler)
-
-	system, err := unraidHandler.EstablishSystem()
-	if err != nil {
-		slog.Error("Failed to establish (parts of) the Unraid system.",
-			"err", err,
-		)
-
-		return
-	}
-
-	deps := newDepPackage(fsHandler, allocHandler, pathingHandler, ioHandler)
-
-	shares := system.GetShares()
-	queueMan := queue.NewManager()
-
-	shareAdapters := make(map[string]schema.Share, len(shares))
-	for name, share := range shares {
-		shareAdapters[name] = NewShareAdapter(share)
-	}
-
-	wg.Add(1)
-	go processShares(ctx, &wg, shareAdapters, queueMan, deps)
-	wg.Wait()
-
-	cancel()
-
-	slog.Info("Memory consumption peaked at:", "maxAlloc", (<-memChan / 1024 / 1024))
 }
