@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
@@ -15,7 +16,7 @@ type fsProvider interface {
 }
 
 type enumerationQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
+	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type Handler struct {
@@ -29,7 +30,7 @@ func NewHandler(fsHandler fsProvider) *Handler {
 }
 
 func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error {
-	q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
+	q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		if err := f.establishElementPath(m); err != nil {
 			return queue.DecisionSkipped
 		}

@@ -34,7 +34,7 @@ func (a *Handler) addAllocated(m *schema.Moveable, dst schema.Disk) {
 	a.Lock()
 	defer a.Unlock()
 
-	allocInfo := &allocInfo{
+	allocInfo := allocInfo{
 		sourcePath:    m.SourcePath,
 		sourceBase:    m.Source.GetFSPath(),
 		allocatedDisk: dst,

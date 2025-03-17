@@ -134,7 +134,7 @@ func (a *Handler) findDisksBySplitLevel(m *schema.Moveable) ([]schema.Disk, int,
 			_, existsAllocated := alreadyAllocated[disk.GetName()]
 
 			if existsPhysical || existsAllocated {
-				enoughSpace, err := a.fsHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
+				enoughSpace, err := a.usageHandler.HasEnoughFreeSpace(disk, m.Share.GetSpaceFloor(), (a.getAllocatedSpace(disk) + m.Metadata.Size))
 				if err != nil {
 					slog.Warn("Skipped disk for split-level consideration",
 						"disk", name,
