@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	CheckerInterval = 3 * time.Second
+	CheckerInterval = 5 * time.Second
 )
 
 type osReadsProvider interface {

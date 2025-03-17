@@ -28,7 +28,10 @@ const (
 	stackTraceBufMax = 1 << 24
 )
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var (
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	memprofile = flag.String("memprofile", "", "write memory profile to this file")
+)
 
 type depPackage struct {
 	FSHandler      *filesystem.Handler
@@ -68,16 +71,34 @@ func main() {
 	))
 
 	flag.Parse()
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer f.Close()
+
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
+	if *memprofile != "" {
+		defer func() {
+			f, err := os.Create(*memprofile)
+			if err != nil {
+				log.Fatalf("Could not create allocs profile: %v", err)
+			}
+			defer f.Close()
+
+			if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
+				log.Fatalf("Could not write allocs profile: %v", err)
+			}
+		}()
+	}
+
 	var wg sync.WaitGroup
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

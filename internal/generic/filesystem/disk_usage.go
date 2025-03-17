@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DiskUsageCacherInterval = 2 * time.Second
+	DiskUsageCacherInterval = 3 * time.Second
 )
 
 type unixStatfsProvider interface {
