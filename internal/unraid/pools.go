@@ -32,7 +32,7 @@ func (u *Handler) establishPools() (map[string]*Pool, error) {
 
 	pools := make(map[string]*Pool)
 
-	files, err := u.fsHandler.ReadDir(basePath)
+	files, err := u.osHandler.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-pools) failed to readdir: %w", err)
 	}

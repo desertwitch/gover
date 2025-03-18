@@ -33,9 +33,12 @@ const (
 	StateParityPosition = "mdResyncPos"
 )
 
+type osProvider interface {
+	ReadDir(name string) ([]os.DirEntry, error)
+}
+
 type fsProvider interface {
 	Exists(path string) (bool, error)
-	ReadDir(name string) ([]os.DirEntry, error)
 }
 
 type configProvider interface {
@@ -49,11 +52,13 @@ type configProvider interface {
 type Handler struct {
 	fsHandler     fsProvider
 	configHandler configProvider
+	osHandler     osProvider
 }
 
-func NewHandler(fsHandler fsProvider, configHandler configProvider) *Handler {
+func NewHandler(fsHandler fsProvider, configHandler configProvider, osHandler osProvider) *Handler {
 	return &Handler{
 		fsHandler:     fsHandler,
 		configHandler: configHandler,
+		osHandler:     osHandler,
 	}
 }

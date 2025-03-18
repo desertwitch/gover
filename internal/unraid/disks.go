@@ -30,7 +30,7 @@ func (u *Handler) establishDisks() (map[string]*Disk, error) {
 
 	disks := make(map[string]*Disk)
 
-	entries, err := u.fsHandler.ReadDir(basePath)
+	entries, err := u.osHandler.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-array) failed to readdir: %w", err)
 	}

@@ -72,7 +72,7 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 		return nil, fmt.Errorf("(unraid-shares) config dir does not exist (%s): %w", basePath, err)
 	}
 
-	files, err := u.fsHandler.ReadDir(basePath)
+	files, err := u.osHandler.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-shares) failed to readdir: %w", err)
 	}

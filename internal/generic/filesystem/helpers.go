@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -22,10 +21,6 @@ func (f *Handler) GetDiskUsage(s schema.Storage) (DiskStats, error) {
 
 func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
 	return f.diskStatHandler.HasEnoughFreeSpace(s, minFree, fileSize)
-}
-
-func (f *Handler) ReadDir(name string) ([]os.DirEntry, error) {
-	return f.osHandler.ReadDir(name)
 }
 
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {

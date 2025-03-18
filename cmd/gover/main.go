@@ -107,7 +107,7 @@ func main() {
 	pathingHandler := pathing.NewHandler(fsHandler)
 	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
 	configHandler := configuration.NewHandler(configProvider)
-	unraidHandler := unraid.NewHandler(fsHandler, configHandler)
+	unraidHandler := unraid.NewHandler(fsHandler, configHandler, osProvider)
 
 	system, err := unraidHandler.EstablishSystem()
 	if err != nil {
