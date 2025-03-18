@@ -10,7 +10,12 @@ type System struct {
 	Shares map[string]*Share
 }
 
+// GetPools returns a copy of the pool map holding pointers to all pools.
 func (s *System) GetPools() map[string]*Pool {
+	if s.Pools == nil {
+		return nil
+	}
+
 	pools := make(map[string]*Pool)
 
 	for k, v := range s.Pools {
@@ -20,7 +25,12 @@ func (s *System) GetPools() map[string]*Pool {
 	return pools
 }
 
+// GetShares returns a copy of of the share map holding pointers to all shares.
 func (s *System) GetShares() map[string]*Share {
+	if s.Shares == nil {
+		return nil
+	}
+
 	shares := make(map[string]*Share)
 
 	for k, v := range s.Shares {

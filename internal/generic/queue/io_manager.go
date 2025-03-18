@@ -40,9 +40,14 @@ func (b *IOManager) GetQueue(target schema.Storage) (*IOTargetQueue, bool) {
 	return nil, false
 }
 
+// GetQueues returns a copy of the internal map holding pointers to all queues.
 func (b *IOManager) GetQueues() map[string]*IOTargetQueue {
 	b.RLock()
 	defer b.RUnlock()
+
+	if b.queues == nil {
+		return nil
+	}
 
 	queues := make(map[string]*IOTargetQueue)
 

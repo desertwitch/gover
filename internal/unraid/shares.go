@@ -50,7 +50,12 @@ func (s *Share) GetDisableCOW() bool {
 	return s.DisableCOW
 }
 
+// GetIncludedDisks returns a copy of the internal map holding pointers to all disks.
 func (s *Share) GetIncludedDisks() map[string]*Disk {
+	if s.IncludedDisks == nil {
+		return nil
+	}
+
 	disks := make(map[string]*Disk)
 
 	for k, v := range s.IncludedDisks {
@@ -148,6 +153,8 @@ func (u *Handler) establishGlobalShareConfig(disks map[string]*Disk) (includedDi
 	return globalIncludes, globalExcludes, nil
 }
 
+// establishIncludedDisks returns a map holding pointers to all effectively included disks (excluding any excluded disks).
+//
 //nolint:lll
 func (u *Handler) establishIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
 	shareIncludedInternal := make(map[string]*Disk)
