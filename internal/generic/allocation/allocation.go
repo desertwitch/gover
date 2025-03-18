@@ -141,4 +141,3 @@ func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, err
 		return nil, fmt.Errorf("(alloc) %w", ErrNoAllocationMethod)
 	}
 }
- test
