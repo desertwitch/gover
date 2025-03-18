@@ -26,6 +26,7 @@ func establishSymlinks(moveables []*schema.Moveable, dst schema.Storage) {
 
 func establishHardlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	inodes := make(map[uint64]*schema.Moveable)
+
 	for _, m := range moveables {
 		if target, exists := inodes[m.Metadata.Inode]; exists {
 			m.IsHardlink = true

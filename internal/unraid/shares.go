@@ -67,8 +67,6 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 		return nil, fmt.Errorf("(unraid-shares) config dir does not exist (%s): %w", basePath, err)
 	}
 
-	shares := make(map[string]*Share)
-
 	files, err := u.fsHandler.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-shares) failed to readdir: %w", err)
@@ -78,6 +76,8 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-shares) failed to establish global share config: %w", err)
 	}
+
+	shares := make(map[string]*Share)
 
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".cfg") {
@@ -120,7 +120,7 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 				return nil, fmt.Errorf("(unraid-shares) failed to deref excluded disks for share (%s): %w", nameWithoutExt, err)
 			}
 
-			share.IncludedDisks = u.filterIncludedDisks(disks, shareIncludes, globalIncludes, shareExcludes, globalExcludes)
+			share.IncludedDisks = u.establishIncludedDisks(disks, shareIncludes, globalIncludes, shareExcludes, globalExcludes)
 
 			shares[share.Name] = share
 		}
@@ -149,7 +149,7 @@ func (u *Handler) establishGlobalShareConfig(disks map[string]*Disk) (includedDi
 }
 
 //nolint:lll
-func (u *Handler) filterIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
+func (u *Handler) establishIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
 	shareIncludedInternal := make(map[string]*Disk)
 	globalIncludedInternal := make(map[string]*Disk)
 

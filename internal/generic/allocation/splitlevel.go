@@ -86,6 +86,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]sche
 
 func (a *Handler) findDisksBySplitLevel(m *schema.Moveable) ([]schema.Disk, int, error) {
 	var foundDisks []schema.Disk
+
 	path := filepath.Dir(m.SourcePath)
 
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), path)

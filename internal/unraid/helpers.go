@@ -23,9 +23,9 @@ func findDisks(disks map[string]*Disk, diskNames string) (map[string]*Disk, erro
 		return nil, nil //nolint: nilnil
 	}
 
-	diskList := strings.Split(diskNames, ",")
 	foundDisks := make(map[string]*Disk)
 
+	diskList := strings.Split(diskNames, ",")
 	for _, name := range diskList {
 		if disk, exists := disks[name]; exists {
 			foundDisks[name] = disk
