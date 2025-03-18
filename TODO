@@ -1,7 +1,9 @@
-- unraid: global exclusions
-- fs: in use service with cache
-- fs: mark root dir as special for later (io) zfs-ing/cow-ing
-- io: zfs datasets
+- fs: mark root dir as special for later (io) zfs-ing/cow-ing (or .RootDir is enough? .isRootDir?)
 - io: nocow for btrfs
+- io: zfs datasets
+- io: flock/unlock file on transfer?
 - pkg: configuration handling
 - pkg: progress handling to json/websocket?
+- progress: multi-step queue each completion is 25% of total completion (for 4 subtasks?)
+- progress: show total progress for enum and io through GetProgress() function - interface?
+- progress: maybe also sub-progress for individual per-disk workers? could also be for enumeration subqueues?

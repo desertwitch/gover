@@ -25,7 +25,7 @@ func (s *System) GetPools() map[string]*Pool {
 	return pools
 }
 
-// GetShares returns a copy of of the share map holding pointers to all shares.
+// GetShares returns a copy of the share map holding pointers to all shares.
 func (s *System) GetShares() map[string]*Share {
 	if s.Shares == nil {
 		return nil
