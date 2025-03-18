@@ -49,10 +49,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 
 		if share.GetCachePool2() == nil {
 			// Array to Cache
-			for name, disk := range share.GetIncludedDisks() {
-				if _, exists := share.GetExcludedDisks()[name]; exists {
-					continue
-				}
+			for _, disk := range share.GetIncludedDisks() {
 				tasker.Add(
 					func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 						return func() {

@@ -12,17 +12,13 @@ const (
 	highWaterDivisor = 2
 )
 
-func (a *Handler) allocateHighWater(m *schema.Moveable, includedDisks map[string]schema.Disk, excludedDisks map[string]schema.Disk) (schema.Disk, error) {
+func (a *Handler) allocateHighWater(m *schema.Moveable, includedDisks map[string]schema.Disk) (schema.Disk, error) {
 	diskStats := make(map[string]filesystem.DiskStats)
 	disks := []schema.Disk{}
 
 	var maxDiskSize uint64
 
-	for name, disk := range includedDisks {
-		if _, exists := excludedDisks[name]; exists {
-			continue
-		}
-
+	for _, disk := range includedDisks {
 		stats, err := a.fsHandler.GetDiskUsage(disk)
 		if err != nil {
 			slog.Warn("Skipped disk for high-water consideration",

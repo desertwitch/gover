@@ -29,31 +29,13 @@ func (s *ShareAdapter) GetCachePool2() schema.Pool {
 	return s.CachePool2
 }
 
-func (a *ShareAdapter) GetIncludedDisks() map[string]schema.Disk {
-	if a.Share.IncludedDisks == nil {
+func (s *ShareAdapter) GetIncludedDisks() map[string]schema.Disk {
+	if s.Share.IncludedDisks == nil {
 		return nil
 	}
 
-	result := make(map[string]schema.Disk, len(a.Share.IncludedDisks))
-	for k, v := range a.Share.IncludedDisks {
-		if v == nil {
-			result[k] = nil
-
-			continue
-		}
-		result[k] = v
-	}
-
-	return result
-}
-
-func (a *ShareAdapter) GetExcludedDisks() map[string]schema.Disk {
-	if a.Share.ExcludedDisks == nil {
-		return nil
-	}
-
-	result := make(map[string]schema.Disk, len(a.Share.ExcludedDisks))
-	for k, v := range a.Share.ExcludedDisks {
+	result := make(map[string]schema.Disk, len(s.Share.IncludedDisks))
+	for k, v := range s.Share.IncludedDisks {
 		if v == nil {
 			result[k] = nil
 

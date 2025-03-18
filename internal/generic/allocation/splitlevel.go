@@ -113,10 +113,6 @@ func (a *Handler) findDisksBySplitLevel(m *schema.Moveable) ([]schema.Disk, int,
 		alreadyAllocated := a.getAllocatedsForSubpath(subPath)
 
 		for name, disk := range m.Share.GetIncludedDisks() {
-			if _, exists := m.Share.GetExcludedDisks()[name]; exists {
-				continue
-			}
-
 			dirToCheck := filepath.Join(disk.GetFSPath(), subPath)
 
 			existsPhysical, err := a.fsHandler.Exists(dirToCheck)

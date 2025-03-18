@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	ArrayStateFile = "/var/local/emhttp/var.ini"
+	ArrayStateFile        = "/var/local/emhttp/var.ini"
+	GlobalShareConfigFile = "/boot/config/share.cfg"
 
 	ConfigDirShares = "/boot/config/shares"
 	ConfigDirPools  = "/boot/config/pools"
@@ -13,9 +14,8 @@ const (
 	BasePathMounts = "/mnt/"
 	PatternDisks   = `^disk[1-9][0-9]?$`
 
-	AllocHighWater = "highwater"
-	AllocMostFree  = "mostfree"
-	AllocFillUp    = "fillup"
+	SettingGlobalShareIncludes = "shareUserInclude"
+	SettingGlobalShareExcludes = "shareUserExclude"
 
 	SettingShareUseCache   = "shareUseCache"
 	SettingShareAllocator  = "shareAllocator"

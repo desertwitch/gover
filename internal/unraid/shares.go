@@ -16,7 +16,6 @@ type Share struct {
 	SpaceFloor    uint64
 	DisableCOW    bool
 	IncludedDisks map[string]*Disk
-	ExcludedDisks map[string]*Disk
 }
 
 func (s *Share) GetName() string {
@@ -55,10 +54,6 @@ func (s *Share) GetIncludedDisks() map[string]*Disk {
 	return s.IncludedDisks
 }
 
-func (s *Share) GetExcludedDisks() map[string]*Disk {
-	return s.ExcludedDisks
-}
-
 func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
 	basePath := ConfigDirShares
 
@@ -71,6 +66,11 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 	files, err := u.fsHandler.ReadDir(basePath)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-shares) failed to readdir: %w", err)
+	}
+
+	globalIncludes, globalExcludes, err := u.establishGlobalShareConfig(disks)
+	if err != nil {
+		return nil, fmt.Errorf("(unraid-shares) failed to establish global share config: %w", err)
 	}
 
 	for _, file := range files {
@@ -104,26 +104,79 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 			}
 			share.CachePool2 = cachepool2
 
-			includedDisks, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingShareIncludeDisks))
+			shareIncludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingShareIncludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("(unraid-shares) failed to deref included disks for share (%s): %w", nameWithoutExt, err)
 			}
-			if includedDisks != nil {
-				share.IncludedDisks = includedDisks
-			} else {
-				// If nil, assume all disks are included
-				share.IncludedDisks = disks
-			}
 
-			excludedDisks, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingShareExcludeDisks))
+			shareExcludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingShareExcludeDisks))
 			if err != nil {
 				return nil, fmt.Errorf("(unraid-shares) failed to deref excluded disks for share (%s): %w", nameWithoutExt, err)
 			}
-			share.ExcludedDisks = excludedDisks
+
+			share.IncludedDisks = u.filterIncludedDisks(disks, shareIncludes, globalIncludes, shareExcludes, globalExcludes)
 
 			shares[share.Name] = share
 		}
 	}
 
 	return shares, nil
+}
+
+func (u *Handler) establishGlobalShareConfig(disks map[string]*Disk) (includedDisks map[string]*Disk, excludedDisks map[string]*Disk, err error) {
+	configMap, err := u.configHandler.ReadGeneric(GlobalShareConfigFile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("(unraid-shares) failed to read global share config (%s): %w", GlobalShareConfigFile, err)
+	}
+
+	globalIncludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingGlobalShareIncludes))
+	if err != nil {
+		return nil, nil, fmt.Errorf("(unraid-shares) failed to deref global included disks: %w", err)
+	}
+
+	globalExcludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingGlobalShareExcludes))
+	if err != nil {
+		return nil, nil, fmt.Errorf("(unraid-shares) failed to deref global excluded disks: %w", err)
+	}
+
+	return globalIncludes, globalExcludes, nil
+}
+
+func (u *Handler) filterIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
+	shareIncludedInternal := make(map[string]*Disk)
+	globalIncludedInternal := make(map[string]*Disk)
+
+	if shareIncluded == nil {
+		for k, v := range allDisks {
+			shareIncludedInternal[k] = v
+		}
+	} else {
+		for k, v := range shareIncluded {
+			shareIncludedInternal[k] = v
+		}
+	}
+
+	if globalIncluded == nil {
+		for k, v := range allDisks {
+			globalIncludedInternal[k] = v
+		}
+	} else {
+		for k, v := range globalIncluded {
+			globalIncludedInternal[k] = v
+		}
+	}
+
+	for name := range shareIncludedInternal {
+		if _, exists := globalExcluded[name]; exists {
+			delete(shareIncludedInternal, name)
+		}
+		if _, exists := shareExcluded[name]; exists {
+			delete(shareIncludedInternal, name)
+		}
+		if _, exists := globalIncludedInternal[name]; !exists {
+			delete(shareIncludedInternal, name)
+		}
+	}
+
+	return shareIncludedInternal
 }

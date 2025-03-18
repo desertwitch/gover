@@ -94,7 +94,6 @@ func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQu
 
 func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) {
 	includedDisks := m.Share.GetIncludedDisks()
-	excludedDisks := m.Share.GetExcludedDisks()
 
 	if m.Share.GetSplitLevel() >= 0 {
 		returnDisks, err := a.allocateDisksBySplitLevel(m)
@@ -108,7 +107,7 @@ func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, err
 
 	switch allocationMethod := m.Share.GetAllocator(); allocationMethod {
 	case configuration.AllocHighWater:
-		ret, err := a.allocateHighWater(m, includedDisks, excludedDisks)
+		ret, err := a.allocateHighWater(m, includedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by high water: %w", err)
 		}
@@ -118,7 +117,7 @@ func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, err
 		return ret, nil
 
 	case configuration.AllocFillUp:
-		ret, err := a.allocateFillUp(m, includedDisks, excludedDisks)
+		ret, err := a.allocateFillUp(m, includedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by fillup: %w", err)
 		}
@@ -128,7 +127,7 @@ func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, err
 		return ret, nil
 
 	case configuration.AllocMostFree:
-		ret, err := a.allocateMostFree(m, includedDisks, excludedDisks)
+		ret, err := a.allocateMostFree(m, includedDisks)
 		if err != nil {
 			return nil, fmt.Errorf("(alloc) failed allocating by mostfree: %w", err)
 		}

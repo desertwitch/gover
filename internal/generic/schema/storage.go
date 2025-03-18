@@ -27,5 +27,4 @@ type Share interface {
 	GetSpaceFloor() uint64
 	GetDisableCOW() bool
 	GetIncludedDisks() map[string]Disk
-	GetExcludedDisks() map[string]Disk
 }

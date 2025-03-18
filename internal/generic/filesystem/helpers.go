@@ -56,10 +56,7 @@ func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
 
 	switch dest := m.Dest.(type) {
 	case schema.Disk:
-		for name, disk := range m.Share.GetIncludedDisks() {
-			if _, exists := m.Share.GetExcludedDisks()[name]; exists {
-				continue
-			}
+		for _, disk := range m.Share.GetIncludedDisks() {
 			alreadyExists, existsPath, err := f.existsOnStorageCandidate(m, disk)
 			if err != nil {
 				return "", err
