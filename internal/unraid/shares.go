@@ -31,7 +31,7 @@ func (s *Share) GetCachePool() *Pool {
 }
 
 func (s *Share) GetCachePool2() *Pool {
-	return s.CachePool
+	return s.CachePool2
 }
 
 func (s *Share) GetAllocator() string {
@@ -65,6 +65,13 @@ func (s *Share) GetIncludedDisks() map[string]*Disk {
 	return disks
 }
 
+type includesExcludesConfig struct {
+	shareIncludes  map[string]*Disk
+	shareExcludes  map[string]*Disk
+	globalIncludes map[string]*Disk
+	globalExcludes map[string]*Disk
+}
+
 func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
 	basePath := ConfigDirShares
 
@@ -77,7 +84,7 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 		return nil, fmt.Errorf("(unraid-shares) failed to readdir: %w", err)
 	}
 
-	globalIncludes, globalExcludes, err := u.establishGlobalShareConfig(disks)
+	includesExcludes, err := u.establishGlobalIncludesExcludes(disks)
 	if err != nil {
 		return nil, fmt.Errorf("(unraid-shares) failed to establish global share config: %w", err)
 	}
@@ -125,7 +132,10 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 				return nil, fmt.Errorf("(unraid-shares) failed to deref excluded disks for share (%s): %w", nameWithoutExt, err)
 			}
 
-			share.IncludedDisks = u.establishIncludedDisks(disks, shareIncludes, globalIncludes, shareExcludes, globalExcludes)
+			includesExcludes.shareIncludes = shareIncludes
+			includesExcludes.shareExcludes = shareExcludes
+
+			share.IncludedDisks = u.establishShareIncludes(disks, includesExcludes)
 
 			shares[share.Name] = share
 		}
@@ -134,63 +144,64 @@ func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool
 	return shares, nil
 }
 
-func (u *Handler) establishGlobalShareConfig(disks map[string]*Disk) (includedDisks map[string]*Disk, excludedDisks map[string]*Disk, err error) {
+func (u *Handler) establishGlobalIncludesExcludes(disks map[string]*Disk) (*includesExcludesConfig, error) {
 	configMap, err := u.configHandler.ReadGeneric(GlobalShareConfigFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("(unraid-shares) failed to read global share config (%s): %w", GlobalShareConfigFile, err)
+		return nil, fmt.Errorf("(unraid-shares) failed to read global share config (%s): %w", GlobalShareConfigFile, err)
 	}
 
 	globalIncludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingGlobalShareIncludes))
 	if err != nil {
-		return nil, nil, fmt.Errorf("(unraid-shares) failed to deref global included disks: %w", err)
+		return nil, fmt.Errorf("(unraid-shares) failed to deref global included disks: %w", err)
 	}
 
 	globalExcludes, err := findDisks(disks, u.configHandler.MapKeyToString(configMap, SettingGlobalShareExcludes))
 	if err != nil {
-		return nil, nil, fmt.Errorf("(unraid-shares) failed to deref global excluded disks: %w", err)
+		return nil, fmt.Errorf("(unraid-shares) failed to deref global excluded disks: %w", err)
 	}
 
-	return globalIncludes, globalExcludes, nil
+	return &includesExcludesConfig{
+		globalIncludes: globalIncludes,
+		globalExcludes: globalExcludes,
+	}, nil
 }
 
 // establishIncludedDisks returns a map holding pointers to all effectively included disks (excluding any excluded disks).
-//
-//nolint:lll
-func (u *Handler) establishIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
-	shareIncludedInternal := make(map[string]*Disk)
-	globalIncludedInternal := make(map[string]*Disk)
+func (u *Handler) establishShareIncludes(allDisks map[string]*Disk, config *includesExcludesConfig) map[string]*Disk {
+	shareIncludes := make(map[string]*Disk)
+	globalIncludes := make(map[string]*Disk)
 
-	if shareIncluded == nil {
+	if config.shareIncludes == nil {
 		for k, v := range allDisks {
-			shareIncludedInternal[k] = v
+			shareIncludes[k] = v
 		}
 	} else {
-		for k, v := range shareIncluded {
-			shareIncludedInternal[k] = v
+		for k, v := range config.shareIncludes {
+			shareIncludes[k] = v
 		}
 	}
 
-	if globalIncluded == nil {
+	if config.globalIncludes == nil {
 		for k, v := range allDisks {
-			globalIncludedInternal[k] = v
+			globalIncludes[k] = v
 		}
 	} else {
-		for k, v := range globalIncluded {
-			globalIncludedInternal[k] = v
+		for k, v := range config.globalIncludes {
+			globalIncludes[k] = v
 		}
 	}
 
-	for name := range shareIncludedInternal {
-		if _, exists := globalExcluded[name]; exists {
-			delete(shareIncludedInternal, name)
+	for name := range shareIncludes {
+		if _, exists := globalIncludes[name]; !exists {
+			delete(shareIncludes, name)
 		}
-		if _, exists := shareExcluded[name]; exists {
-			delete(shareIncludedInternal, name)
+		if _, exists := config.globalExcludes[name]; exists {
+			delete(shareIncludes, name)
 		}
-		if _, exists := globalIncludedInternal[name]; !exists {
-			delete(shareIncludedInternal, name)
+		if _, exists := config.shareExcludes[name]; exists {
+			delete(shareIncludes, name)
 		}
 	}
 
-	return shareIncludedInternal
+	return shareIncludes
 }
