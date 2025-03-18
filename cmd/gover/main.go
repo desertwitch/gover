@@ -29,6 +29,7 @@ const (
 )
 
 var (
+	exitCode   = 0
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
@@ -65,6 +66,10 @@ func (app *App) ProcessShares(ctx context.Context, shares map[string]schema.Shar
 }
 
 func main() {
+	defer func() {
+		os.Exit(exitCode)
+	}()
+
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:      slog.LevelDebug,
@@ -128,7 +133,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		_ = app.ProcessShares(ctx, shareAdapters)
+		if err := app.ProcessShares(ctx, shareAdapters); err != nil {
+			exitCode = 1
+		}
 	}()
 	wg.Wait()
 }
