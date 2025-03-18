@@ -11,11 +11,23 @@ type System struct {
 }
 
 func (s *System) GetPools() map[string]*Pool {
-	return s.Pools
+	pools := make(map[string]*Pool)
+
+	for k, v := range s.Pools {
+		pools[k] = v
+	}
+
+	return pools
 }
 
 func (s *System) GetShares() map[string]*Share {
-	return s.Shares
+	shares := make(map[string]*Share)
+
+	for k, v := range s.Shares {
+		shares[k] = v
+	}
+
+	return shares
 }
 
 // establishSystem returns a pointer to an established Unraid system.

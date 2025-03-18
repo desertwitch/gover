@@ -12,7 +12,7 @@ func (app *App) ioProcessFiles(ctx context.Context, files []*schema.Moveable) er
 	tasker := queue.NewTaskManager()
 
 	app.queueManager.IOManager.Enqueue(files...)
-	queues := app.queueManager.IOManager.GetQueuesUnsafe()
+	queues := app.queueManager.IOManager.GetQueues()
 
 	for _, q := range queues {
 		tasker.Add(

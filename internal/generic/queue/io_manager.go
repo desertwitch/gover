@@ -29,7 +29,7 @@ func (b *IOManager) Enqueue(items ...*schema.Moveable) {
 	}
 }
 
-func (b *IOManager) GetQueueUnsafe(target schema.Storage) (*IOTargetQueue, bool) {
+func (b *IOManager) GetQueue(target schema.Storage) (*IOTargetQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 
@@ -40,9 +40,15 @@ func (b *IOManager) GetQueueUnsafe(target schema.Storage) (*IOTargetQueue, bool)
 	return nil, false
 }
 
-func (b *IOManager) GetQueuesUnsafe() map[string]*IOTargetQueue {
+func (b *IOManager) GetQueues() map[string]*IOTargetQueue {
 	b.RLock()
 	defer b.RUnlock()
 
-	return b.queues
+	queues := make(map[string]*IOTargetQueue)
+
+	for k, v := range b.queues {
+		queues[k] = v
+	}
+
+	return queues
 }

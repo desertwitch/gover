@@ -51,7 +51,13 @@ func (s *Share) GetDisableCOW() bool {
 }
 
 func (s *Share) GetIncludedDisks() map[string]*Disk {
-	return s.IncludedDisks
+	disks := make(map[string]*Disk)
+
+	for k, v := range s.IncludedDisks {
+		disks[k] = v
+	}
+
+	return disks
 }
 
 func (u *Handler) establishShares(disks map[string]*Disk, pools map[string]*Pool) (map[string]*Share, error) {
@@ -142,6 +148,7 @@ func (u *Handler) establishGlobalShareConfig(disks map[string]*Disk) (includedDi
 	return globalIncludes, globalExcludes, nil
 }
 
+//nolint:lll
 func (u *Handler) filterIncludedDisks(allDisks map[string]*Disk, shareIncluded map[string]*Disk, globalIncluded map[string]*Disk, shareExcluded map[string]*Disk, globalExcluded map[string]*Disk) map[string]*Disk {
 	shareIncludedInternal := make(map[string]*Disk)
 	globalIncludedInternal := make(map[string]*Disk)
