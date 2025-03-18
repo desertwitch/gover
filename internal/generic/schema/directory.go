@@ -19,5 +19,3 @@ func (d *Directory) GetSourcePath() string {
 func (d *Directory) GetDestPath() string {
 	return d.DestPath
 }
-
-test
