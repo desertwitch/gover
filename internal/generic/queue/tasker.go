@@ -59,5 +59,9 @@ func (t *TaskManager) LaunchConcAndWait(ctx context.Context, maxWorkers int) err
 
 	wg.Wait()
 
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	return nil
 }
