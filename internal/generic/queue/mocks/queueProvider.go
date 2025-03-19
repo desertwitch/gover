@@ -120,6 +120,53 @@ func (_c *QueueProvider_Enqueue_Call[T]) RunAndReturn(run func(...T)) *QueueProv
 	return _c
 }
 
+// GetSuccessful provides a mock function with no fields
+func (_m *QueueProvider[T]) GetSuccessful() []T {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSuccessful")
+	}
+
+	var r0 []T
+	if rf, ok := ret.Get(0).(func() []T); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]T)
+		}
+	}
+
+	return r0
+}
+
+// QueueProvider_GetSuccessful_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSuccessful'
+type QueueProvider_GetSuccessful_Call[T any] struct {
+	*mock.Call
+}
+
+// GetSuccessful is a helper method to define mock.On call
+func (_e *QueueProvider_Expecter[T]) GetSuccessful() *QueueProvider_GetSuccessful_Call[T] {
+	return &QueueProvider_GetSuccessful_Call[T]{Call: _e.mock.On("GetSuccessful")}
+}
+
+func (_c *QueueProvider_GetSuccessful_Call[T]) Run(run func()) *QueueProvider_GetSuccessful_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *QueueProvider_GetSuccessful_Call[T]) Return(_a0 []T) *QueueProvider_GetSuccessful_Call[T] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *QueueProvider_GetSuccessful_Call[T]) RunAndReturn(run func() []T) *QueueProvider_GetSuccessful_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HasRemainingItems provides a mock function with no fields
 func (_m *QueueProvider[T]) HasRemainingItems() bool {
 	ret := _m.Called()
@@ -162,38 +209,6 @@ func (_c *QueueProvider_HasRemainingItems_Call[T]) Return(_a0 bool) *QueueProvid
 
 func (_c *QueueProvider_HasRemainingItems_Call[T]) RunAndReturn(run func() bool) *QueueProvider_HasRemainingItems_Call[T] {
 	_c.Call.Return(run)
-	return _c
-}
-
-// ResetQueue provides a mock function with no fields
-func (_m *QueueProvider[T]) ResetQueue() {
-	_m.Called()
-}
-
-// QueueProvider_ResetQueue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetQueue'
-type QueueProvider_ResetQueue_Call[T any] struct {
-	*mock.Call
-}
-
-// ResetQueue is a helper method to define mock.On call
-func (_e *QueueProvider_Expecter[T]) ResetQueue() *QueueProvider_ResetQueue_Call[T] {
-	return &QueueProvider_ResetQueue_Call[T]{Call: _e.mock.On("ResetQueue")}
-}
-
-func (_c *QueueProvider_ResetQueue_Call[T]) Run(run func()) *QueueProvider_ResetQueue_Call[T] {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *QueueProvider_ResetQueue_Call[T]) Return() *QueueProvider_ResetQueue_Call[T] {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *QueueProvider_ResetQueue_Call[T]) RunAndReturn(run func()) *QueueProvider_ResetQueue_Call[T] {
-	_c.Run(run)
 	return _c
 }
 

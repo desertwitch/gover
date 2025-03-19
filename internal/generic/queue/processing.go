@@ -14,18 +14,14 @@ const (
 type queueProvider[T any] interface {
 	Dequeue() (T, bool)
 	Enqueue(items ...T)
+	GetSuccessful() []T
 	HasRemainingItems() bool
-	ResetQueue()
 	SetProcessing(items ...T)
 	SetSkipped(items ...T)
 	SetSuccess(items ...T)
 }
 
-func processQueue[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) int, resetQueueAfter bool) error {
-	if resetQueueAfter {
-		defer queue.ResetQueue()
-	}
-
+func processQueue[T any](ctx context.Context, queue queueProvider[T], processFunc func(T) int) error {
 	for {
 		if ctx.Err() != nil {
 			break
@@ -57,11 +53,7 @@ func processQueue[T any](ctx context.Context, queue queueProvider[T], processFun
 	return nil
 }
 
-func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) int, resetQueueAfter bool) error {
-	if resetQueueAfter {
-		defer queue.ResetQueue()
-	}
-
+func concurrentProcessQueue[T any](ctx context.Context, maxWorkers int, queue queueProvider[T], processFunc func(T) int) error {
 	var wg sync.WaitGroup
 
 	semaphore := make(chan struct{}, maxWorkers)

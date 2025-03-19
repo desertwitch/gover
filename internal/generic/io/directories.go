@@ -110,7 +110,11 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ioReport) {
 			continue
 		}
 		if isEmpty {
-			if err := i.osHandler.Remove(dir.DestPath); err != nil {
+			i.Lock()
+			err := i.osHandler.Remove(dir.DestPath)
+			i.Unlock()
+
+			if err != nil {
 				if errors.Is(err, fs.ErrNotExist) {
 					removed[dir.DestPath] = struct{}{}
 				} else {

@@ -23,17 +23,17 @@ func (_m *IoTargetQueue) EXPECT() *IoTargetQueue_Expecter {
 	return &IoTargetQueue_Expecter{mock: &_m.Mock}
 }
 
-// DequeueAndProcess provides a mock function with given fields: ctx, processFunc, resetQueueAfter
-func (_m *IoTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
-	ret := _m.Called(ctx, processFunc, resetQueueAfter)
+// DequeueAndProcess provides a mock function with given fields: ctx, processFunc
+func (_m *IoTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error {
+	ret := _m.Called(ctx, processFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DequeueAndProcess")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, func(*schema.Moveable) int, bool) error); ok {
-		r0 = rf(ctx, processFunc, resetQueueAfter)
+	if rf, ok := ret.Get(0).(func(context.Context, func(*schema.Moveable) int) error); ok {
+		r0 = rf(ctx, processFunc)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -49,14 +49,13 @@ type IoTargetQueue_DequeueAndProcess_Call struct {
 // DequeueAndProcess is a helper method to define mock.On call
 //   - ctx context.Context
 //   - processFunc func(*schema.Moveable) int
-//   - resetQueueAfter bool
-func (_e *IoTargetQueue_Expecter) DequeueAndProcess(ctx interface{}, processFunc interface{}, resetQueueAfter interface{}) *IoTargetQueue_DequeueAndProcess_Call {
-	return &IoTargetQueue_DequeueAndProcess_Call{Call: _e.mock.On("DequeueAndProcess", ctx, processFunc, resetQueueAfter)}
+func (_e *IoTargetQueue_Expecter) DequeueAndProcess(ctx interface{}, processFunc interface{}) *IoTargetQueue_DequeueAndProcess_Call {
+	return &IoTargetQueue_DequeueAndProcess_Call{Call: _e.mock.On("DequeueAndProcess", ctx, processFunc)}
 }
 
-func (_c *IoTargetQueue_DequeueAndProcess_Call) Run(run func(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool)) *IoTargetQueue_DequeueAndProcess_Call {
+func (_c *IoTargetQueue_DequeueAndProcess_Call) Run(run func(ctx context.Context, processFunc func(*schema.Moveable) int)) *IoTargetQueue_DequeueAndProcess_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(func(*schema.Moveable) int), args[2].(bool))
+		run(args[0].(context.Context), args[1].(func(*schema.Moveable) int))
 	})
 	return _c
 }
@@ -66,7 +65,7 @@ func (_c *IoTargetQueue_DequeueAndProcess_Call) Return(_a0 error) *IoTargetQueue
 	return _c
 }
 
-func (_c *IoTargetQueue_DequeueAndProcess_Call) RunAndReturn(run func(context.Context, func(*schema.Moveable) int, bool) error) *IoTargetQueue_DequeueAndProcess_Call {
+func (_c *IoTargetQueue_DequeueAndProcess_Call) RunAndReturn(run func(context.Context, func(*schema.Moveable) int) error) *IoTargetQueue_DequeueAndProcess_Call {
 	_c.Call.Return(run)
 	return _c
 }

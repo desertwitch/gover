@@ -1,16 +1,13 @@
 package allocation
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
-	"runtime"
 	"sync"
 
 	"github.com/desertwitch/gover/internal/generic/configuration"
 	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
@@ -18,10 +15,6 @@ type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
-}
-
-type enumerationQueue interface {
-	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type allocInfo struct {
@@ -45,51 +38,45 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (a *Handler) AllocateArrayDestinations(ctx context.Context, q enumerationQueue) error {
-	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
-		dest, err := a.allocateArrayDestination(m)
-		if err != nil {
-			slog.Warn("Skipped job: failed to allocate array destination",
-				"err", err,
-				"job", m.SourcePath,
-				"share", m.Share.GetName(),
-			)
+func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
+	dest, err := a.allocateArrayDestination(m)
+	if err != nil {
+		slog.Warn("Skipped job: failed to allocate array destination",
+			"err", err,
+			"job", m.SourcePath,
+			"share", m.Share.GetName(),
+		)
 
-			return queue.DecisionSkipped
-		}
-		m.Dest = dest
+		return false
+	}
+	m.Dest = dest
 
-		for _, h := range m.Hardlinks {
-			h.Dest = dest
-		}
-
-		symlinkFailure := false
-		for _, s := range m.Symlinks {
-			dest, err := a.allocateArrayDestination(s)
-			if err != nil {
-				slog.Warn("Skipped job: failed to allocate array destination for subjob",
-					"path", s.SourcePath,
-					"err", err,
-					"subjob", s.SourcePath,
-					"job", m.SourcePath,
-					"share", s.Share.GetName(),
-				)
-				symlinkFailure = true
-
-				break
-			}
-			s.Dest = dest
-		}
-		if symlinkFailure {
-			return queue.DecisionSkipped
-		}
-
-		return queue.DecisionSuccess
-	}, true); err != nil {
-		return err
+	for _, h := range m.Hardlinks {
+		h.Dest = dest
 	}
 
-	return nil
+	symlinkFailure := false
+	for _, s := range m.Symlinks {
+		dest, err := a.allocateArrayDestination(s)
+		if err != nil {
+			slog.Warn("Skipped job: failed to allocate array destination for subjob",
+				"path", s.SourcePath,
+				"err", err,
+				"subjob", s.SourcePath,
+				"job", m.SourcePath,
+				"share", s.Share.GetName(),
+			)
+			symlinkFailure = true
+
+			break
+		}
+		s.Dest = dest
+	}
+	if symlinkFailure {
+		return false
+	}
+
+	return true
 }
 
 func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) {

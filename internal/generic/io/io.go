@@ -37,7 +37,7 @@ type unixProvider interface {
 }
 
 type ioTargetQueue interface {
-	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
+	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error
 }
 
 type fsElement interface {
@@ -67,18 +67,18 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 	q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		job := &ioReport{}
 
-		if err := i.processQueueElement(ctx, m, job); err != nil {
+		if err := i.processElement(ctx, m, job); err != nil {
 			return queue.DecisionSkipped
 		}
 
 		for _, h := range m.Hardlinks {
-			if err := i.processQueueSubElement(ctx, h, m, job); err != nil {
+			if err := i.processSubElement(ctx, h, m, job); err != nil {
 				continue
 			}
 		}
 
 		for _, s := range m.Symlinks {
-			if err := i.processQueueSubElement(ctx, s, m, job); err != nil {
+			if err := i.processSubElement(ctx, s, m, job); err != nil {
 				continue
 			}
 		}
@@ -86,13 +86,13 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 		mergeIOReports(batch, job)
 
 		return queue.DecisionSuccess
-	}, false)
+	})
 
 	i.ensureTimestamps(batch)
 	i.cleanDirectoryStructure(batch)
 }
 
-func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable, job *ioReport) error {
+func (i *Handler) processElement(ctx context.Context, elem *schema.Moveable, job *ioReport) error {
 	if err := i.processMoveable(ctx, elem, job); err != nil {
 		slog.Warn("Skipped job: failure during processing",
 			"path", elem.DestPath,
@@ -113,7 +113,7 @@ func (i *Handler) processQueueElement(ctx context.Context, elem *schema.Moveable
 	return nil
 }
 
-func (i *Handler) processQueueSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *ioReport) error {
+func (i *Handler) processSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *ioReport) error {
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
 			"path", subelem.DestPath,

@@ -1,22 +1,15 @@
 package pathing
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"path/filepath"
-	"runtime"
 
-	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type fsProvider interface {
 	ExistsOnStorage(m *schema.Moveable) (string, error)
-}
-
-type enumerationQueue interface {
-	DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error
 }
 
 type Handler struct {
@@ -29,40 +22,36 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-func (f *Handler) EstablishPaths(ctx context.Context, q enumerationQueue) error {
-	q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
-		if err := f.establishElementPath(m); err != nil {
-			return queue.DecisionSkipped
+func (f *Handler) EstablishPath(m *schema.Moveable) bool {
+	if err := f.establishElementPath(m); err != nil {
+		return false
+	}
+
+	hardLinkFailure := false
+	for _, h := range m.Hardlinks {
+		if err := f.establishSubElementPath(h, m); err != nil {
+			hardLinkFailure = true
+
+			break
 		}
+	}
+	if hardLinkFailure {
+		return false
+	}
 
-		hardLinkFailure := false
-		for _, h := range m.Hardlinks {
-			if err := f.establishSubElementPath(h, m); err != nil {
-				hardLinkFailure = true
+	symlinkFailure := false
+	for _, s := range m.Symlinks {
+		if err := f.establishSubElementPath(s, m); err != nil {
+			symlinkFailure = true
 
-				break
-			}
+			break
 		}
-		if hardLinkFailure {
-			return queue.DecisionSkipped
-		}
+	}
+	if symlinkFailure {
+		return false
+	}
 
-		symlinkFailure := false
-		for _, s := range m.Symlinks {
-			if err := f.establishSubElementPath(s, m); err != nil {
-				symlinkFailure = true
-
-				break
-			}
-		}
-		if symlinkFailure {
-			return queue.DecisionSkipped
-		}
-
-		return queue.DecisionSuccess
-	}, true)
-
-	return nil
+	return true
 }
 
 func (f *Handler) establishElementPath(elem *schema.Moveable) error {
@@ -90,7 +79,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 		return ErrPathExistsOnDest
 	}
 
-	if err := establishPath(elem); err != nil {
+	if err := constructPaths(elem); err != nil {
 		slog.Warn("Skipped job: cannot set destination path",
 			"err", err,
 			"dst", elem.Dest.GetName(),
@@ -128,7 +117,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 
 		return ErrPathExistsOnDest
 	}
-	if err := establishPath(subelem); err != nil {
+	if err := constructPaths(subelem); err != nil {
 		slog.Warn("Skipped job: cannot set destination path for subjob",
 			"err", err,
 			"dst", subelem.Dest.GetName(),
@@ -143,7 +132,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 	return nil
 }
 
-func establishPath(m *schema.Moveable) error {
+func constructPaths(m *schema.Moveable) error {
 	if m.Dest == nil {
 		return fmt.Errorf("(pathing) %w", ErrNilDestination)
 	}
@@ -158,14 +147,14 @@ func establishPath(m *schema.Moveable) error {
 	}
 	m.DestPath = filepath.Join(m.Dest.GetFSPath(), relPath)
 
-	if err := establishRelatedDirPaths(m); err != nil {
+	if err := constructRelatedDirPaths(m); err != nil {
 		return fmt.Errorf("(pathing) failed related dir pathing: %w", err)
 	}
 
 	return nil
 }
 
-func establishRelatedDirPaths(m *schema.Moveable) error {
+func constructRelatedDirPaths(m *schema.Moveable) error {
 	dir := m.RootDir
 
 	for dir != nil {

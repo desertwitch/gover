@@ -74,7 +74,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 		return nil, err
 	}
 
-	return app.queueManager.EnumerationManager.GetItems(), nil
+	return app.queueManager.EnumerationManager.GetSuccessful(), nil
 }
 
 func (app *App) enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
@@ -102,43 +102,31 @@ func (app *App) enumerateShare(ctx context.Context, share schema.Share, src sche
 }
 
 func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
-	q := app.queueManager.EnumerationManager.NewQueue()
-
-	app.queueManager.EnumerationManager.SetQueuePhase(q, "initializing")
-
 	files, err := app.fsHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
-		app.queueManager.EnumerationManager.DestroyQueue(q)
-
 		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
+	q := app.queueManager.EnumerationManager.NewQueue()
 	q.Enqueue(files...)
 
-	if dst == nil {
-		app.queueManager.EnumerationManager.SetQueuePhase(q, "allocating")
-		if err = app.allocHandler.AllocateArrayDestinations(ctx, q); err != nil {
-			app.queueManager.EnumerationManager.DestroyQueue(q)
-
-			return fmt.Errorf("(main) failed to allocate: %w", err)
+	q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
+		if m.Dest == nil {
+			if success := app.allocHandler.AllocateArrayDestination(m); !success {
+				return queue.DecisionSkipped
+			}
 		}
-	}
 
-	app.queueManager.EnumerationManager.SetQueuePhase(q, "pathing")
-	if err := app.pathingHandler.EstablishPaths(ctx, q); err != nil {
-		app.queueManager.EnumerationManager.DestroyQueue(q)
+		if success := app.pathingHandler.EstablishPath(m); !success {
+			return queue.DecisionSkipped
+		}
 
-		return fmt.Errorf("(main) failed to establish paths: %w", err)
-	}
+		if success := validation.ValidateMoveable(m); !success {
+			return queue.DecisionSkipped
+		}
 
-	app.queueManager.EnumerationManager.SetQueuePhase(q, "validating")
-	if err := validation.ValidateMoveables(ctx, q); err != nil {
-		app.queueManager.EnumerationManager.DestroyQueue(q)
-
-		return fmt.Errorf("(main) failed to validate: %w", err)
-	}
-
-	app.queueManager.EnumerationManager.SetQueuePhase(q, "waiting for IO")
+		return queue.DecisionSuccess
+	})
 
 	return nil
 }

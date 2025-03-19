@@ -17,14 +17,14 @@ func NewEnumerationManager() *EnumerationManager {
 	}
 }
 
-func (e *EnumerationManager) GetItems() []*schema.Moveable {
+func (e *EnumerationManager) GetSuccessful() []*schema.Moveable {
 	e.Lock()
 	defer e.Unlock()
 
 	result := []*schema.Moveable{}
 
 	for q := range e.queues {
-		result = append(result, q.GetItems()...)
+		result = append(result, q.GetSuccessful()...)
 	}
 
 	return result

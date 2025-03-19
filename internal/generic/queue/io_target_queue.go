@@ -25,17 +25,25 @@ func NewIOTargetQueue() *IOTargetQueue {
 	}
 }
 
-func (q *IOTargetQueue) ResetQueue() {
+func (q *IOTargetQueue) HasRemainingItems() bool {
 	q.Lock()
 	defer q.Unlock()
 
-	q.items = make([]*schema.Moveable, len(q.success))
-	copy(q.items, q.success)
+	if q.head >= len(q.items) {
+		return false
+	}
 
-	q.head = 0
-	q.success = []*schema.Moveable{}
-	q.skipped = []*schema.Moveable{}
-	q.inProgress = make(map[*schema.Moveable]struct{})
+	return true
+}
+
+func (q *IOTargetQueue) GetSuccessful() []*schema.Moveable {
+	q.Lock()
+	defer q.Unlock()
+
+	result := make([]*schema.Moveable, len(q.success))
+	copy(result, q.success)
+
+	return result
 }
 
 func (q *IOTargetQueue) Enqueue(items ...*schema.Moveable) {
@@ -62,17 +70,6 @@ func (q *IOTargetQueue) Dequeue() (*schema.Moveable, bool) {
 	q.head++
 
 	return item, true
-}
-
-func (q *IOTargetQueue) HasRemainingItems() bool {
-	q.Lock()
-	defer q.Unlock()
-
-	if q.head >= len(q.items) {
-		return false
-	}
-
-	return true
 }
 
 func (q *IOTargetQueue) SetSuccess(items ...*schema.Moveable) {
@@ -104,10 +101,10 @@ func (q *IOTargetQueue) SetProcessing(items ...*schema.Moveable) {
 	}
 }
 
-func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
-	return processQueue(ctx, q, processFunc, resetQueueAfter)
+func (q *IOTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error {
+	return processQueue(ctx, q, processFunc)
 }
 
-func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int, resetQueueAfter bool) error {
-	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc, resetQueueAfter)
+func (q *IOTargetQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int) error {
+	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc)
 }
