@@ -7,7 +7,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-type EnumerationQueue struct {
+type EnumerationShareQueue struct {
 	sync.Mutex
 	head       int
 	items      []*schema.Moveable
@@ -16,8 +16,8 @@ type EnumerationQueue struct {
 	inProgress map[*schema.Moveable]struct{}
 }
 
-func NewEnumerationQueue() *EnumerationQueue {
-	return &EnumerationQueue{
+func NewEnumerationQueue() *EnumerationShareQueue {
+	return &EnumerationShareQueue{
 		head:       0,
 		items:      []*schema.Moveable{},
 		success:    []*schema.Moveable{},
@@ -26,7 +26,7 @@ func NewEnumerationQueue() *EnumerationQueue {
 	}
 }
 
-func (q *EnumerationQueue) HasRemainingItems() bool {
+func (q *EnumerationShareQueue) HasRemainingItems() bool {
 	q.Lock()
 	defer q.Unlock()
 
@@ -37,7 +37,7 @@ func (q *EnumerationQueue) HasRemainingItems() bool {
 	return true
 }
 
-func (q *EnumerationQueue) GetSuccessful() []*schema.Moveable {
+func (q *EnumerationShareQueue) GetSuccessful() []*schema.Moveable {
 	q.Lock()
 	defer q.Unlock()
 
@@ -47,7 +47,7 @@ func (q *EnumerationQueue) GetSuccessful() []*schema.Moveable {
 	return result
 }
 
-func (q *EnumerationQueue) Enqueue(items ...*schema.Moveable) {
+func (q *EnumerationShareQueue) Enqueue(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -59,7 +59,7 @@ func (q *EnumerationQueue) Enqueue(items ...*schema.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) Dequeue() (*schema.Moveable, bool) {
+func (q *EnumerationShareQueue) Dequeue() (*schema.Moveable, bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -73,7 +73,7 @@ func (q *EnumerationQueue) Dequeue() (*schema.Moveable, bool) {
 	return item, true
 }
 
-func (q *EnumerationQueue) SetSuccess(items ...*schema.Moveable) {
+func (q *EnumerationShareQueue) SetSuccess(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -83,7 +83,7 @@ func (q *EnumerationQueue) SetSuccess(items ...*schema.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) SetSkipped(items ...*schema.Moveable) {
+func (q *EnumerationShareQueue) SetSkipped(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -93,7 +93,7 @@ func (q *EnumerationQueue) SetSkipped(items ...*schema.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) SetProcessing(items ...*schema.Moveable) {
+func (q *EnumerationShareQueue) SetProcessing(items ...*schema.Moveable) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -102,10 +102,10 @@ func (q *EnumerationQueue) SetProcessing(items ...*schema.Moveable) {
 	}
 }
 
-func (q *EnumerationQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error {
+func (q *EnumerationShareQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error {
 	return processQueue(ctx, q, processFunc)
 }
 
-func (q *EnumerationQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int) error {
+func (q *EnumerationShareQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*schema.Moveable) int) error {
 	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc)
 }

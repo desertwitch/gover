@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"runtime"
 
@@ -13,6 +12,8 @@ import (
 
 func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Share) ([]*schema.Moveable, error) {
 	tasker := queue.NewTaskManager()
+
+	slog.Info("Walking filesystems...")
 
 	// Primary to Secondary
 	for _, share := range shares {
@@ -25,7 +26,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						_ = app.enumerateShare(ctx, share, src, dst)
+						_ = app.enqueueForProcessing(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), nil),
 			)
@@ -34,7 +35,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						_ = app.enumerateShare(ctx, share, src, dst)
+						_ = app.enqueueForProcessing(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), share.GetCachePool2()),
 			)
@@ -53,7 +54,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 				tasker.Add(
 					func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 						return func() {
-							_ = app.enumerateShare(ctx, share, src, dst)
+							_ = app.enqueueForProcessing(ctx, share, src, dst)
 						}
 					}(share, disk, share.GetCachePool()),
 				)
@@ -63,7 +64,7 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 			tasker.Add(
 				func(share schema.Share, src schema.Storage, dst schema.Storage) func() {
 					return func() {
-						_ = app.enumerateShare(ctx, share, src, dst)
+						_ = app.enqueueForProcessing(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool2(), share.GetCachePool()),
 			)
@@ -74,20 +75,23 @@ func (app *App) enumerateShares(ctx context.Context, shares map[string]schema.Sh
 		return nil, err
 	}
 
+	if err := app.processEnumerationQueues(ctx); err != nil {
+		return nil, err
+	}
+
 	return app.queueManager.EnumerationManager.GetSuccessful(), nil
 }
 
-func (app *App) enumerateShare(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
-	slog.Info("Enumerating share on storage:", "src", src.GetName(), "share", share.GetName())
-
-	if err := app.enumerateShareTask(ctx, share, src, dst); err != nil {
+func (app *App) enqueueForProcessing(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
+	files, err := app.fsHandler.GetMoveables(ctx, share, src, dst)
+	if err != nil {
 		if _, ok := src.(schema.Disk); ok {
-			slog.Warn("Skipped enumerating array disk due to failure",
+			slog.Warn("Skipped walking array disk due to failure",
 				"err", err,
 				"share", share.GetName(),
 			)
 		} else {
-			slog.Warn("Skipped enumerating share due to failure",
+			slog.Warn("Skipped walking share due to failure",
 				"err", err,
 				"share", share.GetName(),
 			)
@@ -96,20 +100,48 @@ func (app *App) enumerateShare(ctx context.Context, share schema.Share, src sche
 		return err
 	}
 
-	slog.Info("Enumerating share on storage done:", "src", src.GetName(), "share", share.GetName())
+	app.queueManager.EnumerationManager.Enqueue(files...)
 
 	return nil
 }
 
-func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
-	files, err := app.fsHandler.GetMoveables(ctx, share, src, dst)
-	if err != nil {
-		return fmt.Errorf("(main) failed to enumerate: %w", err)
+func (app *App) processEnumerationQueues(ctx context.Context) error {
+	tasker := queue.NewTaskManager()
+	queues := app.queueManager.EnumerationManager.GetQueues()
+
+	for name, q := range queues {
+		tasker.Add(
+			func(name string, q *queue.EnumerationShareQueue) func() {
+				return func() {
+					slog.Info("Enumerating share:",
+						"share", name,
+					)
+
+					if err := app.processEnumerationQueue(ctx, q); err != nil {
+						slog.Warn("Skipped enumerating share due to failure:",
+							"err", err,
+							"share", name,
+						)
+
+						return
+					}
+
+					slog.Info("Enumerating share done:",
+						"share", name,
+					)
+				}
+			}(name, q),
+		)
 	}
 
-	q := app.queueManager.EnumerationManager.NewQueue()
-	q.Enqueue(files...)
+	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (app *App) processEnumerationQueue(ctx context.Context, q *queue.EnumerationShareQueue) error {
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		if m.Dest == nil {
 			if success := app.allocHandler.AllocateArrayDestination(m); !success {
