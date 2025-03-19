@@ -5,13 +5,11 @@ import (
 	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (app *App) ioProcessFiles(ctx context.Context, files []*schema.Moveable) error {
+func (app *App) IO(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
-	app.queueManager.IOManager.Enqueue(files...)
 	queues := app.queueManager.IOManager.GetQueues()
 
 	for _, q := range queues {

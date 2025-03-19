@@ -17,36 +17,23 @@ func NewEnumerationManager() *EnumerationManager {
 	}
 }
 
-func (b *EnumerationManager) GetSuccessful() []*schema.Moveable {
-	b.Lock()
-	defer b.Unlock()
-
-	result := []*schema.Moveable{}
-
-	for _, q := range b.queues {
-		result = append(result, q.GetSuccessful()...)
-	}
-
-	return result
-}
-
-func (b *EnumerationManager) Enqueue(items ...*schema.Moveable) {
+func (b *EnumerationManager) Enqueue(items ...*EnumerationTask) {
 	b.Lock()
 	defer b.Unlock()
 
 	for _, item := range items {
 		if b.queues[item.Share.GetName()] == nil {
-			b.queues[item.Share.GetName()] = NewEnumerationQueue()
+			b.queues[item.Share.GetName()] = NewEnumerationShareQueue()
 		}
 		b.queues[item.Share.GetName()].Enqueue(item)
 	}
 }
 
-func (b *EnumerationManager) GetQueue(target schema.Share) (*EnumerationShareQueue, bool) {
+func (b *EnumerationManager) GetQueue(share schema.Share) (*EnumerationShareQueue, bool) {
 	b.RLock()
 	defer b.RUnlock()
 
-	if queue, exists := b.queues[target.GetName()]; exists {
+	if queue, exists := b.queues[share.GetName()]; exists {
 		return queue, true
 	}
 
