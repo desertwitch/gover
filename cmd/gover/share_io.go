@@ -12,13 +12,13 @@ func (app *App) IO(ctx context.Context) error {
 
 	queues := app.queueManager.IOManager.GetQueues()
 
-	for _, q := range queues {
+	for _, targetQueue := range queues {
 		tasker.Add(
-			func(q *queue.IOTargetQueue) func() {
+			func(targetQueue *queue.IOTargetQueue) func() {
 				return func() {
-					_ = app.ioHandler.ProcessQueue(ctx, q)
+					_ = app.ioHandler.ProcessTargetQueue(ctx, targetQueue)
 				}
-			}(q),
+			}(targetQueue),
 		)
 	}
 

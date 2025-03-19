@@ -61,7 +61,7 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) error {
+func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) error {
 	batch := &ioReport{}
 
 	defer func() {
