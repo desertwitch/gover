@@ -91,7 +91,7 @@ func (app *App) enqueueForProcessing(ctx context.Context, share schema.Share, sr
 				"share", share.GetName(),
 			)
 		} else {
-			slog.Warn("Skipped walking share due to failure",
+			slog.Warn("Skipped walking pool due to failure",
 				"err", err,
 				"share", share.GetName(),
 			)
