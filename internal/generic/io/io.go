@@ -61,10 +61,15 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
+func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) error {
 	batch := &ioReport{}
 
-	q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
+	defer func() {
+		i.ensureTimestamps(batch)
+		i.cleanDirectoryStructure(batch)
+	}()
+
+	if err := q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		job := &ioReport{}
 
 		if err := i.processElement(ctx, m, job); err != nil {
@@ -86,10 +91,11 @@ func (i *Handler) ProcessQueue(ctx context.Context, q ioTargetQueue) {
 		mergeIOReports(batch, job)
 
 		return queue.DecisionSuccess
-	})
+	}); err != nil {
+		return err
+	}
 
-	i.ensureTimestamps(batch)
-	i.cleanDirectoryStructure(batch)
+	return nil
 }
 
 func (i *Handler) processElement(ctx context.Context, elem *schema.Moveable, job *ioReport) error {

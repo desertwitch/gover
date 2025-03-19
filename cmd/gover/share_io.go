@@ -18,7 +18,7 @@ func (app *App) ioProcessFiles(ctx context.Context, files []*schema.Moveable) er
 		tasker.Add(
 			func(q *queue.IOTargetQueue) func() {
 				return func() {
-					app.ioHandler.ProcessQueue(ctx, q)
+					_ = app.ioHandler.ProcessQueue(ctx, q)
 				}
 			}(q),
 		)

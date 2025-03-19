@@ -110,7 +110,7 @@ func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src 
 	q := app.queueManager.EnumerationManager.NewQueue()
 	q.Enqueue(files...)
 
-	q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
+	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		if m.Dest == nil {
 			if success := app.allocHandler.AllocateArrayDestination(m); !success {
 				return queue.DecisionSkipped
@@ -126,7 +126,9 @@ func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src 
 		}
 
 		return queue.DecisionSuccess
-	})
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }
