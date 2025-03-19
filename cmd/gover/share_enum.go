@@ -102,12 +102,13 @@ func (app *App) enumerateShare(ctx context.Context, share schema.Share, src sche
 }
 
 func (app *App) enumerateShareTask(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) error {
+	q := app.queueManager.EnumerationManager.NewQueue()
+
 	files, err := app.fsHandler.GetMoveables(ctx, share, src, dst)
 	if err != nil {
 		return fmt.Errorf("(main) failed to enumerate: %w", err)
 	}
 
-	q := app.queueManager.EnumerationManager.NewQueue()
 	q.Enqueue(files...)
 
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
