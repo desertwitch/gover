@@ -10,14 +10,14 @@ import (
 type EnumerationTask struct {
 	Share    schema.Share
 	Source   schema.Storage
-	Function func() error
+	Function func() bool
 }
 
-func (e *EnumerationTask) Run() error {
+func (e *EnumerationTask) Run() bool {
 	return e.Function()
 }
 
-type EnumerationShareQueue struct {
+type EnumerationSourceQueue struct {
 	sync.Mutex
 	head       int
 	items      []*EnumerationTask
@@ -26,8 +26,8 @@ type EnumerationShareQueue struct {
 	inProgress map[*EnumerationTask]struct{}
 }
 
-func NewEnumerationShareQueue() *EnumerationShareQueue {
-	return &EnumerationShareQueue{
+func NewEnumerationSourceQueue() *EnumerationSourceQueue {
+	return &EnumerationSourceQueue{
 		items:      []*EnumerationTask{},
 		inProgress: make(map[*EnumerationTask]struct{}),
 		success:    []*EnumerationTask{},
@@ -35,7 +35,7 @@ func NewEnumerationShareQueue() *EnumerationShareQueue {
 	}
 }
 
-func (q *EnumerationShareQueue) HasRemainingItems() bool {
+func (q *EnumerationSourceQueue) HasRemainingItems() bool {
 	q.Lock()
 	defer q.Unlock()
 
@@ -46,7 +46,7 @@ func (q *EnumerationShareQueue) HasRemainingItems() bool {
 	return true
 }
 
-func (q *EnumerationShareQueue) GetSuccessful() []*EnumerationTask {
+func (q *EnumerationSourceQueue) GetSuccessful() []*EnumerationTask {
 	q.Lock()
 	defer q.Unlock()
 
@@ -56,7 +56,7 @@ func (q *EnumerationShareQueue) GetSuccessful() []*EnumerationTask {
 	return result
 }
 
-func (q *EnumerationShareQueue) Enqueue(items ...*EnumerationTask) {
+func (q *EnumerationSourceQueue) Enqueue(items ...*EnumerationTask) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -68,7 +68,7 @@ func (q *EnumerationShareQueue) Enqueue(items ...*EnumerationTask) {
 	}
 }
 
-func (q *EnumerationShareQueue) Dequeue() (*EnumerationTask, bool) {
+func (q *EnumerationSourceQueue) Dequeue() (*EnumerationTask, bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -82,7 +82,7 @@ func (q *EnumerationShareQueue) Dequeue() (*EnumerationTask, bool) {
 	return item, true
 }
 
-func (q *EnumerationShareQueue) SetSuccess(items ...*EnumerationTask) {
+func (q *EnumerationSourceQueue) SetSuccess(items ...*EnumerationTask) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -92,7 +92,7 @@ func (q *EnumerationShareQueue) SetSuccess(items ...*EnumerationTask) {
 	}
 }
 
-func (q *EnumerationShareQueue) SetSkipped(items ...*EnumerationTask) {
+func (q *EnumerationSourceQueue) SetSkipped(items ...*EnumerationTask) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -102,7 +102,7 @@ func (q *EnumerationShareQueue) SetSkipped(items ...*EnumerationTask) {
 	}
 }
 
-func (q *EnumerationShareQueue) SetProcessing(items ...*EnumerationTask) {
+func (q *EnumerationSourceQueue) SetProcessing(items ...*EnumerationTask) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -111,10 +111,10 @@ func (q *EnumerationShareQueue) SetProcessing(items ...*EnumerationTask) {
 	}
 }
 
-func (q *EnumerationShareQueue) DequeueAndProcess(ctx context.Context, processFunc func(*EnumerationTask) int) error {
+func (q *EnumerationSourceQueue) DequeueAndProcess(ctx context.Context, processFunc func(*EnumerationTask) int) error {
 	return processQueue(ctx, q, processFunc)
 }
 
-func (q *EnumerationShareQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*EnumerationTask) int) error {
+func (q *EnumerationSourceQueue) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(*EnumerationTask) int) error {
 	return concurrentProcessQueue(ctx, maxWorkers, q, processFunc)
 }

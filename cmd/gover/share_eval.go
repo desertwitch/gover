@@ -13,36 +13,40 @@ import (
 func (app *App) Evaluate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
-	queues := app.queueManager.EvaluationManager.GetQueues()
-
-	for name, q := range queues {
+	for shareName, shareQueue := range app.queueManager.EvaluationManager.GetQueues() {
 		tasker.Add(
-			func(name string, q *queue.EvaluationShareQueue) func() {
+			func(shareName string, shareQueue *queue.EvaluationShareQueue) func() {
 				return func() {
-					slog.Info("Evaluating share:",
-						"share", name,
-					)
-
-					if err := app.evaluateToIO(ctx, q); err != nil {
-						slog.Warn("Skipped evaluating share due to failure:",
-							"err", err,
-							"share", name,
-						)
-
-						return
-					}
-
-					slog.Info("Evaluating share done:",
-						"share", name,
-					)
+					_ = app.processEvaluationQueue(ctx, shareName, shareQueue)
 				}
-			}(name, q),
+			}(shareName, shareQueue),
 		)
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (app *App) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) error {
+	slog.Info("Evaluating share:",
+		"share", shareName,
+	)
+
+	if err := app.evaluateToIO(ctx, shareQueue); err != nil {
+		slog.Warn("Skipped evaluating share due to failure:",
+			"err", err,
+			"share", shareName,
+		)
+
+		return err
+	}
+
+	slog.Info("Evaluating share done:",
+		"share", shareName,
+	)
 
 	return nil
 }
