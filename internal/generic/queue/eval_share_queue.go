@@ -52,9 +52,7 @@ func (q *EvaluationShareQueue) Enqueue(items ...*schema.Moveable) {
 	defer q.Unlock()
 
 	for _, item := range items {
-		if _, exists := q.inProgress[item]; exists {
-			delete(q.inProgress, item)
-		}
+		delete(q.inProgress, item)
 		q.items = append(q.items, item)
 	}
 }

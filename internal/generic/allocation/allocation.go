@@ -79,7 +79,7 @@ func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	return true
 }
 
-func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) {
+func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) { //nolint:ireturn
 	includedDisks := m.Share.GetIncludedDisks()
 
 	if m.Share.GetSplitLevel() >= 0 {

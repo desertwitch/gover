@@ -40,3 +40,6 @@ linters-settings:
 
     lll:
         line-length: 180
+
+    gosimple:
+        checks: ["all", "-S1008"]

@@ -28,6 +28,7 @@ const (
 	stackTraceBufMax = 1 << 24
 )
 
+//nolint:gochecknoglobals
 var (
 	exitCode   = 0
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -161,7 +162,7 @@ func establishProfilers() {
 		}
 		defer f.Close()
 
-		pprof.StartCPUProfile(f)
+		_ = pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 

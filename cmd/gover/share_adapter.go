@@ -13,7 +13,7 @@ func NewShareAdapter(unraidShare *unraid.Share) *ShareAdapter {
 	return &ShareAdapter{unraidShare}
 }
 
-func (s *ShareAdapter) GetCachePool() schema.Pool {
+func (s *ShareAdapter) GetCachePool() schema.Pool { //nolint:ireturn
 	if s.CachePool == nil {
 		return nil
 	}
@@ -21,7 +21,7 @@ func (s *ShareAdapter) GetCachePool() schema.Pool {
 	return s.CachePool
 }
 
-func (s *ShareAdapter) GetCachePool2() schema.Pool {
+func (s *ShareAdapter) GetCachePool2() schema.Pool { //nolint:ireturn
 	if s.CachePool2 == nil {
 		return nil
 	}

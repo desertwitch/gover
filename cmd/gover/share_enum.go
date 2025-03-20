@@ -23,8 +23,8 @@ func (app *App) Enumerate(ctx context.Context) error {
 			app.queueManager.EnumerationManager.Enqueue(&queue.EnumerationTask{
 				Share:  share,
 				Source: share.GetCachePool(),
-				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() bool {
-					return func() bool {
+				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() int {
+					return func() int {
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), nil),
@@ -34,8 +34,8 @@ func (app *App) Enumerate(ctx context.Context) error {
 			app.queueManager.EnumerationManager.Enqueue(&queue.EnumerationTask{
 				Share:  share,
 				Source: share.GetCachePool(),
-				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() bool {
-					return func() bool {
+				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() int {
+					return func() int {
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), share.GetCachePool2()),
@@ -55,8 +55,8 @@ func (app *App) Enumerate(ctx context.Context) error {
 				app.queueManager.EnumerationManager.Enqueue(&queue.EnumerationTask{
 					Share:  share,
 					Source: disk,
-					Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() bool {
-						return func() bool {
+					Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() int {
+						return func() int {
 							return app.enumerateToEvaluation(ctx, share, src, dst)
 						}
 					}(share, disk, share.GetCachePool()),
@@ -67,8 +67,8 @@ func (app *App) Enumerate(ctx context.Context) error {
 			app.queueManager.EnumerationManager.Enqueue(&queue.EnumerationTask{
 				Share:  share,
 				Source: share.GetCachePool2(),
-				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() bool {
-					return func() bool {
+				Function: func(share schema.Share, src schema.Storage, dst schema.Storage) func() int {
+					return func() int {
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool2(), share.GetCachePool()),
@@ -91,34 +91,30 @@ func (app *App) Enumerate(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) error {
+func (app *App) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) bool {
 	slog.Info("Enumerating shares on source:",
 		"source", sourceName,
 	)
 
 	if err := sourceQueue.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(enumTask *queue.EnumerationTask) int {
-		if success := enumTask.Run(); !success {
-			return queue.DecisionSkipped
-		}
-
-		return queue.DecisionSuccess
+		return enumTask.Run()
 	}); err != nil {
 		slog.Warn("Skipped enumerating shares on source due to failure:",
 			"err", err,
 			"source", sourceName,
 		)
 
-		return err
+		return false
 	}
 
 	slog.Info("Enumerating shares on source done:",
 		"share", sourceName,
 	)
 
-	return nil
+	return true
 }
 
-func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) bool {
+func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) int {
 	slog.Info("Enumerating share on storage:",
 		"storage", src.GetName(),
 		"share", share.GetName(),
@@ -132,7 +128,7 @@ func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, s
 			"share", share.GetName(),
 		)
 
-		return false
+		return queue.DecisionSkipped
 	}
 
 	slog.Info("Enumerating shares on storage done:",
@@ -142,5 +138,5 @@ func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, s
 
 	app.queueManager.EvaluationManager.Enqueue(files...)
 
-	return true
+	return queue.DecisionSuccess
 }

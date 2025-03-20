@@ -10,10 +10,10 @@ import (
 type EnumerationTask struct {
 	Share    schema.Share
 	Source   schema.Storage
-	Function func() bool
+	Function func() int
 }
 
-func (e *EnumerationTask) Run() bool {
+func (e *EnumerationTask) Run() int {
 	return e.Function()
 }
 
@@ -61,9 +61,7 @@ func (q *EnumerationSourceQueue) Enqueue(items ...*EnumerationTask) {
 	defer q.Unlock()
 
 	for _, item := range items {
-		if _, exists := q.inProgress[item]; exists {
-			delete(q.inProgress, item)
-		}
+		delete(q.inProgress, item)
 		q.items = append(q.items, item)
 	}
 }

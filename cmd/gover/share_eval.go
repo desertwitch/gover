@@ -30,7 +30,7 @@ func (app *App) Evaluate(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) error {
+func (app *App) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) bool {
 	slog.Info("Evaluating share:",
 		"share", shareName,
 	)
@@ -41,14 +41,14 @@ func (app *App) processEvaluationQueue(ctx context.Context, shareName string, sh
 			"share", shareName,
 		)
 
-		return err
+		return false
 	}
 
 	slog.Info("Evaluating share done:",
 		"share", shareName,
 	)
 
-	return nil
+	return true
 }
 
 func (app *App) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue) error {

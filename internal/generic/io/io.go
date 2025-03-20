@@ -61,7 +61,7 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) error {
+func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool {
 	batch := &ioReport{}
 
 	defer func() {
@@ -92,10 +92,10 @@ func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) error
 
 		return queue.DecisionSuccess
 	}); err != nil {
-		return err
+		return false
 	}
 
-	return nil
+	return true
 }
 
 func (i *Handler) processElement(ctx context.Context, elem *schema.Moveable, job *ioReport) error {
