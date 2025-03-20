@@ -29,7 +29,7 @@ func (t *TaskManager) Launch(ctx context.Context) error {
 
 	for _, task := range t.Tasks {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			break
 		}
 
 		task()
