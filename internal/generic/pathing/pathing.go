@@ -64,7 +64,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 			"share", elem.Share.GetName(),
 		)
 
-		return err
+		return fmt.Errorf("(pathing) %w", err)
 	}
 
 	// A directory is allowed to exist, that gets handled later in IO.
@@ -76,7 +76,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 			"share", elem.Share.GetName(),
 		)
 
-		return ErrPathExistsOnDest
+		return fmt.Errorf("(pathing) %w", ErrPathExistsOnDest)
 	}
 
 	if err := constructPaths(elem); err != nil {
@@ -87,7 +87,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 			"share", elem.Share.GetName(),
 		)
 
-		return err
+		return fmt.Errorf("(pathing) %w", err)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 			"share", elem.Share.GetName(),
 		)
 
-		return err
+		return fmt.Errorf("(pathing) %w", err)
 	}
 	if existsPath != "" {
 		slog.Warn("Skipped job: destination path already exists for subjob",
@@ -115,7 +115,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 			"share", elem.Share.GetName(),
 		)
 
-		return ErrPathExistsOnDest
+		return fmt.Errorf("(pathing) %w", ErrPathExistsOnDest)
 	}
 	if err := constructPaths(subelem); err != nil {
 		slog.Warn("Skipped job: cannot set destination path for subjob",
@@ -126,7 +126,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 			"share", elem.Share.GetName(),
 		)
 
-		return err
+		return fmt.Errorf("(pathing) %w", err)
 	}
 
 	return nil

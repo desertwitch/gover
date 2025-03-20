@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime"
 
@@ -24,7 +25,7 @@ func (app *App) Evaluate(ctx context.Context) error {
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
-		return err
+		return fmt.Errorf("(app-eval) %w", err)
 	}
 
 	return nil
@@ -69,7 +70,7 @@ func (app *App) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue)
 
 		return queue.DecisionSuccess
 	}); err != nil {
-		return err
+		return fmt.Errorf("(app-eval) %w", err)
 	}
 
 	app.queueManager.IOManager.Enqueue(q.GetSuccessful()...)

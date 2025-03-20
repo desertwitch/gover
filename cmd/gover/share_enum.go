@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime"
 
@@ -85,7 +86,7 @@ func (app *App) Enumerate(ctx context.Context) error {
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
-		return err
+		return fmt.Errorf("(app-enum) %w", err)
 	}
 
 	return nil

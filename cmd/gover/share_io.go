@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 
 	"github.com/desertwitch/gover/internal/generic/queue"
@@ -23,7 +24,7 @@ func (app *App) IO(ctx context.Context) error {
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
-		return err
+		return fmt.Errorf("(app-io) %w", err)
 	}
 
 	return nil

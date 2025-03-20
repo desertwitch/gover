@@ -16,11 +16,15 @@ func (f *Handler) IsInUse(path string) bool {
 }
 
 func (f *Handler) GetDiskUsage(s schema.Storage) (DiskStats, error) {
-	return f.diskStatHandler.GetDiskUsage(s)
+	data, err := f.diskStatHandler.GetDiskUsage(s)
+
+	return data, fmt.Errorf("(fs-diskusage) %w", err)
 }
 
 func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
-	return f.diskStatHandler.HasEnoughFreeSpace(s, minFree, fileSize)
+	data, err := f.diskStatHandler.HasEnoughFreeSpace(s, minFree, fileSize)
+
+	return data, fmt.Errorf("(fs-enoughspace) %w", err)
 }
 
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {
@@ -151,7 +155,7 @@ func concFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filt
 	}
 
 	if ctx.Err() != nil {
-		return nil, ctx.Err()
+		return nil, fmt.Errorf("(fs-concfs) %w", ctx.Err())
 	}
 
 	return filtered, nil

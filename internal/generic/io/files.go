@@ -24,7 +24,7 @@ func (cr *contextReader) Read(p []byte) (int, error) {
 	case <-cr.ctx.Done():
 		return 0, context.Canceled
 	default:
-		return cr.reader.Read(p)
+		return cr.reader.Read(p) //nolint:wrapcheck
 	}
 }
 

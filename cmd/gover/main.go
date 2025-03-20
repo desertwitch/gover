@@ -96,7 +96,7 @@ func main() {
 	defer memObserver.Stop()
 
 	defer func() {
-		slog.Info("Memory consumption peaked at:", "maxAlloc", (memObserver.GetMaxAlloc() / 1024 / 1024))
+		slog.Info("Memory consumption peaked at:", "maxAlloc", (memObserver.GetMaxAlloc() / 1024 / 1024)) //nolint:mnd
 	}()
 
 	establishProfilers()

@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"fmt"
 	"sync"
 )
 
@@ -47,7 +48,7 @@ func processQueue[T any](ctx context.Context, queue queueProvider[T], processFun
 	}
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("(queue-proc) %w", ctx.Err())
 	}
 
 	return nil
@@ -64,7 +65,7 @@ LOOP:
 		case <-ctx.Done():
 			wg.Wait()
 
-			return ctx.Err()
+			return fmt.Errorf("(queue-concproc) %w", ctx.Err())
 		case semaphore <- struct{}{}:
 		}
 
@@ -98,7 +99,7 @@ LOOP:
 	wg.Wait()
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("(queue-concproc) %w", ctx.Err())
 	}
 
 	if queue.HasRemainingItems() {

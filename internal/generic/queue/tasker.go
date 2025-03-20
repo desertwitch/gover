@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"fmt"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func (t *TaskManager) Launch(ctx context.Context) error {
 	}
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("(queue-tasker) %w", ctx.Err())
 	}
 
 	return nil
@@ -54,7 +55,7 @@ func (t *TaskManager) LaunchConcAndWait(ctx context.Context, maxWorkers int) err
 		case <-ctx.Done():
 			wg.Wait()
 
-			return ctx.Err()
+			return fmt.Errorf("(queue-tasker-conc) %w", ctx.Err())
 		case semaphore <- struct{}{}:
 		}
 
@@ -70,7 +71,7 @@ func (t *TaskManager) LaunchConcAndWait(ctx context.Context, maxWorkers int) err
 	wg.Wait()
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("(queue-tasker-conc) %w", ctx.Err())
 	}
 
 	return nil

@@ -12,6 +12,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
+//nolint:nestif
 func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]schema.Disk, error) {
 	matches := make(map[int]map[string]schema.Disk)
 	splitExceedLvl := false

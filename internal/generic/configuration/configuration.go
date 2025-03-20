@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -25,7 +26,9 @@ func NewHandler(genericHandler genericConfigProvider) *Handler {
 }
 
 func (c *Handler) ReadGeneric(filenames ...string) (map[string]string, error) {
-	return c.genericHandler.Read(filenames...)
+	data, err := c.genericHandler.Read(filenames...)
+
+	return data, fmt.Errorf("(config) %w", err)
 }
 
 func (c *Handler) MapKeyToString(envMap map[string]string, key string) string {

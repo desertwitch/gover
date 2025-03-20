@@ -4,10 +4,10 @@ linters:
             - depguard
             - dupl
             - exhaustruct
-            - nestif
+            # - nestif
             - tenv
             - varnamelen
-            - wrapcheck
+            # - wrapcheck
             - wsl
 
 linters-settings:
@@ -43,3 +43,14 @@ linters-settings:
 
     gosimple:
         checks: ["all", "-S1008"]
+
+    wrapcheck:
+        ignoreSigRegexps:
+            - unix.*?\(
+            - os.*?\(
+            - filepath.*?\(
+
+    nestif:
+        # Minimal complexity of if statements to report.
+        # Default: 5
+        min-complexity: 6
