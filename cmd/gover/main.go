@@ -35,6 +35,7 @@ var (
 )
 
 type App struct {
+	shares         map[string]schema.Share
 	fsHandler      *filesystem.Handler
 	allocHandler   *allocation.Handler
 	pathingHandler *pathing.Handler
@@ -42,8 +43,15 @@ type App struct {
 	queueManager   *queue.Manager
 }
 
-func NewApp(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, pathingHandler *pathing.Handler, ioHandler *io.Handler, queueManager *queue.Manager) *App {
+func NewApp(shares map[string]schema.Share,
+	fsHandler *filesystem.Handler,
+	allocHandler *allocation.Handler,
+	pathingHandler *pathing.Handler,
+	ioHandler *io.Handler,
+	queueManager *queue.Manager,
+) *App {
 	return &App{
+		shares:         shares,
 		fsHandler:      fsHandler,
 		allocHandler:   allocHandler,
 		pathingHandler: pathingHandler,
@@ -52,13 +60,16 @@ func NewApp(fsHandler *filesystem.Handler, allocHandler *allocation.Handler, pat
 	}
 }
 
-func (app *App) ProcessShares(ctx context.Context, shares map[string]schema.Share) error {
-	files, err := app.enumerateShares(ctx, shares)
-	if err != nil {
+func (app *App) Launch(ctx context.Context) error {
+	if err := app.Enumerate(ctx); err != nil {
 		return err
 	}
 
-	if err := app.ioProcessFiles(ctx, files); err != nil {
+	if err := app.Evaluate(ctx); err != nil {
+		return err
+	}
+
+	if err := app.IO(ctx); err != nil {
 		return err
 	}
 
@@ -126,14 +137,14 @@ func main() {
 		shareAdapters[name] = NewShareAdapter(share)
 	}
 
-	app := NewApp(fsHandler, allocHandler, pathingHandler, ioHandler, queueManager)
+	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager)
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := app.ProcessShares(ctx, shareAdapters); err != nil {
+		if err := app.Launch(ctx); err != nil {
 			exitCode = 1
 		}
 	}()

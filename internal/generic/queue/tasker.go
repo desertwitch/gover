@@ -23,13 +23,19 @@ func (t *TaskManager) Add(taskedFunc func()) {
 	t.Tasks = append(t.Tasks, taskedFunc)
 }
 
-func (t *TaskManager) Launch(ctx context.Context) {
+func (t *TaskManager) Launch(ctx context.Context) error {
 	t.Lock()
 	defer t.Unlock()
 
 	for _, task := range t.Tasks {
 		task()
 	}
+
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	return nil
 }
 
 func (t *TaskManager) LaunchConcAndWait(ctx context.Context, maxWorkers int) error {
