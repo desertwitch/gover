@@ -36,7 +36,7 @@ func (b *EvaluationManager) Enqueue(items ...*schema.Moveable) {
 
 	for _, item := range items {
 		if b.queues[item.Share.GetName()] == nil {
-			b.queues[item.Share.GetName()] = NewEnumerationQueue()
+			b.queues[item.Share.GetName()] = NewEvaluationShareQueue()
 		}
 		b.queues[item.Share.GetName()].Enqueue(item)
 	}

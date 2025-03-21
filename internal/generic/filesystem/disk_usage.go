@@ -109,9 +109,10 @@ func (c *DiskUsageCacher) GetDiskUsageFresh(s schema.Storage) (DiskStats, error)
 func (c *DiskUsageCacher) GetDiskUsage(s schema.Storage) (DiskStats, error) {
 	c.RLock()
 	if cachedStats, exists := c.cache[s.GetName()]; exists {
+		stats := cachedStats.stats
 		c.RUnlock()
 
-		return cachedStats.stats, nil
+		return stats, nil
 	}
 	c.RUnlock()
 

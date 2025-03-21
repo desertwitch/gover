@@ -17,14 +17,20 @@ func (f *Handler) IsInUse(path string) bool {
 
 func (f *Handler) GetDiskUsage(s schema.Storage) (DiskStats, error) {
 	data, err := f.diskStatHandler.GetDiskUsage(s)
+	if err != nil {
+		return data, fmt.Errorf("(fs-diskusage) %w", err)
+	}
 
-	return data, fmt.Errorf("(fs-diskusage) %w", err)
+	return data, nil
 }
 
 func (f *Handler) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
 	data, err := f.diskStatHandler.HasEnoughFreeSpace(s, minFree, fileSize)
+	if err != nil {
+		return data, fmt.Errorf("(fs-enoughspace) %w", err)
+	}
 
-	return data, fmt.Errorf("(fs-enoughspace) %w", err)
+	return data, nil
 }
 
 func (f *Handler) IsEmptyFolder(path string) (bool, error) {

@@ -27,8 +27,11 @@ func NewHandler(genericHandler genericConfigProvider) *Handler {
 
 func (c *Handler) ReadGeneric(filenames ...string) (map[string]string, error) {
 	data, err := c.genericHandler.Read(filenames...)
+	if err != nil {
+		return data, fmt.Errorf("(config) %w", err)
+	}
 
-	return data, fmt.Errorf("(config) %w", err)
+	return data, nil
 }
 
 func (c *Handler) MapKeyToString(envMap map[string]string, key string) string {

@@ -83,7 +83,7 @@ func main() {
 	}()
 
 	slog.SetDefault(slog.New(
-		tint.NewHandler(os.Stderr, &tint.Options{
+		tint.NewHandler(os.Stdout, &tint.Options{
 			Level:      slog.LevelDebug,
 			TimeFormat: time.Kitchen,
 		}),
