@@ -36,31 +36,38 @@ func (f *Handler) establishRelatedDirs(m *schema.Moveable, basePath string) erro
 
 func (f *Handler) walkParentDirs(m *schema.Moveable, basePath string) error {
 	var prevElement *schema.Directory
-	path := m.SourcePath
 
-	for path != basePath && path != "/" && path != "." {
-		path = filepath.Dir(path)
+	path := filepath.Clean(m.SourcePath)
+	basePath = filepath.Clean(basePath)
 
-		if strings.HasPrefix(path, basePath) {
-			thisElement := &schema.Directory{
-				SourcePath: path,
-			}
+	for {
+		parentPath := filepath.Dir(path)
 
-			metadata, err := f.getMetadata(path)
-			if err != nil {
-				return fmt.Errorf("(fs-parents) failed to get metadata: %w", err)
-			}
-			thisElement.Metadata = metadata
-
-			if prevElement != nil {
-				thisElement.Child = prevElement
-				prevElement.Parent = thisElement
-			}
-
-			prevElement = thisElement
-		} else {
+		if parentPath == path {
 			break
 		}
+
+		if !strings.HasPrefix(parentPath, basePath) {
+			break
+		}
+
+		path = parentPath
+
+		thisElement := &schema.Directory{
+			SourcePath: path,
+		}
+
+		metadata, err := f.getMetadata(path)
+		if err != nil {
+			return fmt.Errorf("(fs-parents) failed to get metadata: %w", err)
+		}
+		thisElement.Metadata = metadata
+
+		if prevElement != nil {
+			thisElement.Child = prevElement
+			prevElement.Parent = thisElement
+		}
+		prevElement = thisElement
 	}
 
 	m.RootDir = prevElement
