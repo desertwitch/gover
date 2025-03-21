@@ -58,14 +58,14 @@ func (q *GenericQueue[T]) Enqueue(items ...T) {
 	}
 }
 
-func (q *GenericQueue[T]) Dequeue() (T, bool) {
+func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 	q.Lock()
 	defer q.Unlock()
 
-	var itemZero T
-
 	if q.head >= len(q.items) {
-		return itemZero, false
+		var zeroVal T
+
+		return zeroVal, false
 	}
 
 	item := q.items[q.head]

@@ -30,7 +30,8 @@ const (
 
 //nolint:gochecknoglobals
 var (
-	exitCode   = 0
+	ExitCode   = 0
+	Version    string
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
@@ -79,7 +80,7 @@ func (app *App) Launch(ctx context.Context) error {
 
 func main() {
 	defer func() {
-		os.Exit(exitCode)
+		os.Exit(ExitCode)
 	}()
 
 	slog.SetDefault(slog.New(
@@ -88,6 +89,8 @@ func main() {
 			TimeFormat: time.Kitchen,
 		}),
 	))
+
+	slog.Info("Warming up, a good day to move some files!", "version", Version)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -146,7 +149,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := app.Launch(ctx); err != nil {
-			exitCode = 1
+			ExitCode = 1
 		}
 	}()
 	wg.Wait()
