@@ -10,7 +10,7 @@ VERSION := $(shell git rev-parse --short=7 HEAD)
 all: check mocks $(BINARY) ## Runs the entire build chain for the application
 
 $(BINARY): ## Builds the application
-	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -X=main.Version=$(VERSION) -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
+	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -X main.Version=$(VERSION) -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
 	@$(MAKE) info
 
 check: ## Runs all static analysis and tests on the application code
@@ -22,7 +22,7 @@ clean: ## Returns the build stage to its original state (deleting files)
 	@rm -vf $(BINARY) || true
 
 debug: ## Builds the application in debug mode (with symbols, race checks, ...)
-	CGO_ENABLED=1 GOFLAGS="-mod=vendor" go build -ldflags="-X=main.Version=$(VERSION)-DBG" -trimpath -race -o $(BINARY) $(SRC_DIR)
+	CGO_ENABLED=1 GOFLAGS="-mod=vendor" go build -ldflags="-X main.Version=$(VERSION)-DBG" -trimpath -race -o $(BINARY) $(SRC_DIR)
 	@$(MAKE) info
 
 help: ## Shows all build related commands of the Makefile
