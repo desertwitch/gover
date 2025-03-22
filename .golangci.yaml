@@ -4,10 +4,8 @@ linters:
             - depguard
             - dupl
             - exhaustruct
-            # - nestif
             - tenv
             - varnamelen
-            # - wrapcheck
             - wsl
 
 linters-settings:
