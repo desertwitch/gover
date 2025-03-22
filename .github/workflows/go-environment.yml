@@ -21,12 +21,7 @@ jobs:
           echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
       
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.go-version.outputs.version }}
           cache: true
-      
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
