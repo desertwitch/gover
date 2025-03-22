@@ -7,7 +7,7 @@ VERSION := $(shell git rev-parse --short=7 HEAD)
 
 .PHONY: all clean check debug help info lint mocks test vendor
 
-all: check mocks $(BINARY) ## Runs the entire build chain for the application
+all: vendor check mocks $(BINARY) ## Runs the entire build chain for the application
 
 $(BINARY): ## Builds the application
 	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -X main.Version=$(VERSION) -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
