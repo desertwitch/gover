@@ -20,16 +20,13 @@ jobs:
           GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+(\.[0-9]+)?' go.mod | awk '{print $2}')
           echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
       
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ steps.go-version.outputs.version }}
           cache: true
       
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          # This creates a golangci-lint binary in the PATH but skips running the linter
-          # since we'll run it in a separate job
-          install-mode-only: true
