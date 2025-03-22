@@ -40,7 +40,7 @@ func (i *Handler) moveFile(ctx context.Context, m *schema.Moveable) error {
 	tmpPath := m.DestPath + ".gover"
 	defer func() {
 		if !transferComplete {
-			i.osHandler.Remove(tmpPath) //nolint:errcheck
+			_ = i.osHandler.Remove(tmpPath)
 		}
 	}()
 
