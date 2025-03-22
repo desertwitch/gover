@@ -40,7 +40,7 @@ func (s *System) GetShares() map[string]*Share {
 	return shares
 }
 
-// establishSystem returns a pointer to an established Unraid system
+// establishSystem returns a pointer to an established Unraid system.
 func (u *Handler) EstablishSystem() (*System, error) {
 	disks, err := u.establishDisks()
 	if err != nil {
