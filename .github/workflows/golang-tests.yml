@@ -17,4 +17,4 @@ jobs:
           go-version: 1.24.1
       - uses: actions/checkout@v4
       - name: run
-        run: go test ./..
+        run: go test ./...
