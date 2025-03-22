@@ -24,6 +24,9 @@ jobs:
         with:
           go-version: ${{ needs.setup.outputs.go-version }}
           cache: true
+
+      - name: Vendor
+        run: make vendor
       
       - name: Lint
         run: make lint
