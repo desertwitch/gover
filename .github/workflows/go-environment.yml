@@ -1,13 +1,11 @@
 # .github/workflows/setup-go.yml
 name: Setup Environment (Go)
-
 on:
   workflow_call:
     outputs:
       go-version:
         description: "The Go version extracted from go.mod"
         value: ${{ jobs.setup.outputs.go-version }}
-
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -27,3 +25,11 @@ jobs:
         with:
           go-version: ${{ steps.go-version.outputs.version }}
           cache: true
+      
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          # This creates a golangci-lint binary in the PATH but skips running the linter
+          # since we'll run it in a separate job
+          install-mode-only: true
