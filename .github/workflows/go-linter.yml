@@ -25,8 +25,7 @@ jobs:
           go-version: ${{ needs.setup.outputs.go-version }}
           cache: true
 
-      - name: Vendor
-        run: make vendor
-      
-      - name: Lint
-        run: make lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
