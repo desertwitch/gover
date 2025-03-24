@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   golang:
-    name: tests
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v5
