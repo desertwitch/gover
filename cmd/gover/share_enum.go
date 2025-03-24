@@ -140,7 +140,7 @@ func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, s
 		"share", share.GetName(),
 	)
 
-	app.queueManager.EvaluationManager.EnqueueMany(files, func(m *schema.Moveable) string {
+	app.queueManager.EvaluationManager.EnqueueSlice(files, func(m *schema.Moveable) string {
 		return m.Share.GetName()
 	}, queue.NewEvaluationShareQueue)
 

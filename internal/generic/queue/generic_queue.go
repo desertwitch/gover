@@ -13,22 +13,6 @@ const (
 	DecisionSuccess = 1
 )
 
-type Progress struct {
-	IsStarted         bool
-	StartTime         time.Time
-	FinishTime        time.Time
-	ProgressPct       float64
-	TotalItems        int
-	ProcessedItems    int
-	InProgressItems   int
-	SuccessItems      int
-	SkippedItems      int
-	ETA               time.Time
-	TimeLeft          time.Duration
-	TransferSpeed     float64
-	TransferSpeedUnit string
-}
-
 type GenericQueue[T comparable] struct {
 	sync.RWMutex
 	isStarted  bool

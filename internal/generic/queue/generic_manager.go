@@ -35,10 +35,10 @@ func (b *GenericManager[E, T]) GetSuccessful() []E {
 }
 
 func (b *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
-	b.EnqueueMany([]E{item}, getKeyFunc, newQueueFunc)
+	b.EnqueueSlice([]E{item}, getKeyFunc, newQueueFunc)
 }
 
-func (b *GenericManager[E, T]) EnqueueMany(items []E, getKeyFunc func(E) string, newQueueFunc func() T) {
+func (b *GenericManager[E, T]) EnqueueSlice(items []E, getKeyFunc func(E) string, newQueueFunc func() T) {
 	b.Lock()
 	defer b.Unlock()
 
