@@ -22,7 +22,8 @@ func NewManager() *Manager {
 }
 
 type Progress struct {
-	IsStarted         bool
+	HasStarted        bool
+	HasFinished       bool
 	StartTime         time.Time
 	FinishTime        time.Time
 	ProgressPct       float64

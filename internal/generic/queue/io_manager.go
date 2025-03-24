@@ -35,7 +35,7 @@ func (m *IOManager) Progress() Progress {
 		queue.RUnlock()
 	}
 
-	if mProgress.IsStarted && mProgress.ProcessedItems > 0 && mProgress.ProcessedItems < mProgress.TotalItems {
+	if mProgress.HasStarted && mProgress.ProcessedItems > 0 && mProgress.ProcessedItems < mProgress.TotalItems {
 		elapsed := time.Since(mProgress.StartTime)
 		bytesPerSec := float64(totalBytesTransferred) / max(elapsed.Seconds(), 1)
 
