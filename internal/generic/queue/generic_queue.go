@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 )
 
 const (
@@ -12,8 +13,26 @@ const (
 	DecisionSuccess = 1
 )
 
+type Progress struct {
+	IsStarted         bool
+	StartTime         time.Time
+	FinishTime        time.Time
+	ProgressPct       float64
+	TotalItems        int
+	ProgressItems     int
+	SuccessItems      int
+	SkippedItems      int
+	ETA               time.Time
+	TimeLeft          time.Duration
+	TransferSpeed     float64
+	TransferSpeedUnit string
+}
+
 type GenericQueue[T comparable] struct {
-	sync.Mutex
+	sync.RWMutex
+	isStarted  bool
+	startTime  time.Time
+	finishTime time.Time
 	head       int
 	items      []T
 	success    []T
@@ -28,8 +47,8 @@ func NewGenericQueue[T comparable]() *GenericQueue[T] {
 }
 
 func (q *GenericQueue[T]) HasRemainingItems() bool {
-	q.Lock()
-	defer q.Unlock()
+	q.RLock()
+	defer q.RUnlock()
 
 	if q.head >= len(q.items) {
 		return false
@@ -39,8 +58,8 @@ func (q *GenericQueue[T]) HasRemainingItems() bool {
 }
 
 func (q *GenericQueue[T]) GetSuccessful() []T {
-	q.Lock()
-	defer q.Unlock()
+	q.RLock()
+	defer q.RUnlock()
 
 	result := make([]T, len(q.success))
 	copy(result, q.success)
@@ -65,7 +84,19 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 	if q.head >= len(q.items) {
 		var zeroVal T
 
+		if q.isStarted {
+			q.finishTime = time.Now()
+			q.isStarted = false
+		}
+
 		return zeroVal, false
+	}
+
+	if !q.isStarted {
+		if q.head == 0 {
+			q.startTime = time.Now()
+		}
+		q.isStarted = true
 	}
 
 	item := q.items[q.head]
@@ -100,6 +131,58 @@ func (q *GenericQueue[T]) SetProcessing(items ...T) {
 
 	for _, item := range items {
 		q.inProgress[item] = struct{}{}
+	}
+}
+
+func (q *GenericQueue[T]) Progress() Progress {
+	q.RLock()
+	defer q.RUnlock()
+
+	isStarted := q.isStarted
+	progress := q.head
+	totalCount := len(q.items)
+	successCount := len(q.success)
+	skippedCount := len(q.skipped)
+
+	progress = min(progress, totalCount)
+
+	var progressPct float64
+	if totalCount > 0 {
+		progressPct = float64(progress) / float64(totalCount) * 100   //nolint:mnd
+		progressPct = max(float64(0), min(progressPct, float64(100))) //nolint:mnd
+	}
+
+	var eta time.Time
+	var timeLeft time.Duration
+	var transferSpeed float64
+	transferSpeedUnit := "items/sec"
+
+	if isStarted && progress > 0 && progress < totalCount {
+		elapsed := time.Since(q.startTime)
+		itemsPerSec := float64(progress) / elapsed.Seconds()
+
+		if itemsPerSec > 0 {
+			remainingItems := totalCount - progress
+			remainingSeconds := float64(remainingItems) / itemsPerSec
+			timeLeft = time.Duration(remainingSeconds * float64(time.Second))
+			eta = time.Now().Add(timeLeft)
+			transferSpeed = itemsPerSec
+		}
+	}
+
+	return Progress{
+		IsStarted:         isStarted,
+		StartTime:         q.startTime,
+		FinishTime:        q.finishTime,
+		ProgressPct:       progressPct,
+		TotalItems:        totalCount,
+		ProgressItems:     progress,
+		SuccessItems:      successCount,
+		SkippedItems:      skippedCount,
+		ETA:               eta,
+		TimeLeft:          timeLeft,
+		TransferSpeed:     transferSpeed,
+		TransferSpeedUnit: transferSpeedUnit,
 	}
 }
 

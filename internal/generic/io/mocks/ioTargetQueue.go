@@ -23,6 +23,39 @@ func (_m *IoTargetQueue) EXPECT() *IoTargetQueue_Expecter {
 	return &IoTargetQueue_Expecter{mock: &_m.Mock}
 }
 
+// AddBytesTransfered provides a mock function with given fields: bytes
+func (_m *IoTargetQueue) AddBytesTransfered(bytes uint64) {
+	_m.Called(bytes)
+}
+
+// IoTargetQueue_AddBytesTransfered_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddBytesTransfered'
+type IoTargetQueue_AddBytesTransfered_Call struct {
+	*mock.Call
+}
+
+// AddBytesTransfered is a helper method to define mock.On call
+//   - bytes uint64
+func (_e *IoTargetQueue_Expecter) AddBytesTransfered(bytes interface{}) *IoTargetQueue_AddBytesTransfered_Call {
+	return &IoTargetQueue_AddBytesTransfered_Call{Call: _e.mock.On("AddBytesTransfered", bytes)}
+}
+
+func (_c *IoTargetQueue_AddBytesTransfered_Call) Run(run func(bytes uint64)) *IoTargetQueue_AddBytesTransfered_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64))
+	})
+	return _c
+}
+
+func (_c *IoTargetQueue_AddBytesTransfered_Call) Return() *IoTargetQueue_AddBytesTransfered_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *IoTargetQueue_AddBytesTransfered_Call) RunAndReturn(run func(uint64)) *IoTargetQueue_AddBytesTransfered_Call {
+	_c.Run(run)
+	return _c
+}
+
 // DequeueAndProcess provides a mock function with given fields: ctx, processFunc
 func (_m *IoTargetQueue) DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error {
 	ret := _m.Called(ctx, processFunc)

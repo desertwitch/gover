@@ -37,6 +37,7 @@ type unixProvider interface {
 }
 
 type ioTargetQueue interface {
+	AddBytesTransfered(bytes uint64)
 	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error
 }
 
@@ -89,6 +90,7 @@ func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool 
 		}
 
 		mergeIOReports(batch, job)
+		q.AddBytesTransfered(m.Metadata.Size)
 
 		return queue.DecisionSuccess
 	}); err != nil {

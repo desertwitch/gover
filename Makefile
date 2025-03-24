@@ -7,7 +7,7 @@ VERSION := $(shell git rev-parse --short=7 HEAD)
 
 .PHONY: all clean check debug help info lint mocks test vendor
 
-all: vendor check mocks $(BINARY) ## Runs the entire build chain for the application
+all: vendor mocks check $(BINARY) ## Runs the entire build chain for the application
 
 $(BINARY): ## Builds the application
 	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -X main.Version=$(VERSION) -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
@@ -17,9 +17,11 @@ check: ## Runs all static analysis and tests on the application code
 	@$(MAKE) lint
 	@$(MAKE) test
 
-clean: ## Returns the build stage to its original state (deleting files)
-	@find . -type d -name "mocks" -exec rm -vrf {} +
+clean: ## Returns the application build stage to its original state (deleting files)
 	@rm -vf $(BINARY) || true
+
+clean-mocks: ## Returns the mock build stage to its original state (deleting files)
+	@find . -type d -name "mocks" -exec rm -vrf {} +
 
 debug: ## Builds the application in debug mode (with symbols, race checks, ...)
 	CGO_ENABLED=1 GOFLAGS="-mod=vendor" go build -ldflags="-X main.Version=$(VERSION)-DBG" -trimpath -race -o $(BINARY) $(SRC_DIR)
