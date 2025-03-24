@@ -23,3 +23,10 @@ func NewEnumerationSourceQueue() *EnumerationSourceQueue {
 		GenericQueue: NewGenericQueue[*EnumerationTask](),
 	}
 }
+
+func (q *EnumerationSourceQueue) Progress() Progress {
+	qProgress := q.GenericQueue.Progress()
+	qProgress.TransferSpeedUnit = "tasks/sec"
+
+	return qProgress
+}

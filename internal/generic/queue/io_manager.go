@@ -16,12 +16,12 @@ func NewIOManager() *IOManager {
 	}
 }
 
-func (b *IOManager) Progress() Progress {
-	mProgress := b.GenericManager.Progress()
+func (m *IOManager) Progress() Progress {
+	mProgress := m.GenericManager.Progress()
 
 	var totalBytesTransferred uint64
 
-	for _, queue := range b.GetQueues() {
+	for _, queue := range m.GetQueues() {
 		queue.RLock()
 		totalBytesTransferred += queue.bytesTransfered
 		queue.RUnlock()

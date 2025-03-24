@@ -22,61 +22,61 @@ func NewGenericManager[E comparable, T GenericQueueType[E]]() *GenericManager[E,
 	}
 }
 
-func (b *GenericManager[E, T]) GetSuccessful() []E {
-	b.RLock()
-	defer b.RUnlock()
+func (m *GenericManager[E, T]) GetSuccessful() []E {
+	m.RLock()
+	defer m.RUnlock()
 
 	var result []E
-	for _, q := range b.queues {
+	for _, q := range m.queues {
 		result = append(result, q.GetSuccessful()...)
 	}
 
 	return result
 }
 
-func (b *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
-	b.EnqueueSlice([]E{item}, getKeyFunc, newQueueFunc)
+func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
+	m.EnqueueSlice([]E{item}, getKeyFunc, newQueueFunc)
 }
 
-func (b *GenericManager[E, T]) EnqueueSlice(items []E, getKeyFunc func(E) string, newQueueFunc func() T) {
-	b.Lock()
-	defer b.Unlock()
+func (m *GenericManager[E, T]) EnqueueSlice(items []E, getKeyFunc func(E) string, newQueueFunc func() T) {
+	m.Lock()
+	defer m.Unlock()
 
 	for _, item := range items {
 		key := getKeyFunc(item)
 
-		_, exists := b.queues[key]
+		_, exists := m.queues[key]
 		if !exists {
-			b.queues[key] = newQueueFunc()
+			m.queues[key] = newQueueFunc()
 		}
 
-		b.queues[key].Enqueue(item)
+		m.queues[key].Enqueue(item)
 	}
 }
 
 // GetQueues returns a copy of the internal map holding pointers to all queues.
-func (b *GenericManager[E, T]) GetQueues() map[string]T {
-	b.RLock()
-	defer b.RUnlock()
+func (m *GenericManager[E, T]) GetQueues() map[string]T {
+	m.RLock()
+	defer m.RUnlock()
 
-	if b.queues == nil {
+	if m.queues == nil {
 		return nil
 	}
 
 	queues := make(map[string]T)
 
-	for k, v := range b.queues {
+	for k, v := range m.queues {
 		queues[k] = v
 	}
 
 	return queues
 }
 
-func (b *GenericManager[E, T]) Progress() Progress {
-	b.RLock()
-	defer b.RUnlock()
+func (m *GenericManager[E, T]) Progress() Progress {
+	m.RLock()
+	defer m.RUnlock()
 
-	if len(b.queues) == 0 {
+	if len(m.queues) == 0 {
 		return Progress{}
 	}
 
@@ -85,7 +85,7 @@ func (b *GenericManager[E, T]) Progress() Progress {
 	var anyStarted bool
 	var earliestStartTime, latestFinishTime time.Time
 
-	for _, queue := range b.queues {
+	for _, queue := range m.queues {
 		qProgress := queue.Progress()
 
 		if qProgress.IsStarted {
