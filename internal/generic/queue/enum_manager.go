@@ -16,3 +16,11 @@ func (m *EnumerationManager) Progress() Progress {
 
 	return mProgress
 }
+
+func (m *EnumerationManager) Enqueue(items ...*EnumerationTask) {
+	for _, item := range items {
+		m.GenericManager.Enqueue(item, func(et *EnumerationTask) string {
+			return et.Source.GetName()
+		}, NewEnumerationSourceQueue)
+	}
+}

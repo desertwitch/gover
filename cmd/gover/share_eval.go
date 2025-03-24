@@ -73,9 +73,7 @@ func (app *App) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue)
 		return fmt.Errorf("(app-eval) %w", err)
 	}
 
-	app.queueManager.IOManager.EnqueueSlice(q.GetSuccessful(), func(m *schema.Moveable) string {
-		return m.Dest.GetName()
-	}, queue.NewIOTargetQueue)
+	app.queueManager.IOManager.Enqueue(q.GetSuccessful()...)
 
 	return nil
 }

@@ -16,6 +16,14 @@ func NewIOManager() *IOManager {
 	}
 }
 
+func (m *IOManager) Enqueue(items ...*schema.Moveable) {
+	for _, item := range items {
+		m.GenericManager.Enqueue(item, func(m *schema.Moveable) string {
+			return m.Dest.GetName()
+		}, NewIOTargetQueue)
+	}
+}
+
 func (m *IOManager) Progress() Progress {
 	mProgress := m.GenericManager.Progress()
 

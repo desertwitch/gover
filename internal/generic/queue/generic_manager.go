@@ -35,23 +35,17 @@ func (m *GenericManager[E, T]) GetSuccessful() []E {
 }
 
 func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
-	m.EnqueueSlice([]E{item}, getKeyFunc, newQueueFunc)
-}
-
-func (m *GenericManager[E, T]) EnqueueSlice(items []E, getKeyFunc func(E) string, newQueueFunc func() T) {
 	m.Lock()
 	defer m.Unlock()
 
-	for _, item := range items {
-		key := getKeyFunc(item)
+	key := getKeyFunc(item)
 
-		_, exists := m.queues[key]
-		if !exists {
-			m.queues[key] = newQueueFunc()
-		}
-
-		m.queues[key].Enqueue(item)
+	_, exists := m.queues[key]
+	if !exists {
+		m.queues[key] = newQueueFunc()
 	}
+
+	m.queues[key].Enqueue(item)
 }
 
 // GetQueues returns a copy of the internal map holding pointers to all queues.

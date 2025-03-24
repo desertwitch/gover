@@ -10,11 +10,8 @@ import (
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
-func (app *App) Enumerate(ctx context.Context) error { //nolint:funlen
+func (app *App) Enumerate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
-
-	enumKeyFunc := func(et *queue.EnumerationTask) string { return et.Source.GetName() }
-	enumFactoryFunc := queue.NewEnumerationSourceQueue
 
 	// Primary to Secondary
 	for _, share := range app.shares {
@@ -32,7 +29,7 @@ func (app *App) Enumerate(ctx context.Context) error { //nolint:funlen
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), nil),
-			}, enumKeyFunc, enumFactoryFunc)
+			})
 		} else {
 			// Cache to Cache2
 			app.queueManager.EnumerationManager.Enqueue(&queue.EnumerationTask{
@@ -43,7 +40,7 @@ func (app *App) Enumerate(ctx context.Context) error { //nolint:funlen
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool(), share.GetCachePool2()),
-			}, enumKeyFunc, enumFactoryFunc)
+			})
 		}
 	}
 
@@ -64,7 +61,7 @@ func (app *App) Enumerate(ctx context.Context) error { //nolint:funlen
 							return app.enumerateToEvaluation(ctx, share, src, dst)
 						}
 					}(share, disk, share.GetCachePool()),
-				}, enumKeyFunc, enumFactoryFunc)
+				})
 			}
 		} else {
 			// Cache2 to Cache
@@ -76,7 +73,7 @@ func (app *App) Enumerate(ctx context.Context) error { //nolint:funlen
 						return app.enumerateToEvaluation(ctx, share, src, dst)
 					}
 				}(share, share.GetCachePool2(), share.GetCachePool()),
-			}, enumKeyFunc, enumFactoryFunc)
+			})
 		}
 	}
 
@@ -140,9 +137,7 @@ func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, s
 		"share", share.GetName(),
 	)
 
-	app.queueManager.EvaluationManager.EnqueueSlice(files, func(m *schema.Moveable) string {
-		return m.Share.GetName()
-	}, queue.NewEvaluationShareQueue)
+	app.queueManager.EvaluationManager.Enqueue(files...)
 
 	return queue.DecisionSuccess
 }
