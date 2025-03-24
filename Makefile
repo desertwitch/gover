@@ -43,6 +43,6 @@ mocks: ## Generates the mocks for the application code
 test: ## Runs all written tests for and on the application code
 	@go test -race ./...
 
-vendor: ## Pulls the dependencies from remote into the local vendor folder
+vendor: ## Pulls the (remote) dependencies into the local vendor folder
 	@go mod tidy
 	@go mod vendor
