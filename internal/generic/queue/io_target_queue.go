@@ -25,54 +25,21 @@ func (q *IOTargetQueue) AddBytesTransfered(bytes uint64) {
 }
 
 func (q *IOTargetQueue) Progress() Progress {
-	q.RLock()
-	defer q.RUnlock()
+	qProgress := q.GenericQueue.Progress()
 
-	isStarted := q.isStarted
-	progress := q.head
-	totalCount := len(q.items)
-	successCount := len(q.success)
-	skippedCount := len(q.skipped)
+	if qProgress.IsStarted && qProgress.ProcessedItems > 0 && qProgress.ProcessedItems < qProgress.TotalItems {
+		elapsed := time.Since(qProgress.StartTime)
 
-	progress = min(progress, totalCount)
+		q.RLock()
+		bytesPerSec := float64(q.bytesTransfered) / max(elapsed.Seconds(), 1)
+		q.RUnlock()
 
-	var progressPct float64
-	if totalCount > 0 {
-		progressPct = float64(progress) / float64(totalCount) * 100   //nolint:mnd
-		progressPct = max(float64(0), min(progressPct, float64(100))) //nolint:mnd
-	}
-
-	var eta time.Time
-	var timeLeft time.Duration
-	var transferSpeed float64
-	transferSpeedUnit := "bytes/sec"
-
-	if isStarted && progress > 0 && progress < totalCount {
-		elapsed := time.Since(q.startTime)
-		itemsPerSec := float64(progress) / elapsed.Seconds()
-		bytesPerSec := float64(q.bytesTransfered) / elapsed.Seconds()
-
-		if itemsPerSec > 0 {
-			remainingItems := totalCount - progress
-			remainingSeconds := float64(remainingItems) / itemsPerSec
-			timeLeft = time.Duration(remainingSeconds * float64(time.Second))
-			eta = time.Now().Add(timeLeft)
-			transferSpeed = bytesPerSec
+		if bytesPerSec > 0 {
+			qProgress.TransferSpeed = bytesPerSec
 		}
 	}
 
-	return Progress{
-		IsStarted:         isStarted,
-		StartTime:         q.startTime,
-		FinishTime:        q.finishTime,
-		ProgressPct:       progressPct,
-		TotalItems:        totalCount,
-		ProgressItems:     progress,
-		SuccessItems:      successCount,
-		SkippedItems:      skippedCount,
-		ETA:               eta,
-		TimeLeft:          timeLeft,
-		TransferSpeed:     transferSpeed,
-		TransferSpeedUnit: transferSpeedUnit,
-	}
+	qProgress.TransferSpeedUnit = "bytes/sec"
+
+	return qProgress
 }

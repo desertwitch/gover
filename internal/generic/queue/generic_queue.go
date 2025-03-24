@@ -19,7 +19,8 @@ type Progress struct {
 	FinishTime        time.Time
 	ProgressPct       float64
 	TotalItems        int
-	ProgressItems     int
+	ProcessedItems    int
+	InProgressItems   int
 	SuccessItems      int
 	SkippedItems      int
 	ETA               time.Time
@@ -139,30 +140,29 @@ func (q *GenericQueue[T]) Progress() Progress {
 	defer q.RUnlock()
 
 	isStarted := q.isStarted
-	progress := q.head
-	totalCount := len(q.items)
-	successCount := len(q.success)
-	skippedCount := len(q.skipped)
+	totalItems := len(q.items)
 
-	progress = min(progress, totalCount)
+	processedItems := q.head
+	processedItems = min(processedItems, totalItems)
 
 	var progressPct float64
-	if totalCount > 0 {
-		progressPct = float64(progress) / float64(totalCount) * 100   //nolint:mnd
-		progressPct = max(float64(0), min(progressPct, float64(100))) //nolint:mnd
+	if totalItems > 0 {
+		progressPct = float64(processedItems) / float64(totalItems) * 100 //nolint:mnd
+		progressPct = max(float64(0), min(progressPct, float64(100)))     //nolint:mnd
 	}
 
 	var eta time.Time
 	var timeLeft time.Duration
+
 	var transferSpeed float64
 	transferSpeedUnit := "items/sec"
 
-	if isStarted && progress > 0 && progress < totalCount {
+	if isStarted && processedItems > 0 && processedItems < totalItems {
 		elapsed := time.Since(q.startTime)
-		itemsPerSec := float64(progress) / elapsed.Seconds()
+		itemsPerSec := float64(processedItems) / max(elapsed.Seconds(), 1)
 
 		if itemsPerSec > 0 {
-			remainingItems := totalCount - progress
+			remainingItems := totalItems - processedItems
 			remainingSeconds := float64(remainingItems) / itemsPerSec
 			timeLeft = time.Duration(remainingSeconds * float64(time.Second))
 			eta = time.Now().Add(timeLeft)
@@ -175,10 +175,11 @@ func (q *GenericQueue[T]) Progress() Progress {
 		StartTime:         q.startTime,
 		FinishTime:        q.finishTime,
 		ProgressPct:       progressPct,
-		TotalItems:        totalCount,
-		ProgressItems:     progress,
-		SuccessItems:      successCount,
-		SkippedItems:      skippedCount,
+		TotalItems:        totalItems,
+		ProcessedItems:    processedItems,
+		InProgressItems:   len(q.inProgress),
+		SuccessItems:      len(q.success),
+		SkippedItems:      len(q.skipped),
 		ETA:               eta,
 		TimeLeft:          timeLeft,
 		TransferSpeed:     transferSpeed,

@@ -35,6 +35,7 @@ info: ## Shows information about the application binaries that were built
 	@file $(BINARY)
 
 lint: ## Runs the linter on the application code
+	@golangci-lint cache clean
 	@golangci-lint run
 
 mocks: ## Generates the mocks for the application code

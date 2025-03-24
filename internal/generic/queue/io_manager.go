@@ -1,59 +1,42 @@
 package queue
 
 import (
-	"sync"
+	"time"
 
 	"github.com/desertwitch/gover/internal/generic/schema"
 )
 
 type IOManager struct {
-	sync.RWMutex
-	queues map[string]*IOTargetQueue
+	*GenericManager[*schema.Moveable, *IOTargetQueue]
 }
 
 func NewIOManager() *IOManager {
 	return &IOManager{
-		queues: make(map[string]*IOTargetQueue),
+		GenericManager: NewGenericManager[*schema.Moveable, *IOTargetQueue](),
 	}
 }
 
-func (b *IOManager) Enqueue(items ...*schema.Moveable) {
-	b.Lock()
-	defer b.Unlock()
+func (b *IOManager) Progress() Progress {
+	mProgress := b.GenericManager.Progress()
 
-	for _, item := range items {
-		if b.queues[item.Dest.GetName()] == nil {
-			b.queues[item.Dest.GetName()] = NewIOTargetQueue()
+	var totalBytesTransferred uint64
+
+	for _, queue := range b.GetQueues() {
+		queue.RLock()
+		totalBytesTransferred += queue.bytesTransfered
+		queue.RUnlock()
+	}
+
+	if mProgress.IsStarted && mProgress.ProcessedItems > 0 && mProgress.ProcessedItems < mProgress.TotalItems {
+		elapsed := time.Since(mProgress.StartTime)
+		bytesPerSec := float64(totalBytesTransferred) / max(elapsed.Seconds(), 1)
+
+		if bytesPerSec > 0 {
+			mProgress.TransferSpeed = bytesPerSec
 		}
-		b.queues[item.Dest.GetName()].Enqueue(item)
-	}
-}
-
-func (b *IOManager) GetQueue(target schema.Storage) (*IOTargetQueue, bool) {
-	b.RLock()
-	defer b.RUnlock()
-
-	if queue, exists := b.queues[target.GetName()]; exists {
-		return queue, true
 	}
 
-	return nil, false
-}
+	mProgress.TransferSpeedUnit = "bytes/sec"
 
-// GetQueues returns a copy of the internal map holding pointers to all queues.
-func (b *IOManager) GetQueues() map[string]*IOTargetQueue {
-	b.RLock()
-	defer b.RUnlock()
-
-	if b.queues == nil {
-		return nil
-	}
-
-	queues := make(map[string]*IOTargetQueue)
-
-	for k, v := range b.queues {
-		queues[k] = v
-	}
-
-	return queues
+	return mProgress
 }
