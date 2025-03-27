@@ -15,14 +15,15 @@ const (
 
 type GenericQueue[T comparable] struct {
 	sync.RWMutex
-	isStarted  bool
-	startTime  time.Time
-	finishTime time.Time
-	head       int
-	items      []T
-	success    []T
-	skipped    []T
-	inProgress map[T]struct{}
+	hasStarted  bool
+	hasFinished bool
+	startTime   time.Time
+	finishTime  time.Time
+	head        int
+	items       []T
+	success     []T
+	skipped     []T
+	inProgress  map[T]struct{}
 }
 
 func NewGenericQueue[T comparable]() *GenericQueue[T] {
@@ -69,19 +70,22 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 	if q.head >= len(q.items) {
 		var zeroVal T
 
-		if q.isStarted {
+		if !q.hasFinished {
 			q.finishTime = time.Now()
-			q.isStarted = false
+			q.hasFinished = true
 		}
 
 		return zeroVal, false
 	}
 
-	if !q.isStarted {
-		if q.head == 0 {
-			q.startTime = time.Now()
-		}
-		q.isStarted = true
+	if q.hasFinished {
+		q.finishTime = time.Time{}
+		q.hasFinished = false
+	}
+
+	if !q.hasStarted {
+		q.startTime = time.Now()
+		q.hasStarted = true
 	}
 
 	item := q.items[q.head]
@@ -123,7 +127,7 @@ func (q *GenericQueue[T]) Progress() Progress {
 	q.RLock()
 	defer q.RUnlock()
 
-	isStarted := q.isStarted
+	hasStarted := q.hasStarted
 	totalItems := len(q.items)
 
 	processedItems := q.head
@@ -141,7 +145,7 @@ func (q *GenericQueue[T]) Progress() Progress {
 	var transferSpeed float64
 	transferSpeedUnit := "items/sec"
 
-	if isStarted && processedItems > 0 && processedItems < totalItems {
+	if hasStarted && processedItems > 0 && processedItems < totalItems {
 		elapsed := time.Since(q.startTime)
 		itemsPerSec := float64(processedItems) / max(elapsed.Seconds(), 1)
 
@@ -155,7 +159,8 @@ func (q *GenericQueue[T]) Progress() Progress {
 	}
 
 	return Progress{
-		IsStarted:         isStarted,
+		HasStarted:        hasStarted,
+		HasFinished:       q.hasFinished,
 		StartTime:         q.startTime,
 		FinishTime:        q.finishTime,
 		ProgressPct:       progressPct,

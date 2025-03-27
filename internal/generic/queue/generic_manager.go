@@ -76,13 +76,13 @@ func (m *GenericManager[E, T]) Progress() Progress {
 
 	var totalItems, totalProcessed, totalInProgress, totalSuccess, totalSkipped int
 
-	var anyStarted bool
+	var anyStarted, allFinished bool
 	var earliestStartTime, latestFinishTime time.Time
 
 	for _, queue := range m.queues {
 		qProgress := queue.Progress()
 
-		if qProgress.IsStarted {
+		if qProgress.HasStarted {
 			if !qProgress.StartTime.IsZero() && (earliestStartTime.IsZero() || qProgress.StartTime.Before(earliestStartTime)) {
 				earliestStartTime = qProgress.StartTime
 			}
@@ -128,11 +128,12 @@ func (m *GenericManager[E, T]) Progress() Progress {
 		if latestFinishTime.IsZero() {
 			latestFinishTime = time.Now()
 		}
-		anyStarted = false
+		allFinished = true
 	}
 
 	return Progress{
-		IsStarted:         anyStarted,
+		HasStarted:        anyStarted,
+		HasFinished:       allFinished,
 		StartTime:         earliestStartTime,
 		FinishTime:        latestFinishTime,
 		ProgressPct:       progressPct,

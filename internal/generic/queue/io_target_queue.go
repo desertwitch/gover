@@ -27,7 +27,7 @@ func (q *IOTargetQueue) AddBytesTransfered(bytes uint64) {
 func (q *IOTargetQueue) Progress() Progress {
 	qProgress := q.GenericQueue.Progress()
 
-	if qProgress.IsStarted && qProgress.ProcessedItems > 0 && qProgress.ProcessedItems < qProgress.TotalItems {
+	if qProgress.HasStarted && qProgress.ProcessedItems > 0 && qProgress.ProcessedItems < qProgress.TotalItems {
 		elapsed := time.Since(qProgress.StartTime)
 
 		q.RLock()
