@@ -20,6 +20,7 @@ import (
 	"github.com/desertwitch/gover/internal/generic/pathing"
 	"github.com/desertwitch/gover/internal/generic/queue"
 	"github.com/desertwitch/gover/internal/generic/schema"
+	"github.com/desertwitch/gover/internal/generic/ui"
 	"github.com/desertwitch/gover/internal/unraid"
 	"github.com/lmittmann/tint"
 )
@@ -43,6 +44,7 @@ type App struct {
 	pathingHandler *pathing.Handler
 	ioHandler      *io.Handler
 	queueManager   *queue.Manager
+	uiHandler      *ui.Handler
 }
 
 func NewApp(shares map[string]schema.Share,
@@ -51,6 +53,7 @@ func NewApp(shares map[string]schema.Share,
 	pathingHandler *pathing.Handler,
 	ioHandler *io.Handler,
 	queueManager *queue.Manager,
+	uiHandler *ui.Handler,
 ) *App {
 	return &App{
 		shares:         shares,
@@ -59,7 +62,12 @@ func NewApp(shares map[string]schema.Share,
 		pathingHandler: pathingHandler,
 		ioHandler:      ioHandler,
 		queueManager:   queueManager,
+		uiHandler:      uiHandler,
 	}
+}
+
+func (app *App) LaunchUI(ctx context.Context) {
+	app.uiHandler.Launch(ctx)
 }
 
 func (app *App) Launch(ctx context.Context) error {
@@ -102,7 +110,33 @@ func main() {
 		slog.Info("Memory consumption peaked at:", "maxAlloc", (memObserver.GetMaxAlloc() / 1024 / 1024)) //nolint:mnd
 	}()
 
-	establishProfilers()
+	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+
+		_ = pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	if *memprofile != "" {
+		defer func() {
+			f, err := os.Create(*memprofile)
+			if err != nil {
+				log.Fatalf("Could not create allocs profile: %v", err)
+			}
+			defer f.Close()
+
+			if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
+				log.Fatalf("Could not write allocs profile: %v", err)
+			}
+		}()
+	}
+
 	establishSignalHandlers(cancel)
 
 	osProvider := &schema.OS{}
@@ -135,13 +169,14 @@ func main() {
 
 	shares := system.GetShares()
 	queueManager := queue.NewManager()
+	uiHandler := ui.NewHandler(queueManager)
 
 	shareAdapters := make(map[string]schema.Share, len(shares))
 	for name, share := range shares {
 		shareAdapters[name] = NewShareAdapter(share)
 	}
 
-	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager)
+	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
 
 	var wg sync.WaitGroup
 
@@ -152,36 +187,14 @@ func main() {
 			ExitCode = 1
 		}
 	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		app.LaunchUI(ctx)
+	}()
+
 	wg.Wait()
-}
-
-func establishProfilers() {
-	flag.Parse()
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-
-		_ = pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
-
-	if *memprofile != "" {
-		defer func() {
-			f, err := os.Create(*memprofile)
-			if err != nil {
-				log.Fatalf("Could not create allocs profile: %v", err)
-			}
-			defer f.Close()
-
-			if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
-				log.Fatalf("Could not write allocs profile: %v", err)
-			}
-		}()
-	}
 }
 
 func establishSignalHandlers(cancel context.CancelFunc) {
