@@ -13,17 +13,16 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
+//nolint:gochecknoglobals
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
-			Background(lipgloss.Color("#7D56F4")).
-			Padding(0, 0)
+			Background(lipgloss.Color("#7D56F4"))
 
 	borderStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#7D56F4")).
-			Padding(0, 0) // Minimal padding for spacing.
+			BorderForeground(lipgloss.Color("#7D56F4"))
 
 	infoStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FAFAFA"))
@@ -95,13 +94,14 @@ func (m TeaModel) Init() tea.Cmd {
 	)
 }
 
+//nolint:mnd
 func tickCmd() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }
 
-//nolint:mnd,funlen
+//nolint:mnd,funlen,ireturn
 func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -212,7 +212,7 @@ func (m TeaModel) View() string {
 	evaluationView := m.formatProgressView("Evaluation", m.evaluationProgress.View(), m.evaluationData)
 	ioView := m.formatProgressView("IO", m.ioProgress.View(), m.ioData)
 
-	progressRow := lipgloss.JoinHorizontal(
+	progressSection := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		borderStyle.Width(m.splitWidthWithBorders).Render(enumerationView),
 		borderStyle.Width(m.splitWidthWithBorders).Render(evaluationView),
@@ -231,7 +231,7 @@ func (m TeaModel) View() string {
 
 	s.WriteString(lipgloss.JoinVertical(
 		lipgloss.Left,
-		progressRow,
+		progressSection,
 		logsSection,
 	))
 
@@ -243,7 +243,7 @@ func (m TeaModel) formatProgressView(title string, progressBar string, progress 
 	var timeLeftMin float64
 
 	if !progress.ETA.IsZero() {
-		timeLeft = progress.ETA.Sub(time.Now())
+		timeLeft = time.Until(progress.ETA)
 		timeLeftMin = float64(timeLeft.Minutes())
 	}
 
@@ -254,22 +254,39 @@ func (m TeaModel) formatProgressView(title string, progressBar string, progress 
 		transferSpeed = fmt.Sprintf("%d %s", int(progress.TransferSpeed), progress.TransferSpeedUnit)
 	}
 
-	details := fmt.Sprintf(
-		"Progress: %.2f%% (%d/%d)\n"+
-			"Items: InProgress=%d, Success=%d, Skipped=%d\n"+
-			"Time: Started=%v, ETA=%v (%.1f%s left)\n"+
-			"Speed: %s\n",
-		progress.ProgressPct,
-		progress.ProcessedItems,
-		progress.TotalItems,
-		progress.InProgressItems,
-		progress.SuccessItems,
-		progress.SkippedItems,
-		progress.StartTime.Format("15:04:05"),
-		progress.ETA.Format("15:04:05"),
-		timeLeftMin, "min",
-		transferSpeed,
-	)
+	var details string
+	if !progress.HasFinished {
+		details = fmt.Sprintf(
+			"Progress: %.2f%% (%d/%d)\n"+
+				"Items: InProgress=%d, Success=%d, Skipped=%d\n"+
+				"Time: Started=%v, ETA=%v (%.1f%s left)\n"+
+				"Speed: %s\n",
+			progress.ProgressPct,
+			progress.ProcessedItems,
+			progress.TotalItems,
+			progress.InProgressItems,
+			progress.SuccessItems,
+			progress.SkippedItems,
+			progress.StartTime.Format("15:04:05"),
+			progress.ETA.Format("15:04:05"),
+			timeLeftMin, "min",
+			transferSpeed,
+		)
+	} else {
+		details = fmt.Sprintf(
+			"Progress: %.2f%% (%d/%d)\n"+
+				"Items: InProgress=%d, Success=%d, Skipped=%d\n"+
+				"Time: Started=%v, Finished=%v\n\n",
+			progress.ProgressPct,
+			progress.ProcessedItems,
+			progress.TotalItems,
+			progress.InProgressItems,
+			progress.SuccessItems,
+			progress.SkippedItems,
+			progress.StartTime.Format("15:04:05"),
+			progress.FinishTime.Format("15:04:05"),
+		)
+	}
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,

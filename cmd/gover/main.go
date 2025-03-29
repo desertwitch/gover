@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -66,8 +66,12 @@ func NewApp(shares map[string]schema.Share,
 	}
 }
 
-func (app *App) LaunchUI(ctx context.Context) {
-	app.uiHandler.Launch(ctx)
+func (app *App) LaunchUI(ctx context.Context) error {
+	if err := app.uiHandler.Launch(ctx); err != nil {
+		return fmt.Errorf("(ui) %w", err)
+	}
+
+	return nil
 }
 
 func (app *App) Launch(ctx context.Context) error {
@@ -86,6 +90,7 @@ func (app *App) Launch(ctx context.Context) error {
 	return nil
 }
 
+//nolint:funlen
 func main() {
 	defer func() {
 		os.Exit(ExitCode)
@@ -115,7 +120,9 @@ func main() {
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Could not create cpu profile", "err", err)
+
+			return
 		}
 		defer f.Close()
 
@@ -127,12 +134,12 @@ func main() {
 		defer func() {
 			f, err := os.Create(*memprofile)
 			if err != nil {
-				log.Fatalf("Could not create allocs profile: %v", err)
+				slog.Error("Could not create allocs profile", "err", err)
 			}
 			defer f.Close()
 
 			if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
-				log.Fatalf("Could not write allocs profile: %v", err)
+				slog.Error("Could not write allocs profile", "err", err)
 			}
 		}()
 	}
@@ -191,7 +198,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app.LaunchUI(ctx)
+		if err := app.LaunchUI(ctx); err != nil {
+			slog.Error("UI failure: falling back to terminal.", "err", err)
+		}
 	}()
 
 	wg.Wait()

@@ -25,6 +25,7 @@ func (h *TeaLogger) SetProgram(p *tea.Program) {
 	h.program = p
 }
 
+//nolint:revive
 func (h *TeaLogger) Handle(ctx context.Context, r slog.Record) error {
 	timeStr := r.Time.Format("15:04:05")
 	levelStr := r.Level.String()
@@ -52,14 +53,17 @@ func (h *TeaLogger) Handle(ctx context.Context, r slog.Record) error {
 	return nil
 }
 
+//nolint:revive
 func (h *TeaLogger) Enabled(ctx context.Context, level slog.Level) bool {
 	return true
 }
 
+//nolint:revive
 func (h *TeaLogger) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return h
 }
 
+//nolint:revive
 func (h *TeaLogger) WithGroup(name string) slog.Handler {
 	return h
 }

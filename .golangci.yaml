@@ -52,3 +52,9 @@ linters-settings:
         # Minimal complexity of if statements to report.
         # Default: 5
         min-complexity: 6
+
+    gomoddirectives:
+        # List of allowed `replace` directives.
+        # Default: []
+        replace-allow-list:
+        - github.com/charmbracelet/bubbletea

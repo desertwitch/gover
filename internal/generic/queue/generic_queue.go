@@ -57,6 +57,11 @@ func (q *GenericQueue[T]) Enqueue(items ...T) {
 	q.Lock()
 	defer q.Unlock()
 
+	if q.hasFinished {
+		q.finishTime = time.Time{}
+		q.hasFinished = false
+	}
+
 	for _, item := range items {
 		delete(q.inProgress, item)
 		q.items = append(q.items, item)
@@ -76,11 +81,6 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 		}
 
 		return zeroVal, false
-	}
-
-	if q.hasFinished {
-		q.finishTime = time.Time{}
-		q.hasFinished = false
 	}
 
 	if !q.hasStarted {

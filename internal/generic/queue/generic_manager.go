@@ -66,6 +66,7 @@ func (m *GenericManager[E, T]) GetQueues() map[string]T {
 	return queues
 }
 
+//nolint:funlen
 func (m *GenericManager[E, T]) Progress() Progress {
 	m.RLock()
 	defer m.RUnlock()
@@ -87,7 +88,9 @@ func (m *GenericManager[E, T]) Progress() Progress {
 				earliestStartTime = qProgress.StartTime
 			}
 			anyStarted = true
-		} else if !qProgress.FinishTime.IsZero() && (latestFinishTime.IsZero() || qProgress.FinishTime.After(latestFinishTime)) {
+		}
+
+		if !qProgress.FinishTime.IsZero() && (latestFinishTime.IsZero() || qProgress.FinishTime.After(latestFinishTime)) {
 			latestFinishTime = qProgress.FinishTime
 		}
 

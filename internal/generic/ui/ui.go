@@ -37,7 +37,7 @@ func (uiHandler *Handler) Launch(ctx context.Context) error {
 
 	// Start the program
 	if _, err := uiHandler.program.Run(); err != nil {
-		return fmt.Errorf("failed to start UI: %w", err)
+		return fmt.Errorf("(ui-tea) %w", err)
 	}
 
 	return nil
