@@ -28,9 +28,14 @@ var (
 			Foreground(lipgloss.Color("#FAFAFA"))
 )
 
-type tickMsg time.Time
-
 type logEntryMsg string
+
+type queueProgressMsg struct {
+	t               time.Time
+	enumerationData queue.Progress
+	evaluationData  queue.Progress
+	ioData          queue.Progress
+}
 
 type TeaModel struct {
 	width  int
@@ -90,14 +95,21 @@ func NewTeaModel(queueManager *queue.Manager, logHandler *TeaLogger) TeaModel {
 func (m TeaModel) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
-		tickCmd(),
+		updateQueueProgress(m.queueManager),
 	)
 }
 
 //nolint:mnd
-func tickCmd() tea.Cmd {
+func updateQueueProgress(q *queue.Manager) tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		return tickMsg(t)
+		queueProgressMsg := queueProgressMsg{
+			t:               t,
+			enumerationData: q.EnumerationManager.Progress(),
+			evaluationData:  q.EvaluationManager.Progress(),
+			ioData:          q.IOManager.Progress(),
+		}
+
+		return queueProgressMsg
 	})
 }
 
@@ -145,10 +157,10 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.ready = true
 
-	case tickMsg:
-		m.enumerationData = m.queueManager.EnumerationManager.Progress()
-		m.evaluationData = m.queueManager.EvaluationManager.Progress()
-		m.ioData = m.queueManager.IOManager.Progress()
+	case queueProgressMsg:
+		m.enumerationData = msg.enumerationData
+		m.evaluationData = msg.evaluationData
+		m.ioData = msg.ioData
 
 		cmds = append(cmds,
 			m.enumerationProgress.SetPercent(float64(m.enumerationData.ProgressPct)/100),
@@ -156,8 +168,8 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ioProgress.SetPercent(float64(m.ioData.ProgressPct)/100),
 		)
 
-		// Queue the next tick.
-		cmds = append(cmds, tickCmd())
+		// Queue the next update.
+		cmds = append(cmds, updateQueueProgress(m.queueManager))
 
 	case logEntryMsg:
 		logMsg := string(msg)
