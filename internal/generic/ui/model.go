@@ -155,6 +155,9 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Viewport height: lower section minus borders and title.
 		viewportHeight := lowerHeight - 3
+		if viewportHeight%2 != 0 {
+			viewportHeight--
+		}
 
 		// Set viewport width to full width minus borders.
 		m.logsViewport.Width = m.fullWidthWithBorders
