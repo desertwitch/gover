@@ -66,8 +66,8 @@ func NewApp(shares map[string]schema.Share,
 	}
 }
 
-func (app *App) LaunchUI(ctx context.Context) error {
-	if err := app.uiHandler.Launch(ctx); err != nil {
+func (app *App) LaunchUI(ctx context.Context, cancel context.CancelFunc) error {
+	if err := app.uiHandler.Launch(ctx, cancel); err != nil {
 		return fmt.Errorf("(ui) %w", err)
 	}
 
@@ -90,18 +90,22 @@ func (app *App) Launch(ctx context.Context) error {
 	return nil
 }
 
-//nolint:funlen
-func main() {
-	defer func() {
-		os.Exit(ExitCode)
-	}()
-
+func setupLogging() {
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stdout, &tint.Options{
 			Level:      slog.LevelDebug,
 			TimeFormat: time.Kitchen,
 		}),
 	))
+}
+
+//nolint:funlen
+func main() {
+	defer func() {
+		os.Exit(ExitCode)
+	}()
+
+	setupLogging()
 
 	slog.Info("Warming up, a good day to move some files!", "version", Version)
 
@@ -198,7 +202,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := app.LaunchUI(ctx); err != nil {
+		defer setupLogging()
+
+		if err := app.LaunchUI(ctx, cancel); err != nil {
 			slog.Error("UI failure: falling back to terminal.", "err", err)
 		}
 	}()

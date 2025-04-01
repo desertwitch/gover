@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ var (
 			Padding(0, 1)
 )
 
-type logEntryMsg string
+type logMsg string
 
 type queueProgressMsg struct {
 	t               time.Time
@@ -45,8 +46,10 @@ type TeaModel struct {
 	width  int
 	height int
 
+	cancel context.CancelFunc
+
 	queueManager *queue.Manager
-	logHandler   *TeaLogger
+	logHandler   *teaLogWriter
 
 	fullWidthWithBorders  int
 	splitWidthWithBorders int
@@ -65,7 +68,7 @@ type TeaModel struct {
 }
 
 //nolint:mnd
-func NewTeaModel(queueManager *queue.Manager, logHandler *TeaLogger) TeaModel {
+func NewTeaModel(queueManager *queue.Manager, logHandler *teaLogWriter, cancel context.CancelFunc) TeaModel {
 	enumerationProgress := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(80),
@@ -92,6 +95,7 @@ func NewTeaModel(queueManager *queue.Manager, logHandler *TeaLogger) TeaModel {
 		ioData:              queue.Progress{},
 		logsViewport:        logsViewport,
 		logs:                make([]string, 0, 100),
+		cancel:              cancel,
 		ready:               false,
 	}
 }
@@ -126,6 +130,8 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
+			m.cancel()
+
 			return m, tea.Quit
 		case "q":
 			return m, tea.Quit
@@ -156,7 +162,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update viewport content with current logs.
 		if len(m.logs) > 0 {
-			m.logsViewport.SetContent(strings.Join(m.logs, "\n"))
+			m.logsViewport.SetContent(strings.Join(m.logs, ""))
 		}
 
 		m.ready = true
@@ -175,7 +181,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Queue the next update.
 		cmds = append(cmds, updateQueueProgress(m.queueManager))
 
-	case logEntryMsg:
+	case logMsg:
 		logMsg := string(msg)
 
 		if len(m.logs) >= 100 {
@@ -184,7 +190,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.logs = append(m.logs, logMsg)
 
-		m.logsViewport.SetContent(strings.Join(m.logs, "\n"))
+		m.logsViewport.SetContent(strings.Join(m.logs, ""))
 		m.logsViewport.GotoBottom()
 
 	case progress.FrameMsg:
@@ -247,7 +253,7 @@ func (m TeaModel) View() string {
 
 	helpSection := helpStyle.
 		Width(m.fullWidthWithBorders).
-		Render("Press Q to exit the GUI...")
+		Render("q: quit gui • ctrl+c: quit program")
 
 	s.WriteString(lipgloss.JoinVertical(
 		lipgloss.Left,

@@ -1,69 +1,70 @@
 package ui
 
 import (
-	"context"
-	"fmt"
-	"log/slog"
 	"sync"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type TeaLogger struct {
-	sync.RWMutex
-	program *tea.Program
+type teaLogWriter struct {
+	program  *tea.Program
+	sendChan chan logMsg
+	mu       sync.RWMutex
 }
 
-func NewLogHandler() *TeaLogger {
-	return &TeaLogger{}
+//nolint:mnd
+func newTeaLogWriter() *teaLogWriter {
+	return &teaLogWriter{
+		sendChan: make(chan logMsg, 1000),
+	}
 }
 
-func (h *TeaLogger) SetProgram(p *tea.Program) {
-	h.Lock()
-	defer h.Unlock()
+func (h *teaLogWriter) processLogs() {
+	h.mu.RLock()
+	program := h.program
+	sendChan := h.sendChan
+	h.mu.RUnlock()
+
+	for msg := range sendChan {
+		program.Send(msg)
+	}
+}
+
+func (h *teaLogWriter) Start() {
+	go h.processLogs()
+}
+
+func (h *teaLogWriter) Stop() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	sendChan := h.sendChan
+	h.sendChan = nil
+	close(sendChan)
+}
+
+func (h *teaLogWriter) SetProgram(p *tea.Program) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	h.program = p
 }
 
-//nolint:revive
-func (h *TeaLogger) Handle(ctx context.Context, r slog.Record) error {
-	timeStr := r.Time.Format("15:04:05")
-	levelStr := r.Level.String()
+func (h *teaLogWriter) Write(p []byte) (int, error) {
+	logStr := string(p)
 
-	var attrs []string
-	r.Attrs(func(a slog.Attr) bool {
-		attrs = append(attrs, fmt.Sprintf("%s=%v", a.Key, a.Value.Any()))
+	h.mu.RLock()
+	program := h.program
+	sendChan := h.sendChan
+	h.mu.RUnlock()
 
-		return true
-	})
-
-	attrStr := ""
-	if len(attrs) > 0 {
-		attrStr = " " + fmt.Sprint(attrs)
+	if program != nil && sendChan != nil {
+		select {
+		case sendChan <- logMsg(logStr):
+		case <-time.After(time.Second):
+		}
 	}
 
-	logMsg := fmt.Sprintf("[%s] [%s] %s%s", timeStr, levelStr, r.Message, attrStr)
-
-	h.RLock()
-	if h.program != nil {
-		h.program.Send(logEntryMsg(logMsg))
-	}
-	h.RUnlock()
-
-	return nil
-}
-
-//nolint:revive
-func (h *TeaLogger) Enabled(ctx context.Context, level slog.Level) bool {
-	return true
-}
-
-//nolint:revive
-func (h *TeaLogger) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
-}
-
-//nolint:revive
-func (h *TeaLogger) WithGroup(name string) slog.Handler {
-	return h
+	return len(p), nil
 }
