@@ -26,6 +26,10 @@ var (
 
 	infoStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FAFAFA"))
+
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#626262")).
+			Padding(0, 1)
 )
 
 type logEntryMsg string
@@ -215,7 +219,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m TeaModel) View() string {
 	if !m.ready {
-		return "Initializing..."
+		return "Loading the GUI..."
 	}
 
 	var s strings.Builder
@@ -241,10 +245,15 @@ func (m TeaModel) View() string {
 			),
 		)
 
+	helpSection := helpStyle.
+		Width(m.fullWidthWithBorders).
+		Render("Press Q to exit the GUI...")
+
 	s.WriteString(lipgloss.JoinVertical(
 		lipgloss.Left,
 		progressSection,
 		logsSection,
+		helpSection,
 	))
 
 	return s.String()
