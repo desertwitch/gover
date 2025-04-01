@@ -155,9 +155,6 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Viewport height: lower section minus borders and title.
 		viewportHeight := lowerHeight - 3
-		if viewportHeight%2 != 0 {
-			viewportHeight--
-		}
 
 		// Set viewport width to full width minus borders.
 		m.logsViewport.Width = m.fullWidthWithBorders
@@ -165,7 +162,12 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update viewport content with current logs.
 		if len(m.logs) > 0 {
-			m.logsViewport.SetContent(strings.Join(m.logs, ""))
+			logs := lipgloss.NewStyle().
+				Width(m.logsViewport.Width).
+				Render(strings.TrimSuffix(strings.Join(m.logs, ""), "\n"))
+
+			m.logsViewport.SetContent(logs)
+			m.logsViewport.GotoBottom()
 		}
 
 		m.ready = true
@@ -193,7 +195,11 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.logs = append(m.logs, logMsg)
 
-		m.logsViewport.SetContent(strings.Join(m.logs, ""))
+		logs := lipgloss.NewStyle().
+			Width(m.logsViewport.Width).
+			Render(strings.TrimSuffix(strings.Join(m.logs, ""), "\n"))
+
+		m.logsViewport.SetContent(logs)
 		m.logsViewport.GotoBottom()
 
 	case progress.FrameMsg:
