@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,6 +16,11 @@ type Handler struct {
 	queueManager *queue.Manager
 	logHandler   *teaLogWriter
 	program      *tea.Program
+
+	modelReady atomic.Bool
+
+	Ready  atomic.Bool
+	Failed atomic.Bool
 }
 
 func NewHandler(queueManager *queue.Manager) *Handler {
@@ -24,33 +30,49 @@ func NewHandler(queueManager *queue.Manager) *Handler {
 	}
 }
 
-func (uiHandler *Handler) Launch(ctx context.Context, cancel context.CancelFunc) error {
-	// Create a new tea program
-	model := NewTeaModel(uiHandler.queueManager, uiHandler.logHandler, cancel)
-
-	uiHandler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
-
-	// Redirect logs to UI
-	uiHandler.logHandler.SetProgram(uiHandler.program)
-
-	uiHandler.logHandler.Start()
-	defer uiHandler.logHandler.Stop()
-
+func (uiHandler *Handler) setupLogging() {
 	slog.SetDefault(slog.New(
 		tint.NewHandler(uiHandler.logHandler, &tint.Options{
 			Level:      slog.LevelDebug,
 			TimeFormat: time.Kitchen,
 		}),
 	))
+}
 
-	// Start the program
+func (uiHandler *Handler) Launch(ctx context.Context, cancel context.CancelFunc) error {
+	model := NewTeaModel(uiHandler, uiHandler.queueManager, uiHandler.logHandler, cancel)
+	uiHandler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
+
+	uiHandler.logHandler.SetProgram(uiHandler.program)
+	uiHandler.logHandler.Init()
+	defer uiHandler.logHandler.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			if uiHandler.Failed.Load() {
+				return
+			}
+
+			if uiHandler.modelReady.Load() {
+				uiHandler.setupLogging()
+				uiHandler.Ready.Store(true)
+
+				return
+			}
+		}
+	}()
+
 	if _, err := uiHandler.program.Run(); err != nil {
+		uiHandler.Failed.Store(true)
+
 		return fmt.Errorf("(ui-tea) %w", err)
 	}
 
 	return nil
-}
-
-func (uiHandler *Handler) Stop() {
-	uiHandler.program.Kill()
 }

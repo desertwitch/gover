@@ -48,6 +48,7 @@ type TeaModel struct {
 
 	cancel context.CancelFunc
 
+	uiHandler    *Handler
 	queueManager *queue.Manager
 	logHandler   *teaLogWriter
 
@@ -68,7 +69,7 @@ type TeaModel struct {
 }
 
 //nolint:mnd
-func NewTeaModel(queueManager *queue.Manager, logHandler *teaLogWriter, cancel context.CancelFunc) TeaModel {
+func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, logHandler *teaLogWriter, cancel context.CancelFunc) TeaModel {
 	enumerationProgress := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(80),
@@ -85,6 +86,7 @@ func NewTeaModel(queueManager *queue.Manager, logHandler *teaLogWriter, cancel c
 	logsViewport := viewport.New(80, 20)
 
 	return TeaModel{
+		uiHandler:           uiHandler,
 		queueManager:        queueManager,
 		logHandler:          logHandler,
 		enumerationProgress: enumerationProgress,
@@ -170,7 +172,10 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.logsViewport.GotoBottom()
 		}
 
-		m.ready = true
+		if !m.ready {
+			m.ready = true
+			m.uiHandler.modelReady.Store(true)
+		}
 
 	case queueProgressMsg:
 		m.enumerationData = msg.enumerationData

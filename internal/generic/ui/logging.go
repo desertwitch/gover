@@ -8,9 +8,9 @@ import (
 )
 
 type teaLogWriter struct {
+	sync.RWMutex
 	program  *tea.Program
 	sendChan chan logMsg
-	mu       sync.RWMutex
 }
 
 //nolint:mnd
@@ -20,44 +20,44 @@ func newTeaLogWriter() *teaLogWriter {
 	}
 }
 
-func (h *teaLogWriter) processLogs() {
-	h.mu.RLock()
-	program := h.program
-	sendChan := h.sendChan
-	h.mu.RUnlock()
+func (wr *teaLogWriter) processLogs() {
+	wr.RLock()
+	program := wr.program
+	sendChan := wr.sendChan
+	wr.RUnlock()
 
 	for msg := range sendChan {
 		program.Send(msg)
 	}
 }
 
-func (h *teaLogWriter) Start() {
-	go h.processLogs()
+func (wr *teaLogWriter) Init() {
+	go wr.processLogs()
 }
 
-func (h *teaLogWriter) Stop() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (wr *teaLogWriter) Stop() {
+	wr.Lock()
+	defer wr.Unlock()
 
-	sendChan := h.sendChan
-	h.sendChan = nil
+	sendChan := wr.sendChan
+	wr.sendChan = nil
 	close(sendChan)
 }
 
-func (h *teaLogWriter) SetProgram(p *tea.Program) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (wr *teaLogWriter) SetProgram(p *tea.Program) {
+	wr.Lock()
+	defer wr.Unlock()
 
-	h.program = p
+	wr.program = p
 }
 
-func (h *teaLogWriter) Write(p []byte) (int, error) {
+func (wr *teaLogWriter) Write(p []byte) (int, error) {
 	logStr := string(p)
 
-	h.mu.RLock()
-	program := h.program
-	sendChan := h.sendChan
-	h.mu.RUnlock()
+	wr.RLock()
+	program := wr.program
+	sendChan := wr.sendChan
+	wr.RUnlock()
 
 	if program != nil && sendChan != nil {
 		select {

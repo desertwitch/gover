@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/pprof"
 	"sync"
 	"syscall"
 	"time"
@@ -31,64 +29,13 @@ const (
 
 //nolint:gochecknoglobals
 var (
-	ExitCode   = 0
-	Version    string
+	ExitCode = 0
+	Version  string
+
+	uiEnabled  = flag.Bool("ui", true, "enable the UI")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
-
-type App struct {
-	shares         map[string]schema.Share
-	fsHandler      *filesystem.Handler
-	allocHandler   *allocation.Handler
-	pathingHandler *pathing.Handler
-	ioHandler      *io.Handler
-	queueManager   *queue.Manager
-	uiHandler      *ui.Handler
-}
-
-func NewApp(shares map[string]schema.Share,
-	fsHandler *filesystem.Handler,
-	allocHandler *allocation.Handler,
-	pathingHandler *pathing.Handler,
-	ioHandler *io.Handler,
-	queueManager *queue.Manager,
-	uiHandler *ui.Handler,
-) *App {
-	return &App{
-		shares:         shares,
-		fsHandler:      fsHandler,
-		allocHandler:   allocHandler,
-		pathingHandler: pathingHandler,
-		ioHandler:      ioHandler,
-		queueManager:   queueManager,
-		uiHandler:      uiHandler,
-	}
-}
-
-func (app *App) LaunchUI(ctx context.Context, cancel context.CancelFunc) error {
-	if err := app.uiHandler.Launch(ctx, cancel); err != nil {
-		return fmt.Errorf("(ui) %w", err)
-	}
-
-	return nil
-}
-
-func (app *App) Launch(ctx context.Context) error {
-	if err := app.Enumerate(ctx); err != nil {
-		return err
-	}
-
-	if err := app.Evaluate(ctx); err != nil {
-		return err
-	}
-
-	if err := app.IO(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func setupLogging() {
 	slog.SetDefault(slog.New(
@@ -99,56 +46,60 @@ func setupLogging() {
 	))
 }
 
-//nolint:funlen
+func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
+	defer wg.Done()
+
+	if app.uiHandler != nil {
+		slog.Info("Waiting for UI...")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			if app.uiHandler.Ready.Load() || app.uiHandler.Failed.Load() {
+				break
+			}
+		}
+	}
+
+	if err := app.Launch(ctx); err != nil {
+		ExitCode = 1
+	}
+}
+
+func startUI(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, app *App) {
+	defer wg.Done()
+
+	if app.uiHandler != nil {
+		defer setupLogging()
+
+		if err := app.LaunchUI(ctx, cancel); err != nil {
+			slog.Error("UI failure: falling back to terminal.", "err", err)
+		}
+	}
+}
+
 func main() {
 	defer func() {
 		os.Exit(ExitCode)
 	}()
 
-	setupLogging()
-
-	slog.Info("Warming up, a good day to move some files!", "version", Version)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	memObserver := NewMemoryObserver(ctx)
+	flag.Parse()
+	setupLogging()
+	establishSignalHandlers(cancel)
+
+	memObserver := newMemoryObserver(ctx)
 	defer memObserver.Stop()
 
-	defer func() {
-		slog.Info("Memory consumption peaked at:", "maxAlloc", (memObserver.GetMaxAlloc() / 1024 / 1024)) //nolint:mnd
-	}()
+	cpuProfiler := newCPUProfiler(ctx, cpuprofile)
+	defer cpuProfiler.Stop()
 
-	flag.Parse()
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			slog.Error("Could not create cpu profile", "err", err)
-
-			return
-		}
-		defer f.Close()
-
-		_ = pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
-
-	if *memprofile != "" {
-		defer func() {
-			f, err := os.Create(*memprofile)
-			if err != nil {
-				slog.Error("Could not create allocs profile", "err", err)
-			}
-			defer f.Close()
-
-			if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
-				slog.Error("Could not write allocs profile", "err", err)
-			}
-		}()
-	}
-
-	establishSignalHandlers(cancel)
+	allocProfiler := newAllocProfiler(ctx, memprofile)
+	defer allocProfiler.Stop()
 
 	osProvider := &schema.OS{}
 	unixProvider := &schema.Unix{}
@@ -180,34 +131,25 @@ func main() {
 
 	shares := system.GetShares()
 	queueManager := queue.NewManager()
-	uiHandler := ui.NewHandler(queueManager)
+
+	var uiHandler *ui.Handler
+	if uiEnabled != nil && *uiEnabled {
+		uiHandler = ui.NewHandler(queueManager)
+	}
 
 	shareAdapters := make(map[string]schema.Share, len(shares))
 	for name, share := range shares {
 		shareAdapters[name] = NewShareAdapter(share)
 	}
 
+	var wg sync.WaitGroup
 	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
 
-	var wg sync.WaitGroup
+	wg.Add(1)
+	go startUI(ctx, cancel, &wg, app)
 
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := app.Launch(ctx); err != nil {
-			ExitCode = 1
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer setupLogging()
-
-		if err := app.LaunchUI(ctx, cancel); err != nil {
-			slog.Error("UI failure: falling back to terminal.", "err", err)
-		}
-	}()
+	go startApp(ctx, &wg, app)
 
 	wg.Wait()
 }
