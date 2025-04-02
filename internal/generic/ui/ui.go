@@ -14,8 +14,8 @@ import (
 
 type Handler struct {
 	queueManager *queue.Manager
-	logHandler   *teaLogWriter
 	program      *tea.Program
+	logHandler   *teaLogWriter
 
 	modelReady atomic.Bool
 
@@ -26,7 +26,6 @@ type Handler struct {
 func NewHandler(queueManager *queue.Manager) *Handler {
 	return &Handler{
 		queueManager: queueManager,
-		logHandler:   newTeaLogWriter(),
 	}
 }
 
@@ -40,11 +39,10 @@ func (uiHandler *Handler) setupLogging() {
 }
 
 func (uiHandler *Handler) Launch(ctx context.Context, cancel context.CancelFunc) error {
-	model := NewTeaModel(uiHandler, uiHandler.queueManager, uiHandler.logHandler, cancel)
+	model := newTeaModel(uiHandler, uiHandler.queueManager, cancel)
 	uiHandler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
 
-	uiHandler.logHandler.SetProgram(uiHandler.program)
-	uiHandler.logHandler.Init()
+	uiHandler.logHandler = newTeaLogWriter(uiHandler.program)
 	defer uiHandler.logHandler.Stop()
 
 	go func() {

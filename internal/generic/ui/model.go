@@ -42,7 +42,7 @@ type queueProgressMsg struct {
 	ioData          queue.Progress
 }
 
-type TeaModel struct {
+type teaModel struct {
 	width  int
 	height int
 
@@ -50,7 +50,6 @@ type TeaModel struct {
 
 	uiHandler    *Handler
 	queueManager *queue.Manager
-	logHandler   *teaLogWriter
 
 	fullWidthWithBorders  int
 	splitWidthWithBorders int
@@ -69,7 +68,7 @@ type TeaModel struct {
 }
 
 //nolint:mnd
-func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, logHandler *teaLogWriter, cancel context.CancelFunc) TeaModel {
+func newTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context.CancelFunc) teaModel {
 	enumerationProgress := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(80),
@@ -85,10 +84,9 @@ func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, logHandler *te
 
 	logsViewport := viewport.New(80, 20)
 
-	return TeaModel{
+	return teaModel{
 		uiHandler:           uiHandler,
 		queueManager:        queueManager,
-		logHandler:          logHandler,
 		enumerationProgress: enumerationProgress,
 		evaluationProgress:  evaluationProgress,
 		ioProgress:          ioProgress,
@@ -102,7 +100,7 @@ func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, logHandler *te
 	}
 }
 
-func (m TeaModel) Init() tea.Cmd {
+func (m teaModel) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
 		updateQueueProgress(m.queueManager),
@@ -124,7 +122,7 @@ func updateQueueProgress(q *queue.Manager) tea.Cmd {
 }
 
 //nolint:mnd,funlen,ireturn
-func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -237,7 +235,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m TeaModel) View() string {
+func (m teaModel) View() string {
 	if !m.ready {
 		return "Loading the GUI..."
 	}
@@ -279,7 +277,7 @@ func (m TeaModel) View() string {
 	return s.String()
 }
 
-func (m TeaModel) formatProgressView(title string, progressBar string, progress queue.Progress) string {
+func (m teaModel) formatProgressView(title string, progressBar string, progress queue.Progress) string {
 	var timeLeft time.Duration
 	var timeLeftMin float64
 
