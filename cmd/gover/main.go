@@ -46,6 +46,34 @@ func setupLogging() {
 	))
 }
 
+func setupSignalHandlers(cancel context.CancelFunc) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	sigChan2 := make(chan os.Signal, 1)
+	signal.Notify(sigChan2, syscall.SIGUSR1)
+	go func() {
+		for range sigChan2 {
+			buf := make([]byte, stackTraceBufMax)
+			stacklen := runtime.Stack(buf, true)
+			os.Stderr.Write(buf[:stacklen])
+		}
+	}()
+
+	sigChan3 := make(chan os.Signal, 1)
+	signal.Notify(sigChan3, syscall.SIGUSR2)
+	go func() {
+		for range sigChan3 {
+			runtime.GC()
+		}
+	}()
+}
+
 func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
 	defer wg.Done()
 
@@ -90,7 +118,7 @@ func main() {
 
 	flag.Parse()
 	setupLogging()
-	establishSignalHandlers(cancel)
+	setupSignalHandlers(cancel)
 
 	memObserver := newMemoryObserver(ctx)
 	defer memObserver.Stop()
@@ -152,32 +180,4 @@ func main() {
 	go startApp(ctx, &wg, app)
 
 	wg.Wait()
-}
-
-func establishSignalHandlers(cancel context.CancelFunc) {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-
-	go func() {
-		<-sigChan
-		cancel()
-	}()
-
-	sigChan2 := make(chan os.Signal, 1)
-	signal.Notify(sigChan2, syscall.SIGUSR1)
-	go func() {
-		for range sigChan2 {
-			buf := make([]byte, stackTraceBufMax)
-			stacklen := runtime.Stack(buf, true)
-			os.Stderr.Write(buf[:stacklen])
-		}
-	}()
-
-	sigChan3 := make(chan os.Signal, 1)
-	signal.Notify(sigChan3, syscall.SIGUSR2)
-	go func() {
-		for range sigChan3 {
-			runtime.GC()
-		}
-	}()
 }
