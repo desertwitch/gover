@@ -4,15 +4,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type teaLogWriter struct {
+type TeaLogWriter struct {
 	program  *tea.Program
 	doneChan chan struct{}
 	logChan  chan logMsg
 }
 
 //nolint:mnd
-func newTeaLogWriter(program *tea.Program) *teaLogWriter {
-	wr := &teaLogWriter{
+func NewTeaLogWriter(program *tea.Program) *TeaLogWriter {
+	wr := &TeaLogWriter{
 		program:  program,
 		doneChan: make(chan struct{}),
 		logChan:  make(chan logMsg, 1000),
@@ -23,11 +23,11 @@ func newTeaLogWriter(program *tea.Program) *teaLogWriter {
 	return wr
 }
 
-func (wr *teaLogWriter) Stop() {
+func (wr *TeaLogWriter) Stop() {
 	close(wr.doneChan)
 }
 
-func (wr *teaLogWriter) processLogs() {
+func (wr *TeaLogWriter) processLogs() {
 	for {
 		select {
 		case <-wr.doneChan:
@@ -38,7 +38,7 @@ func (wr *teaLogWriter) processLogs() {
 	}
 }
 
-func (wr *teaLogWriter) Write(p []byte) (int, error) {
+func (wr *TeaLogWriter) Write(p []byte) (int, error) {
 	logStr := string(p)
 
 	select {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log/slog"
 	"os"
@@ -32,18 +33,43 @@ var (
 	ExitCode = 0
 	Version  string
 
+	slogMan = newSlogManager()
+
 	uiEnabled  = flag.Bool("ui", true, "enable the UI")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
 
-func setupLogging() {
-	slog.SetDefault(slog.New(
-		tint.NewHandler(os.Stdout, &tint.Options{
-			Level:      slog.LevelDebug,
-			TimeFormat: time.Kitchen,
-		}),
-	))
+func termLogging(enabled bool) {
+	if enabled {
+		if _, ok := slogMan.GetHandler("term"); !ok {
+			slogMan.AddHandler("term",
+				tint.NewHandler(os.Stdout,
+					&tint.Options{
+						Level:      slog.LevelDebug,
+						TimeFormat: time.Kitchen,
+					}),
+			)
+		}
+	} else {
+		slogMan.RemoveHandler("term")
+	}
+}
+
+func uiLogging(enabled bool, writer *ui.TeaLogWriter) {
+	if enabled {
+		if _, ok := slogMan.GetHandler("ui"); !ok {
+			slogMan.AddHandler("ui",
+				tint.NewHandler(writer,
+					&tint.Options{
+						Level:      slog.LevelDebug,
+						TimeFormat: time.Kitchen,
+					}),
+			)
+		}
+	} else {
+		slogMan.RemoveHandler("ui")
+	}
 }
 
 func setupSignalHandlers(cancel context.CancelFunc) {
@@ -96,15 +122,45 @@ func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
 	}
 }
 
-func startUI(wg *sync.WaitGroup, app *App) {
+func startUI(ctx context.Context, wg *sync.WaitGroup, app *App) {
 	defer wg.Done()
 
 	if app.uiHandler != nil {
-		defer setupLogging()
+		var err error
 
-		if err := app.LaunchUI(); err != nil {
-			slog.Error("UI failure: falling back to terminal.", "err", err)
-		}
+		defer func() {
+			uiLogging(false, nil)
+			termLogging(true)
+
+			if err != nil && !errors.Is(err, context.Canceled) {
+				slog.Error("UI failure, falling back to regular terminal.",
+					"err", err,
+				)
+			}
+		}()
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
+				if app.uiHandler.Failed.Load() {
+					return
+				}
+
+				if app.uiHandler.Ready.Load() {
+					termLogging(false)
+					uiLogging(true, app.uiHandler.LogWriter)
+
+					return
+				}
+			}
+		}()
+
+		err = app.LaunchUI()
 	}
 }
 
@@ -113,11 +169,13 @@ func main() {
 		os.Exit(ExitCode)
 	}()
 
+	slog.SetDefault(slog.New(slogMan))
+	termLogging(true)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	flag.Parse()
-	setupLogging()
 	setupSignalHandlers(cancel)
 
 	memObserver := newMemoryObserver(ctx)
@@ -174,7 +232,7 @@ func main() {
 	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
 
 	wg.Add(1)
-	go startUI(&wg, app)
+	go startUI(ctx, &wg, app)
 
 	wg.Add(1)
 	go startApp(ctx, &wg, app)

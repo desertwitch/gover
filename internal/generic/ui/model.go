@@ -172,7 +172,7 @@ func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if !m.ready {
 			m.ready = true
-			m.uiHandler.modelReady.Store(true)
+			m.uiHandler.Ready.Store(true)
 		}
 
 	case queueProgressMsg:
