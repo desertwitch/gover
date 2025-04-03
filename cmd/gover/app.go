@@ -58,8 +58,8 @@ func (app *App) Launch(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) LaunchUI(ctx context.Context, cancel context.CancelFunc) error {
-	if err := app.uiHandler.Launch(ctx, cancel); err != nil {
+func (app *App) LaunchUI() error {
+	if err := app.uiHandler.Launch(); err != nil {
 		return fmt.Errorf("(app-ui) %w", err)
 	}
 

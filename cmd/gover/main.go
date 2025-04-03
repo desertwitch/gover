@@ -96,13 +96,13 @@ func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
 	}
 }
 
-func startUI(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, app *App) {
+func startUI(wg *sync.WaitGroup, app *App) {
 	defer wg.Done()
 
 	if app.uiHandler != nil {
 		defer setupLogging()
 
-		if err := app.LaunchUI(ctx, cancel); err != nil {
+		if err := app.LaunchUI(); err != nil {
 			slog.Error("UI failure: falling back to terminal.", "err", err)
 		}
 	}
@@ -162,7 +162,7 @@ func main() {
 
 	var uiHandler *ui.Handler
 	if uiEnabled != nil && *uiEnabled {
-		uiHandler = ui.NewHandler(queueManager)
+		uiHandler = ui.NewHandler(ctx, cancel, queueManager)
 	}
 
 	shareAdapters := make(map[string]schema.Share, len(shares))
@@ -174,7 +174,7 @@ func main() {
 	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
 
 	wg.Add(1)
-	go startUI(ctx, cancel, &wg, app)
+	go startUI(&wg, app)
 
 	wg.Add(1)
 	go startApp(ctx, &wg, app)

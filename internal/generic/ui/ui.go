@@ -12,21 +12,30 @@ import (
 	"github.com/lmittmann/tint"
 )
 
+//nolint:containedctx
 type Handler struct {
 	queueManager *queue.Manager
 	program      *tea.Program
 	logHandler   *teaLogWriter
 
+	ctx        context.Context
 	modelReady atomic.Bool
 
 	Ready  atomic.Bool
 	Failed atomic.Bool
 }
 
-func NewHandler(queueManager *queue.Manager) *Handler {
-	return &Handler{
+func NewHandler(ctx context.Context, cancel context.CancelFunc, queueManager *queue.Manager) *Handler {
+	handler := &Handler{
 		queueManager: queueManager,
+		ctx:          ctx,
 	}
+
+	model := newTeaModel(handler, queueManager, cancel)
+	handler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
+	handler.logHandler = newTeaLogWriter(handler.program)
+
+	return handler
 }
 
 func (uiHandler *Handler) setupLogging() {
@@ -38,17 +47,13 @@ func (uiHandler *Handler) setupLogging() {
 	))
 }
 
-func (uiHandler *Handler) Launch(ctx context.Context, cancel context.CancelFunc) error {
-	model := newTeaModel(uiHandler, uiHandler.queueManager, cancel)
-	uiHandler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
-
-	uiHandler.logHandler = newTeaLogWriter(uiHandler.program)
+func (uiHandler *Handler) Launch() error {
 	defer uiHandler.logHandler.Stop()
 
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-uiHandler.ctx.Done():
 				return
 			default:
 			}
@@ -69,7 +74,7 @@ func (uiHandler *Handler) Launch(ctx context.Context, cancel context.CancelFunc)
 	if _, err := uiHandler.program.Run(); err != nil {
 		uiHandler.Failed.Store(true)
 
-		return fmt.Errorf("(ui-tea) %w", err)
+		return fmt.Errorf("(ui) %w", err)
 	}
 
 	return nil
