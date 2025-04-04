@@ -6,9 +6,14 @@ import (
 )
 
 const (
+	// AllocHighWater is the configuration key for the high-water allocation method.
 	AllocHighWater = "highwater"
-	AllocMostFree  = "mostfree"
-	AllocFillUp    = "fillup"
+
+	// AllocMostFree is the configuration key for the most-free allocation method.
+	AllocMostFree = "mostfree"
+
+	// AllocFillUp is the configuration key for the fill-up allocation method.
+	AllocFillUp = "fillup"
 )
 
 // genericConfigProvider defines methods for reading generic Unix-
