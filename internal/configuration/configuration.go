@@ -24,7 +24,6 @@ type genericConfigProvider interface {
 
 // Handler is the principal implementation for reading configuration files.
 type Handler struct {
-	// An implementation of [genericConfigProvider].
 	genericHandler genericConfigProvider
 }
 

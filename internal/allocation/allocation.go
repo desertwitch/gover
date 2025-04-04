@@ -57,6 +57,9 @@ func NewHandler(fsHandler fsProvider) *Handler {
 
 // AllocateArrayDestination allocates a [schema.Moveable] and its subelements
 // to a [schema.Share]'s included disks (which are typically part of an array).
+//
+// It is the principal method used allocating given [schema.Moveable], where the
+// destination field has not yet been set, to target [schema.Disk] (of an array).
 func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	dest, err := a.allocateArrayDestination(m)
 	if err != nil {
