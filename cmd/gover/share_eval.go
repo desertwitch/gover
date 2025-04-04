@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"runtime"
 
-	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/schema"
-	"github.com/desertwitch/gover/internal/generic/validation"
+	"github.com/desertwitch/gover/internal/queue"
+	"github.com/desertwitch/gover/internal/schema"
+	"github.com/desertwitch/gover/internal/validation"
 )
 
 func (app *App) Evaluate(ctx context.Context) error {

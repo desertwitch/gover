@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/desertwitch/gover/internal/generic/queue"
+	"github.com/desertwitch/gover/internal/queue"
 )
 
 func (app *App) IO(ctx context.Context) error {

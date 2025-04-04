@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/desertwitch/gover/internal/generic/schema"
+	"github.com/desertwitch/gover/internal/schema"
 	"github.com/desertwitch/gover/internal/unraid"
 )
 

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/desertwitch/gover/internal/generic/allocation"
-	"github.com/desertwitch/gover/internal/generic/filesystem"
-	"github.com/desertwitch/gover/internal/generic/io"
-	"github.com/desertwitch/gover/internal/generic/pathing"
-	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/schema"
-	"github.com/desertwitch/gover/internal/generic/ui"
+	"github.com/desertwitch/gover/internal/allocation"
+	"github.com/desertwitch/gover/internal/filesystem"
+	"github.com/desertwitch/gover/internal/io"
+	"github.com/desertwitch/gover/internal/pathing"
+	"github.com/desertwitch/gover/internal/queue"
+	"github.com/desertwitch/gover/internal/schema"
+	"github.com/desertwitch/gover/internal/ui"
 )
 
 type App struct {

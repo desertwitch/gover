@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"runtime"
 
-	"github.com/desertwitch/gover/internal/generic/queue"
-	"github.com/desertwitch/gover/internal/generic/schema"
+	"github.com/desertwitch/gover/internal/queue"
+	"github.com/desertwitch/gover/internal/schema"
 )
 
 func (app *App) Enumerate(ctx context.Context) error {
