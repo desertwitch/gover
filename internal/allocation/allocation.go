@@ -11,25 +11,42 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// fsProvider provides external filesystem related methods to the allocation services.
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
 }
 
+// allocInfo holds information about an allocated [schema.Moveable].
+// It is meant to be passed by value.
 type allocInfo struct {
-	sourcePath    string
-	sourceBase    string
+	// The full source path to the respective [schema.Moveable].
+	sourcePath string
+
+	// The base path of the source filesystem (e.g. /mnt/disk4).
+	sourceBase string
+
+	// The target [schema.Disk] the [schema.Moveable] has been allocated to.
 	allocatedDisk schema.Disk
 }
 
+// Handler is the principal implementation for the allocation service.
+// It is safe for concurrent use on unique, non-concurrent [schema.Moveable].
 type Handler struct {
 	sync.RWMutex
-	fsHandler             fsProvider
-	alreadyAllocated      map[*schema.Moveable]allocInfo
-	alreadyAllocatedSpace map[string]uint64
+
+	// An implementation of [fsProvider] for filesystem-related methods.
+	fsHandler fsProvider
+
+	// A map of [schema.Moveable] pointers with information about their allocation.
+	alreadyAllocated map[*schema.Moveable]allocInfo
+
+	// The total space that will be taken on a target [schema.Disk].
+	alreadyAllocatedSpace map[string]uint64 // map[diskName]uint64
 }
 
+// NewHandler returns a pointer to a new allocation handler.
 func NewHandler(fsHandler fsProvider) *Handler {
 	return &Handler{
 		fsHandler:             fsHandler,
@@ -38,6 +55,8 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
+// AllocateArrayDestination allocates a [schema.Moveable] to a [schema.Share]'s
+// included disks (which are typically part of an array).
 func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	dest, err := a.allocateArrayDestination(m)
 	if err != nil {
@@ -79,6 +98,9 @@ func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	return true
 }
 
+// allocateArrayDestination provides the actual allocation logic for allocating
+// a [schema.Moveable] to a [schema.Share]'s included disks (typically part of an array).
+// For choice of allocation methods, the [schema.Share]'s configuration fields are evaluated.
 func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) { //nolint:ireturn
 	includedDisks := m.Share.GetIncludedDisks()
 
