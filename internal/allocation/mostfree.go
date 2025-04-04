@@ -8,6 +8,8 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// allocateMostFree provides the allocation logic for the most-free allocation method.
+// It chooses the [schema.Disk] that currently has the most free available disk space.
 func (a *Handler) allocateMostFree(m *schema.Moveable, includedDisks map[string]schema.Disk) (schema.Disk, error) { //nolint:ireturn
 	diskStats := make(map[string]filesystem.DiskStats)
 	disks := []schema.Disk{}

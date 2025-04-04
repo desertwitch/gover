@@ -27,7 +27,7 @@ func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]schema.Disk
 }
 
 // getAllocatedSpace is a thread-safe method to retrieve the already allocated
-// space for a [schema.Disk].
+// space for a specific [schema.Disk].
 func (a *Handler) getAllocatedSpace(disk schema.Disk) uint64 {
 	a.RLock()
 	defer a.RUnlock()
@@ -36,7 +36,7 @@ func (a *Handler) getAllocatedSpace(disk schema.Disk) uint64 {
 }
 
 // addAllocated is a thread-safe method to add [allocInfo] for a specific
-// [schema.Moveable] to the [Handler] map of total allocated [schema.Moveable].
+// [schema.Moveable] to the [Handler] map of total [schema.Moveable] allocations.
 func (a *Handler) addAllocated(m *schema.Moveable, dst schema.Disk) {
 	a.Lock()
 	defer a.Unlock()

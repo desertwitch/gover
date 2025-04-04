@@ -12,6 +12,9 @@ const (
 	highWaterDivisor = 2
 )
 
+// allocateHighWater provides the allocation logic for the high-water allocation method.
+// It selects the lowest-numbered [schema.Disk] with free space above a dynamic threshold
+// that starts at half the largest disk's capacity and halves when no suitable disk is found.
 func (a *Handler) allocateHighWater(m *schema.Moveable, includedDisks map[string]schema.Disk) (schema.Disk, error) { //nolint:ireturn
 	diskStats := make(map[string]filesystem.DiskStats)
 	disks := []schema.Disk{}

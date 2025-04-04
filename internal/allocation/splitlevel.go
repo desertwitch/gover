@@ -12,7 +12,10 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-//nolint:nestif
+// allocateDisksBySplitLevel provides the allocation logic for the split-level allocation method.
+// It chooses a suitable [schema.Disk] if the source path exceeds a pre-defined split-level threshold
+// and is already existing on a [schema.Disk] at a certain split-level. A best-match mechanism considers
+// the main [schema.Moveable] and also its subelements, picking the deepest matching available split-path.
 func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]schema.Disk, error) {
 	matches := make(map[int]map[string]schema.Disk)
 	splitExceedLvl := false
@@ -38,7 +41,7 @@ func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]sche
 		}
 	}
 
-	if len(m.Hardlinks) > 0 {
+	if len(m.Hardlinks) > 0 { //nolint:nestif
 		for _, s := range m.Hardlinks {
 			subMatches, subLevel, err := a.findDisksBySplitLevel(s)
 			if err != nil {
@@ -85,6 +88,11 @@ func (a *Handler) allocateDisksBySplitLevel(m *schema.Moveable) (map[string]sche
 	return nil, ErrNotAllocatable
 }
 
+// findDisksBySplitLevel provides the allocation logic for allocating a single
+// [schema.Moveable] according to a configured split-level threshold, if possible.
+// It returns a slice of [schema.Disk] that will contain all disks found at the deepest
+// possible split-level and also an integer of what that split-level was, for later sorting.
+// Both all physically existing paths and paths pre-allocated by the [Handler] are considered.
 func (a *Handler) findDisksBySplitLevel(m *schema.Moveable) ([]schema.Disk, int, error) {
 	var foundDisks []schema.Disk
 

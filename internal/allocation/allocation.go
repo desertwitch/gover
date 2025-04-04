@@ -11,7 +11,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// fsProvider provides external filesystem related methods to the allocation services.
+// fsProvider defines external filesystem related methods that are needed for allocation.
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error)
@@ -31,7 +31,7 @@ type allocInfo struct {
 	allocatedDisk schema.Disk
 }
 
-// Handler is the principal implementation for the allocation service.
+// Handler is the principal implementation for the allocation services.
 // It is safe for concurrent use on unique, non-concurrent [schema.Moveable].
 type Handler struct {
 	sync.RWMutex
@@ -55,8 +55,8 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-// AllocateArrayDestination allocates a [schema.Moveable] to a [schema.Share]'s
-// included disks (which are typically part of an array).
+// AllocateArrayDestination allocates a [schema.Moveable] and its subelements
+// to a [schema.Share]'s included disks (which are typically part of an array).
 func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	dest, err := a.allocateArrayDestination(m)
 	if err != nil {
@@ -98,8 +98,8 @@ func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	return true
 }
 
-// allocateArrayDestination provides the actual allocation logic for allocating
-// a [schema.Moveable] to a [schema.Share]'s included disks (typically part of an array).
+// allocateArrayDestination provides the allocation logic for allocating a single
+// [schema.Moveable] to a [schema.Share]'s included disks (typically part of an array).
 // For choice of allocation methods, the [schema.Share]'s configuration fields are evaluated.
 func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) { //nolint:ireturn
 	includedDisks := m.Share.GetIncludedDisks()
