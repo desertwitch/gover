@@ -46,7 +46,7 @@ type Handler struct {
 	alreadyAllocatedSpace map[string]uint64 // map[diskName]uint64
 }
 
-// NewHandler returns a pointer to a new allocation handler.
+// NewHandler returns a pointer to a new allocation [Handler].
 func NewHandler(fsHandler fsProvider) *Handler {
 	return &Handler{
 		fsHandler:             fsHandler,
