@@ -40,7 +40,7 @@ type unixProvider interface {
 }
 
 // inUseProvider defines methods needed to check if a source path
-// is presently in use by another process on the operating system.
+// is presently in use by another process of the operating system.
 type inUseProvider interface {
 	IsInUse(path string) bool
 }
@@ -169,7 +169,7 @@ func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src sche
 }
 
 // removeInUseFiles removes from a slice of [schema.Moveable] these which are
-// currently in use by another process on the operating system. For this, the
+// currently in use by another process of the operating system. For this, the
 // previously given to the [Handler] implementation of [inUseProvider] is used.
 func (f *Handler) removeInUseFiles(moveables []*schema.Moveable) []*schema.Moveable {
 	filtered := []*schema.Moveable{}

@@ -10,7 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// IsInUse checks if a file is in use by another process on the operating system.
+// IsInUse checks if a file is in use by another process of the operating system.
 // For this it wraps the function of the given [inUseProvider] implementation.
 func (f *Handler) IsInUse(path string) bool {
 	return f.inUseHandler.IsInUse(path)
