@@ -3,22 +3,23 @@ package pathing
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-type fsProvider interface {
-	ExistsOnStorage(m *schema.Moveable) (string, error)
+type osProvider interface {
+	Stat(name string) (os.FileInfo, error)
 }
 
 type Handler struct {
-	fsHandler fsProvider
+	osHandler osProvider
 }
 
-func NewHandler(fsHandler fsProvider) *Handler {
+func NewHandler(osHandler osProvider) *Handler {
 	return &Handler{
-		fsHandler: fsHandler,
+		osHandler: osHandler,
 	}
 }
 
@@ -55,7 +56,7 @@ func (f *Handler) EstablishPath(m *schema.Moveable) bool {
 }
 
 func (f *Handler) establishElementPath(elem *schema.Moveable) error {
-	existsPath, err := f.fsHandler.ExistsOnStorage(elem)
+	existsPath, err := f.ExistsOnStorage(elem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence",
 			"err", err,
@@ -94,7 +95,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 }
 
 func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema.Moveable) error {
-	existsPath, err := f.fsHandler.ExistsOnStorage(subelem)
+	existsPath, err := f.ExistsOnStorage(subelem)
 	if err != nil {
 		slog.Warn("Skipped job: failed establishing path existence for subjob",
 			"err", err,

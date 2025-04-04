@@ -201,7 +201,7 @@ func main() {
 	}
 
 	allocHandler := allocation.NewHandler(fsHandler)
-	pathingHandler := pathing.NewHandler(fsHandler)
+	pathingHandler := pathing.NewHandler(osProvider)
 	ioHandler := io.NewHandler(fsHandler, osProvider, unixProvider)
 	configHandler := configuration.NewHandler(configProvider)
 	unraidHandler := unraid.NewHandler(fsHandler, configHandler, osProvider)

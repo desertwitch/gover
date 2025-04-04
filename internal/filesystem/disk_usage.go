@@ -41,6 +41,7 @@ type diskUsage struct {
 }
 
 // NewDiskUsageCacher returns a pointer to a new [DiskUsageCacher].
+// The update method is started, refreshing the cached data every [DiskUsageCacherInterval].
 func NewDiskUsageCacher(ctx context.Context, unixHandler unixStatfsProvider) *DiskUsageCacher {
 	cacher := &DiskUsageCacher{
 		unixHandler: unixHandler,
