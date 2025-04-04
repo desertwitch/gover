@@ -12,14 +12,14 @@ const (
 	memoryMonitorInterval = 100 * time.Millisecond
 )
 
-type memoryObserver struct {
+type MemoryObserver struct {
 	sync.RWMutex
 	maxAlloc uint64
 	stopChan chan struct{}
 }
 
-func newMemoryObserver(ctx context.Context) *memoryObserver {
-	obs := &memoryObserver{
+func NewMemoryObserver(ctx context.Context) *MemoryObserver {
+	obs := &MemoryObserver{
 		stopChan: make(chan struct{}),
 	}
 	go obs.monitor(ctx)
@@ -27,19 +27,19 @@ func newMemoryObserver(ctx context.Context) *memoryObserver {
 	return obs
 }
 
-func (o *memoryObserver) GetMaxAlloc() uint64 {
+func (o *MemoryObserver) GetMaxAlloc() uint64 {
 	o.RLock()
 	defer o.RUnlock()
 
 	return o.maxAlloc
 }
 
-func (o *memoryObserver) Stop() {
+func (o *MemoryObserver) Stop() {
 	close(o.stopChan)
 	slog.Info("Memory consumption peaked at:", "maxAlloc", (o.GetMaxAlloc() / 1024 / 1024)) //nolint:mnd
 }
 
-func (o *memoryObserver) monitor(ctx context.Context) {
+func (o *MemoryObserver) monitor(ctx context.Context) {
 	ticker := time.NewTicker(memoryMonitorInterval)
 	defer ticker.Stop()
 

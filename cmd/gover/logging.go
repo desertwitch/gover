@@ -6,20 +6,20 @@ import (
 	"sync"
 )
 
-type slogManager struct {
+type SlogManager struct {
 	sync.RWMutex
 	handlers map[string]slog.Handler
 	attrs    []slog.Attr
 	groups   []string
 }
 
-func newSlogManager() *slogManager {
-	return &slogManager{
+func NewSlogManager() *SlogManager {
+	return &SlogManager{
 		handlers: make(map[string]slog.Handler),
 	}
 }
 
-func (m *slogManager) Enabled(ctx context.Context, level slog.Level) bool {
+func (m *SlogManager) Enabled(ctx context.Context, level slog.Level) bool {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -32,7 +32,7 @@ func (m *slogManager) Enabled(ctx context.Context, level slog.Level) bool {
 	return false
 }
 
-func (m *slogManager) Handle(ctx context.Context, r slog.Record) error {
+func (m *SlogManager) Handle(ctx context.Context, r slog.Record) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -43,14 +43,14 @@ func (m *slogManager) Handle(ctx context.Context, r slog.Record) error {
 	return nil
 }
 
-func (m *slogManager) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (m *SlogManager) WithAttrs(attrs []slog.Attr) slog.Handler {
 	m.Lock()
 	defer m.Unlock()
 
 	groups := make([]string, len(m.groups))
 	copy(groups, m.groups)
 
-	newLm := &slogManager{
+	newLm := &SlogManager{
 		handlers: make(map[string]slog.Handler, len(m.handlers)),
 		attrs:    append(m.attrs, attrs...),
 		groups:   groups,
@@ -63,14 +63,14 @@ func (m *slogManager) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return newLm
 }
 
-func (m *slogManager) WithGroup(name string) slog.Handler {
+func (m *SlogManager) WithGroup(name string) slog.Handler {
 	m.Lock()
 	defer m.Unlock()
 
 	attrs := make([]slog.Attr, len(m.attrs))
 	copy(attrs, m.attrs)
 
-	newLm := &slogManager{
+	newLm := &SlogManager{
 		handlers: make(map[string]slog.Handler, len(m.handlers)),
 		attrs:    attrs,
 		groups:   append(m.groups, name),
@@ -84,7 +84,7 @@ func (m *slogManager) WithGroup(name string) slog.Handler {
 }
 
 //nolint:unparam
-func (m *slogManager) GetHandler(name string) (slog.Handler, bool) {
+func (m *SlogManager) GetHandler(name string) (slog.Handler, bool) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -93,7 +93,7 @@ func (m *slogManager) GetHandler(name string) (slog.Handler, bool) {
 	return h, ok
 }
 
-func (m *slogManager) AddHandler(name string, handler slog.Handler) {
+func (m *SlogManager) AddHandler(name string, handler slog.Handler) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -109,7 +109,7 @@ func (m *slogManager) AddHandler(name string, handler slog.Handler) {
 	m.handlers[name] = h
 }
 
-func (m *slogManager) RemoveHandler(name string) {
+func (m *SlogManager) RemoveHandler(name string) {
 	m.Lock()
 	defer m.Unlock()
 

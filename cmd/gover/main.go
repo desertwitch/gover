@@ -33,7 +33,7 @@ var (
 	ExitCode = 0
 	Version  string
 
-	slogMan = newSlogManager()
+	slogMan = NewSlogManager()
 
 	uiEnabled  = flag.Bool("ui", true, "enable the UI")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -178,13 +178,13 @@ func main() {
 	flag.Parse()
 	setupSignalHandlers(cancel)
 
-	memObserver := newMemoryObserver(ctx)
+	memObserver := NewMemoryObserver(ctx)
 	defer memObserver.Stop()
 
-	cpuProfiler := newCPUProfiler(ctx, cpuprofile)
+	cpuProfiler := NewCPUProfiler(ctx, cpuprofile)
 	defer cpuProfiler.Stop()
 
-	allocProfiler := newAllocProfiler(ctx, memprofile)
+	allocProfiler := NewAllocProfiler(ctx, memprofile)
 	defer allocProfiler.Stop()
 
 	osProvider := &schema.OS{}
