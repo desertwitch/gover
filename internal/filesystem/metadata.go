@@ -9,9 +9,11 @@ import (
 )
 
 const (
+	// unixBasePerms defines the base Unix file permissions.
 	unixBasePerms = 0o777
 )
 
+// establishMetadata retrieves the metadata for a [schema.Moveable] from the filesystem.
 func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	metadata, err := f.getMetadata(m.SourcePath)
 	if err != nil {
@@ -28,6 +30,7 @@ func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	return nil
 }
 
+// getMetadata retrieves for a given path the [schema.Metadata] from the filesystem.
 func (f *Handler) getMetadata(path string) (*schema.Metadata, error) {
 	var stat unix.Stat_t
 

@@ -47,6 +47,16 @@ func NewInUseChecker(ctx context.Context, osHandler osProvider) (*InUseChecker, 
 	return checker, nil
 }
 
+// IsInUse checks (the cache) if a path is currently in use by another process of the operating system.
+func (c *InUseChecker) IsInUse(path string) bool {
+	c.RLock()
+	defer c.RUnlock()
+
+	_, exists := c.inUsePaths[path]
+
+	return exists
+}
+
 // periodicUpdate calls [InUseChecker.Update] every [CheckerInterval].
 func (c *InUseChecker) periodicUpdate(ctx context.Context) {
 	ticker := time.NewTicker(CheckerInterval)
@@ -60,16 +70,6 @@ func (c *InUseChecker) periodicUpdate(ctx context.Context) {
 			_ = c.Update()
 		}
 	}
-}
-
-// IsInUse checks (the cache) if a path is currently in use by another process of the operating system.
-func (c *InUseChecker) IsInUse(path string) bool {
-	c.RLock()
-	defer c.RUnlock()
-
-	_, exists := c.inUsePaths[path]
-
-	return exists
 }
 
 // Update queries the operating system for all in-use paths and stores them in the [InUseChecker] cache.
