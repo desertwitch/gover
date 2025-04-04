@@ -11,7 +11,7 @@ import (
 	"github.com/desertwitch/gover/internal/validation"
 )
 
-func (app *App) Evaluate(ctx context.Context) error {
+func (app *app) Evaluate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
 	for shareName, shareQueue := range app.queueManager.EvaluationManager.GetQueues() {
@@ -31,7 +31,7 @@ func (app *App) Evaluate(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) bool {
+func (app *app) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) bool {
 	slog.Info("Evaluating share:",
 		"share", shareName,
 	)
@@ -52,7 +52,7 @@ func (app *App) processEvaluationQueue(ctx context.Context, shareName string, sh
 	return true
 }
 
-func (app *App) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue) error {
+func (app *app) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue) error {
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		if m.Dest == nil {
 			if success := app.allocHandler.AllocateArrayDestination(m); !success {

@@ -33,7 +33,7 @@ var (
 	ExitCode = 0
 	Version  string
 
-	slogMan = NewSlogManager()
+	slogMan = newSlogManager()
 
 	uiEnabled  = flag.Bool("ui", true, "enable the UI")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -100,7 +100,7 @@ func setupSignalHandlers(cancel context.CancelFunc) {
 	}()
 }
 
-func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
+func startApp(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	defer wg.Done()
 
 	if app.uiHandler != nil {
@@ -122,7 +122,7 @@ func startApp(ctx context.Context, wg *sync.WaitGroup, app *App) {
 	}
 }
 
-func startUI(ctx context.Context, wg *sync.WaitGroup, app *App) {
+func startUI(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	defer wg.Done()
 
 	if app.uiHandler != nil {
@@ -178,13 +178,13 @@ func main() {
 	flag.Parse()
 	setupSignalHandlers(cancel)
 
-	memObserver := NewMemoryObserver(ctx)
+	memObserver := newMemoryObserver(ctx)
 	defer memObserver.Stop()
 
-	cpuProfiler := NewCPUProfiler(ctx, cpuprofile)
+	cpuProfiler := newCPUProfiler(ctx, cpuprofile)
 	defer cpuProfiler.Stop()
 
-	allocProfiler := NewAllocProfiler(ctx, memprofile)
+	allocProfiler := newAllocProfiler(ctx, memprofile)
 	defer allocProfiler.Stop()
 
 	osProvider := &schema.OS{}
@@ -225,11 +225,11 @@ func main() {
 
 	shareAdapters := make(map[string]schema.Share, len(shares))
 	for name, share := range shares {
-		shareAdapters[name] = NewShareAdapter(share)
+		shareAdapters[name] = newShareAdapter(share)
 	}
 
 	var wg sync.WaitGroup
-	app := NewApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
+	app := newApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
 
 	wg.Add(1)
 	go startUI(ctx, &wg, app)

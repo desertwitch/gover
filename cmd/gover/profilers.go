@@ -8,14 +8,14 @@ import (
 )
 
 //nolint:containedctx
-type CPUProfiler struct {
+type cpuProfiler struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	doneChan chan struct{}
 }
 
-func NewCPUProfiler(ctx context.Context, path *string) *CPUProfiler {
-	cprof := &CPUProfiler{}
+func newCPUProfiler(ctx context.Context, path *string) *cpuProfiler {
+	cprof := &cpuProfiler{}
 	cprof.ctx, cprof.cancel = context.WithCancel(ctx)
 	cprof.doneChan = make(chan struct{})
 
@@ -24,7 +24,7 @@ func NewCPUProfiler(ctx context.Context, path *string) *CPUProfiler {
 	return cprof
 }
 
-func (cprof *CPUProfiler) Profile(path *string) {
+func (cprof *cpuProfiler) Profile(path *string) {
 	defer close(cprof.doneChan)
 
 	if path == nil || *path == "" {
@@ -50,20 +50,20 @@ func (cprof *CPUProfiler) Profile(path *string) {
 	<-cprof.ctx.Done()
 }
 
-func (cprof *CPUProfiler) Stop() {
+func (cprof *cpuProfiler) Stop() {
 	cprof.cancel()
 	<-cprof.doneChan
 }
 
 //nolint:containedctx
-type AllocProfiler struct {
+type allocProfiler struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	doneChan chan struct{}
 }
 
-func NewAllocProfiler(ctx context.Context, path *string) *AllocProfiler {
-	aprof := &AllocProfiler{}
+func newAllocProfiler(ctx context.Context, path *string) *allocProfiler {
+	aprof := &allocProfiler{}
 	aprof.ctx, aprof.cancel = context.WithCancel(ctx)
 	aprof.doneChan = make(chan struct{})
 
@@ -72,7 +72,7 @@ func NewAllocProfiler(ctx context.Context, path *string) *AllocProfiler {
 	return aprof
 }
 
-func (aprof *AllocProfiler) Profile(path *string) {
+func (aprof *allocProfiler) Profile(path *string) {
 	defer close(aprof.doneChan)
 
 	if path == nil || *path == "" {
@@ -92,7 +92,7 @@ func (aprof *AllocProfiler) Profile(path *string) {
 	}
 }
 
-func (aprof *AllocProfiler) Stop() {
+func (aprof *allocProfiler) Stop() {
 	aprof.cancel()
 	<-aprof.doneChan
 }

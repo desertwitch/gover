@@ -10,7 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-func (app *App) Enumerate(ctx context.Context) error {
+func (app *app) Enumerate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
 	// Primary to Secondary
@@ -92,7 +92,7 @@ func (app *App) Enumerate(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) bool {
+func (app *app) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) bool {
 	slog.Info("Enumerating shares on source:",
 		"source", sourceName,
 	)
@@ -115,7 +115,7 @@ func (app *App) processEnumerationQueue(ctx context.Context, sourceName string, 
 	return true
 }
 
-func (app *App) enumerateToEvaluation(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) int {
+func (app *app) enumerateToEvaluation(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) int {
 	slog.Info("Enumerating share on storage:",
 		"storage", src.GetName(),
 		"share", share.GetName(),

@@ -13,7 +13,7 @@ import (
 	"github.com/desertwitch/gover/internal/ui"
 )
 
-type App struct {
+type app struct {
 	shares         map[string]schema.Share
 	fsHandler      *filesystem.Handler
 	allocHandler   *allocation.Handler
@@ -23,15 +23,15 @@ type App struct {
 	uiHandler      *ui.Handler
 }
 
-func NewApp(shares map[string]schema.Share,
+func newApp(shares map[string]schema.Share,
 	fsHandler *filesystem.Handler,
 	allocHandler *allocation.Handler,
 	pathingHandler *pathing.Handler,
 	ioHandler *io.Handler,
 	queueManager *queue.Manager,
 	uiHandler *ui.Handler,
-) *App {
-	return &App{
+) *app {
+	return &app{
 		shares:         shares,
 		fsHandler:      fsHandler,
 		allocHandler:   allocHandler,
@@ -42,7 +42,7 @@ func NewApp(shares map[string]schema.Share,
 	}
 }
 
-func (app *App) Launch(ctx context.Context) error {
+func (app *app) Launch(ctx context.Context) error {
 	if err := app.Enumerate(ctx); err != nil {
 		return fmt.Errorf("(app) %w", err)
 	}
@@ -58,7 +58,7 @@ func (app *App) Launch(ctx context.Context) error {
 	return nil
 }
 
-func (app *App) LaunchUI() error {
+func (app *app) LaunchUI() error {
 	if err := app.uiHandler.Launch(); err != nil {
 		return fmt.Errorf("(app-ui) %w", err)
 	}

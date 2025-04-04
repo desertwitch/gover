@@ -5,15 +5,15 @@ import (
 	"github.com/desertwitch/gover/internal/unraid"
 )
 
-type ShareAdapter struct {
+type shareAdapter struct {
 	*unraid.Share
 }
 
-func NewShareAdapter(unraidShare *unraid.Share) *ShareAdapter {
-	return &ShareAdapter{unraidShare}
+func newShareAdapter(unraidShare *unraid.Share) *shareAdapter {
+	return &shareAdapter{unraidShare}
 }
 
-func (s *ShareAdapter) GetCachePool() schema.Pool { //nolint:ireturn
+func (s *shareAdapter) GetCachePool() schema.Pool { //nolint:ireturn
 	if s.CachePool == nil {
 		return nil
 	}
@@ -21,7 +21,7 @@ func (s *ShareAdapter) GetCachePool() schema.Pool { //nolint:ireturn
 	return s.CachePool
 }
 
-func (s *ShareAdapter) GetCachePool2() schema.Pool { //nolint:ireturn
+func (s *shareAdapter) GetCachePool2() schema.Pool { //nolint:ireturn
 	if s.CachePool2 == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ func (s *ShareAdapter) GetCachePool2() schema.Pool { //nolint:ireturn
 }
 
 // GetIncludedDisks returns a copy of the map containing disks that implement the schema.Disk interface.
-func (s *ShareAdapter) GetIncludedDisks() map[string]schema.Disk {
+func (s *shareAdapter) GetIncludedDisks() map[string]schema.Disk {
 	if s.Share.IncludedDisks == nil {
 		return nil
 	}
