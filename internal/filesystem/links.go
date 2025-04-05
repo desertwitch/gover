@@ -44,9 +44,13 @@ func establishHardlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	}
 }
 
-// removeInternalLinks clean ups a slice of [schema.Moveable], removing all symbolic
-// and hard links (which were previously linked to another [schema.Moveable]), so
-// only [schema.Moveable] parents remain (with their links as respective subelements).
+// removeInternalLinks cleans up a slice of [schema.Moveable] removing all symbolic
+// and hard links, which were previously linked to another [schema.Moveable], so that only
+// [schema.Moveable] "parents" remain (with their internal link fields set to these links).
+//
+// This is to ensure that only a group of "parent" [schema.Moveable] elements remain,
+// which are internally linked to their respective subelements. This allows for processing
+// them on their own, while being able to reconstruct all symbolic and hard link structures.
 func removeInternalLinks(moveables []*schema.Moveable) []*schema.Moveable {
 	var filtered []*schema.Moveable
 

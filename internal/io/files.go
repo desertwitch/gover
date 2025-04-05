@@ -13,12 +13,15 @@ import (
 	"github.com/zeebo/blake3"
 )
 
-//nolint:containedctx
+// contextReader is an implementation of [io.Reader] that
+// is Context-aware for receiving mid-transfer cancellation.
 type contextReader struct {
-	ctx    context.Context
+	ctx    context.Context //nolint:containedctx
 	reader io.Reader
 }
 
+// Read wraps the [io.Reader] reading function while being
+// aware of and handling any mid-transfer Context cancellations.
 func (cr *contextReader) Read(p []byte) (int, error) {
 	select {
 	case <-cr.ctx.Done():
@@ -28,6 +31,7 @@ func (cr *contextReader) Read(p []byte) (int, error) {
 	}
 }
 
+// moveFile is the principal method for moving a file-type [schema.Moveable].
 func (i *Handler) moveFile(ctx context.Context, m *schema.Moveable) error {
 	var transferComplete bool
 

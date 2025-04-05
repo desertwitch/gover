@@ -10,6 +10,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// ensureDirectoryStructure recreates the necessary directory structure for a [schema.Moveable].
 func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *ioReport) error {
 	dir := m.RootDir
 
@@ -38,6 +39,7 @@ func (i *Handler) ensureDirectoryStructure(m *schema.Moveable, job *ioReport) er
 	return nil
 }
 
+// cleanDirectoryStructure deletes after moving the remaining empty directory structure.
 func (i *Handler) cleanDirectoryStructure(batch *ioReport) {
 	sort.Slice(batch.DirsWalked, func(i, j int) bool {
 		return calculateDirectoryDepth(batch.DirsWalked[i]) > calculateDirectoryDepth(batch.DirsWalked[j])
@@ -85,6 +87,7 @@ func (i *Handler) cleanDirectoryStructure(batch *ioReport) {
 	}
 }
 
+// cleanDirectoriesAfterFailure deletes after a failure the created empty directory structure (on target).
 func (i *Handler) cleanDirectoriesAfterFailure(job *ioReport) {
 	sort.Slice(job.DirsCreated, func(i, j int) bool {
 		return calculateDirectoryDepth(job.DirsCreated[i]) > calculateDirectoryDepth(job.DirsCreated[j])
@@ -132,6 +135,7 @@ func (i *Handler) cleanDirectoriesAfterFailure(job *ioReport) {
 	}
 }
 
+// calculateDirectoryDepth calculates a [schema.Directory] depth for use in sorting.
 func calculateDirectoryDepth(dir *schema.Directory) int {
 	depth := 0
 	for dir != nil {

@@ -4,6 +4,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// ioReport tracks both all creations and encountered directories during IO operations.
 type ioReport struct {
 	AnyCreated       []fsElement
 	DirsCreated      []*schema.Directory
@@ -13,6 +14,7 @@ type ioReport struct {
 	HardlinksCreated []*schema.Moveable
 }
 
+// mergeIOReports merges a source [ioReport] into a target [ioReport].
 func mergeIOReports(target, source *ioReport) {
 	if target == nil || source == nil {
 		return
@@ -26,6 +28,7 @@ func mergeIOReports(target, source *ioReport) {
 	target.SymlinksCreated = append(target.SymlinksCreated, source.SymlinksCreated...)
 }
 
+// addToIOReport adds a [schema.Moveable] to an [ioReport].
 func addToIOReport(r *ioReport, m *schema.Moveable) {
 	switch {
 	case m.IsHardlink:

@@ -9,20 +9,26 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// osProvider defines operating system methods needed for pathing.
 type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
+// Handler is the principal implementation for the pathing services.
 type Handler struct {
 	osHandler osProvider
 }
 
+// NewHandler returns a pointer to a new pathing [Handler].
 func NewHandler(osHandler osProvider) *Handler {
 	return &Handler{
 		osHandler: osHandler,
 	}
 }
 
+// EstablishPath is the principal pathing function that ensures that
+// a valid destination path is constructed from a [schema.Moveable]'s
+// set (previously allocated) destination [schema.Storage].
 func (f *Handler) EstablishPath(m *schema.Moveable) bool {
 	if err := f.establishElementPath(m); err != nil {
 		return false
@@ -55,6 +61,7 @@ func (f *Handler) EstablishPath(m *schema.Moveable) bool {
 	return true
 }
 
+// establishElementPath constructs the destination path for a "parent" [schema.Moveable].
 func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	existsPath, err := f.ExistsOnStorage(elem)
 	if err != nil {
@@ -94,6 +101,7 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	return nil
 }
 
+// establishSubElementPath constructs the destination path for a "child" [schema.Moveable] subelement.
 func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema.Moveable) error {
 	existsPath, err := f.ExistsOnStorage(subelem)
 	if err != nil {
@@ -133,6 +141,7 @@ func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema
 	return nil
 }
 
+// constructPaths constructs the destination path for any [schema.Moveable].
 func constructPaths(m *schema.Moveable) error {
 	if m.Dest == nil {
 		return fmt.Errorf("(pathing) %w", ErrNilDestination)
@@ -155,6 +164,8 @@ func constructPaths(m *schema.Moveable) error {
 	return nil
 }
 
+// constructRelatedDirPaths constructs the destination paths for the directory structure
+// stored inside a [schema.Moveable], for later recreation on the target [schema.Storage].
 func constructRelatedDirPaths(m *schema.Moveable) error {
 	dir := m.RootDir
 

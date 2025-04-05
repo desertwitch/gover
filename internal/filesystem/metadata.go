@@ -14,7 +14,7 @@ const (
 	unixBasePerms = 0o777
 )
 
-// establishMetadata stores in a given [schema.Moveable] the metadata from the filesystem.
+// establishMetadata stores in a given [schema.Moveable] its filesystem metadata.
 func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	metadata, err := f.getMetadata(m.SourcePath)
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// processFile is the principal method for IO-processing a file-type [schema.Moveable].
+// Apart from moving the file itself, it handles both spacing, permissioning and cleanup.
 func (i *Handler) processFile(ctx context.Context, m *schema.Moveable) error {
 	enoughSpace, err := i.fsHandler.HasEnoughFreeSpace(m.Dest, m.Share.GetSpaceFloor(), m.Metadata.Size)
 	if err != nil {
@@ -31,6 +33,8 @@ func (i *Handler) processFile(ctx context.Context, m *schema.Moveable) error {
 	return nil
 }
 
+// processDirectory is the principal method for IO-processing a directory-type [schema.Moveable].
+// Apart from recreating the directory itself, it handles both permissioning and cleanup as well.
 func (i *Handler) processDirectory(m *schema.Moveable) error {
 	dirExisted := false
 
@@ -54,6 +58,8 @@ func (i *Handler) processDirectory(m *schema.Moveable) error {
 	return nil
 }
 
+// processHardlink is the principal method for IO-processing a hardlink-type [schema.Moveable].
+// Apart from recreating the hardlink itself, it handles both permissioning and cleanup as well.
 func (i *Handler) processHardlink(m *schema.Moveable) error {
 	if err := i.unixHandler.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 		return fmt.Errorf("(io-hardl) failed to link: %w", err)
@@ -68,6 +74,8 @@ func (i *Handler) processHardlink(m *schema.Moveable) error {
 	return nil
 }
 
+// processHardlink is the principal method for IO-processing a symlink-type [schema.Moveable].
+// Apart from recreating the symlink itself, it handles both permissioning and cleanup as well.
 func (i *Handler) processSymlink(m *schema.Moveable, internalLink bool) error {
 	if internalLink {
 		if err := i.unixHandler.Symlink(m.SymlinkTo.DestPath, m.DestPath); err != nil {
