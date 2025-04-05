@@ -1,11 +1,11 @@
 package queue
 
-// EnumerationManager is a queue manager for enumeration operations.
-// It is used to manage a number of different [EnumerationSourceQueue]
-// that are each independent and bucketized by their source storage name.
+// EnumerationManager is a queue manager for enumeration operations. It is used
+// to manage a number of different [EnumerationSourceQueue] that are each
+// independent and bucketized by their source storage name.
 //
-// EnumerationManager embeds a [GenericManager].
-// It is thread-safe and can both be accessed and processed concurrently.
+// EnumerationManager embeds a [GenericManager]. It is thread-safe and can both
+// be accessed and processed concurrently.
 //
 // The items contained within [EnumerationSourceQueue] are [EnumerationTask].
 type EnumerationManager struct {
@@ -27,8 +27,9 @@ func (m *EnumerationManager) Progress() Progress {
 	return mProgress
 }
 
-// Enqueue adds [EnumerationTask](s) into the correct [EnumerationSourceQueue], as
-// managed by [EnumerationManager], based on their respective source storage name.
+// Enqueue adds [EnumerationTask](s) into the correct [EnumerationSourceQueue],
+// as managed by [EnumerationManager], based on their respective source storage
+// name.
 func (m *EnumerationManager) Enqueue(items ...*EnumerationTask) {
 	for _, item := range items {
 		m.GenericManager.Enqueue(item, func(et *EnumerationTask) string {

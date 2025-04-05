@@ -1,13 +1,16 @@
 package schema
 
-// Moveable is the principal structure for all candidates to be moved.
-// It can either be a filesystem element that is a file, link or empty folder.
-// Non-empty folder structures are recorded within the [Moveable] for recreation.
+// Moveable is the principal structure for all candidates to be moved. It can
+// either be a filesystem element that is a file, link or empty folder.
+// Non-empty folder structures are recorded within the [Moveable] for
+// recreation.
 //
-// Moveables are meant to be passed by reference (pointer) and are not thread-safe.
+// Moveables are meant to be passed by reference (pointer) and are not
+// thread-safe.
 //
-// By design a [Moveable] and its subelements are entirely autonomous and can be processed
-// independently of other [Moveable] elements, their directory structures and other fields.
+// By design a [Moveable] and its subelements are entirely autonomous and can be
+// processed independently of other [Moveable] elements, their directory
+// structures and other fields.
 type Moveable struct {
 	// Share is a [Share] the [Moveable] belongs to.
 	Share Share
@@ -30,7 +33,8 @@ type Moveable struct {
 	// IsHardlink describes if the [Moveable] is a hard-link.
 	IsHardlink bool
 
-	// HardlinkTo describes the parent [Moveable] that the [Moveable] is linked to.
+	// HardlinkTo describes the parent [Moveable] that the [Moveable] is linked
+	// to.
 	HardlinkTo *Moveable
 
 	// Hardlinks is a slice of symlink-type [Moveable] subelements.
@@ -39,18 +43,21 @@ type Moveable struct {
 	// IsSymlink describes if the [Moveable] is a sym-link.
 	IsSymlink bool
 
-	// SymlinkTo describes the parent [Moveable] that the [Moveable] is linked to.
+	// SymlinkTo describes the parent [Moveable] that the [Moveable] is linked
+	// to.
 	SymlinkTo *Moveable
 
 	// Metadata is the filesystem [Metadata] for the specific [Moveable].
 	Metadata *Metadata
 
-	// RootDir is the shallowest [Directory], almost always a [Share] base folder,
-	// at the start of a chain of [Directory] structs representing the full directory
-	// structure that is required for later recreation on the destination [Storage].
+	// RootDir is the shallowest [Directory], almost always a [Share] base
+	// folder, at the start of a chain of [Directory] structs representing the
+	// full directory structure that is required for later recreation on the
+	// destination [Storage].
 	//
-	// [Directory] elements and their children are always unique to a specific [Moveable].
-	// This allows for a [Moveable] and its subelements to be operated on fully autonomous.
+	// [Directory] elements and their children are always unique to a specific
+	// [Moveable]. This allows for a [Moveable] and its subelements to be
+	// operated on fully autonomous.
 	RootDir *Directory
 }
 

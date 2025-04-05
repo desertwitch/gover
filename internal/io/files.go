@@ -13,15 +13,15 @@ import (
 	"github.com/zeebo/blake3"
 )
 
-// contextReader is an implementation of [io.Reader] that
-// is Context-aware for receiving mid-transfer cancellation.
+// contextReader is an implementation of [io.Reader] that is Context-aware for
+// receiving mid-transfer cancellation.
 type contextReader struct {
 	ctx    context.Context //nolint:containedctx
 	reader io.Reader
 }
 
-// Read wraps the [io.Reader] reading function while being
-// aware of and handling any mid-transfer Context cancellations.
+// Read wraps the [io.Reader] reading function while being aware of and handling
+// any mid-transfer Context cancellations.
 func (cr *contextReader) Read(p []byte) (int, error) {
 	select {
 	case <-cr.ctx.Done():

@@ -9,13 +9,15 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// ExistsOnStorage checks if a [schema.Moveable] path exists on the allocated storage.
+// ExistsOnStorage checks if a [schema.Moveable] path exists on the allocated
+// storage.
 //
-// For the allocated destination as a [schema.Pool], it checks if the path exists only
-// on that specific [schema.Pool].
+// For the allocated destination as a [schema.Pool], it checks if the path
+// exists only on that specific [schema.Pool].
 //
-// For the allocated destination as a [schema.Disk], it checks if the path exists on any
-// of the [schema.Share]'s included disks (of an array), to avoid duplication when pooled.
+// For the allocated destination as a [schema.Disk], it checks if the path
+// exists on any of the [schema.Share]'s included disks (of an array), to avoid
+// duplication when pooled.
 func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
 	if m.Dest == nil {
 		return "", ErrNilDestination
@@ -51,7 +53,8 @@ func (f *Handler) ExistsOnStorage(m *schema.Moveable) (string, error) {
 	}
 }
 
-// existsOnStorageCandidate checks if a [schema.Moveable] path exists on a specific [schema.Storage].
+// existsOnStorageCandidate checks if a [schema.Moveable] path exists on a
+// specific [schema.Storage].
 func (f *Handler) existsOnStorageCandidate(m *schema.Moveable, destCandidate schema.Storage) (bool, string, error) {
 	relPath, err := filepath.Rel(m.Source.GetFSPath(), m.SourcePath)
 	if err != nil {

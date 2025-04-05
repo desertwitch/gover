@@ -11,15 +11,16 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// fsProvider defines external filesystem related methods that are needed for allocation.
+// fsProvider defines external filesystem related methods that are needed for
+// allocation.
 type fsProvider interface {
 	Exists(path string) (bool, error)
 	GetDiskUsage(s schema.Storage) (filesystem.DiskStats, error)
 	HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error)
 }
 
-// allocInfo holds information about an allocated [schema.Moveable].
-// It is meant to be passed by value.
+// allocInfo holds information about an allocated [schema.Moveable]. It is meant
+// to be passed by value.
 type allocInfo struct {
 	// The full source path to the respective [schema.Moveable].
 	sourcePath string
@@ -31,15 +32,16 @@ type allocInfo struct {
 	allocatedDisk schema.Disk
 }
 
-// Handler is the principal implementation for the allocation services.
-// It is safe for concurrent use on unique, non-concurrent [schema.Moveable].
+// Handler is the principal implementation for the allocation services. It is
+// safe for concurrent use on unique, non-concurrent [schema.Moveable].
 type Handler struct {
 	sync.RWMutex
 
 	// An implementation of [fsProvider] for filesystem-related methods.
 	fsHandler fsProvider
 
-	// A map of [schema.Moveable] pointers with information about their allocation.
+	// A map of [schema.Moveable] pointers with information about their
+	// allocation.
 	alreadyAllocated map[*schema.Moveable]allocInfo
 
 	// The total space that will be taken on a target [schema.Disk].
@@ -55,11 +57,12 @@ func NewHandler(fsHandler fsProvider) *Handler {
 	}
 }
 
-// AllocateArrayDestination allocates a [schema.Moveable] and its subelements
-// to a [schema.Share]'s included disks (which are typically part of an array).
+// AllocateArrayDestination allocates a [schema.Moveable] and its subelements to
+// a [schema.Share]'s included disks (which are typically part of an array).
 //
 // It is the principal method used allocating given [schema.Moveable], where the
-// destination field has not yet been set, to target [schema.Disk] (of an array).
+// destination field has not yet been set, to target [schema.Disk] (of an
+// array).
 func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	dest, err := a.allocateArrayDestination(m)
 	if err != nil {
@@ -101,9 +104,10 @@ func (a *Handler) AllocateArrayDestination(m *schema.Moveable) bool {
 	return true
 }
 
-// allocateArrayDestination provides the allocation logic for allocating a single
-// [schema.Moveable] to a [schema.Share]'s included disks (typically part of an array).
-// For choice of allocation methods, the [schema.Share]'s configuration fields are evaluated.
+// allocateArrayDestination provides the allocation logic for allocating a
+// single [schema.Moveable] to a [schema.Share]'s included disks (typically part
+// of an array). For choice of allocation methods, the [schema.Share]'s
+// configuration fields are evaluated.
 func (a *Handler) allocateArrayDestination(m *schema.Moveable) (schema.Disk, error) { //nolint:ireturn
 	includedDisks := m.Share.GetIncludedDisks()
 

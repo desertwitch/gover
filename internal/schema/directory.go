@@ -1,8 +1,8 @@
 package schema
 
-// Directory is a non-empty directory that is recorded as part of a
-// [Moveable]'s directory structure, but is not a [Moveable] itself.
-// It is meant to be passed by reference (pointer).
+// Directory is a non-empty directory that is recorded as part of a [Moveable]'s
+// directory structure, but is not a [Moveable] itself. It is meant to be passed
+// by reference (pointer).
 type Directory struct {
 	SourcePath string
 	DestPath   string

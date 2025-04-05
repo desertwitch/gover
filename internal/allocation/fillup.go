@@ -8,8 +8,9 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// allocateFillUp provides the allocation logic for the fill-up allocation method.
-// It chooses the lowest numbered [schema.Disk] that still has free space above the [schema.Share] space floor.
+// allocateFillUp provides the allocation logic for the fill-up allocation
+// method. It chooses the lowest numbered [schema.Disk] that still has free
+// space above the [schema.Share] space floor.
 func (a *Handler) allocateFillUp(m *schema.Moveable, includedDisks map[string]schema.Disk) (schema.Disk, error) { //nolint:ireturn
 	diskStats := make(map[string]filesystem.DiskStats)
 	disks := []schema.Disk{}

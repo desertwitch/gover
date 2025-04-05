@@ -29,7 +29,8 @@ func (s *shareAdapter) GetCachePool2() schema.Pool { //nolint:ireturn
 	return s.CachePool2
 }
 
-// GetIncludedDisks returns a copy of the map containing disks that implement the schema.Disk interface.
+// GetIncludedDisks returns a copy of the map containing disks that implement
+// the schema.Disk interface.
 func (s *shareAdapter) GetIncludedDisks() map[string]schema.Disk {
 	if s.Share.IncludedDisks == nil {
 		return nil

@@ -26,9 +26,9 @@ func NewHandler(osHandler osProvider) *Handler {
 	}
 }
 
-// EstablishPath is the principal pathing function that ensures that
-// valid destination paths are constructed for a [schema.Moveable]'s
-// set (previously allocated) destination [schema.Storage].
+// EstablishPath is the principal pathing function that ensures that valid
+// destination paths are constructed for a [schema.Moveable]'s set (previously
+// allocated) destination [schema.Storage].
 func (f *Handler) EstablishPath(m *schema.Moveable) bool {
 	if err := f.establishElementPath(m); err != nil {
 		return false
@@ -61,7 +61,8 @@ func (f *Handler) EstablishPath(m *schema.Moveable) bool {
 	return true
 }
 
-// establishElementPath constructs the destination paths for a "parent" [schema.Moveable].
+// establishElementPath constructs the destination paths for a "parent"
+// [schema.Moveable].
 func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	existsPath, err := f.ExistsOnStorage(elem)
 	if err != nil {
@@ -101,7 +102,8 @@ func (f *Handler) establishElementPath(elem *schema.Moveable) error {
 	return nil
 }
 
-// establishSubElementPath constructs the destination paths for a "child" [schema.Moveable] subelement.
+// establishSubElementPath constructs the destination paths for a "child"
+// [schema.Moveable] subelement.
 func (f *Handler) establishSubElementPath(subelem *schema.Moveable, elem *schema.Moveable) error {
 	existsPath, err := f.ExistsOnStorage(subelem)
 	if err != nil {
@@ -164,8 +166,9 @@ func constructPaths(m *schema.Moveable) error {
 	return nil
 }
 
-// constructRelatedDirPaths constructs the destination paths for the directory structure
-// stored inside a [schema.Moveable], for later recreation on the target [schema.Storage].
+// constructRelatedDirPaths constructs the destination paths for the directory
+// structure stored inside a [schema.Moveable], for later recreation on the
+// target [schema.Storage].
 func constructRelatedDirPaths(m *schema.Moveable) error {
 	dir := m.RootDir
 

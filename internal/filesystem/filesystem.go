@@ -13,8 +13,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// osProvider defines operating system methods needed to work
-// on the filesystem within the functions and methods of this package.
+// osProvider defines operating system methods needed to work on the filesystem
+// within the functions and methods of this package.
 type osProvider interface {
 	Open(name string) (*os.File, error)
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
@@ -25,8 +25,8 @@ type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
-// unixProvider defines Unix operating system methods needed to work
-// on the filesystem within the functions and methods of this package.
+// unixProvider defines Unix operating system methods needed to work on the
+// filesystem within the functions and methods of this package.
 type unixProvider interface {
 	Chmod(path string, mode uint32) error
 	Chown(path string, uid, gid int) error
@@ -39,8 +39,8 @@ type unixProvider interface {
 	UtimesNano(path string, times []unix.Timespec) error
 }
 
-// inUseProvider defines methods needed to check if a source path
-// is presently in use by another process of the operating system.
+// inUseProvider defines methods needed to check if a source path is presently
+// in use by another process of the operating system.
 type inUseProvider interface {
 	IsInUse(path string) bool
 }
@@ -84,14 +84,18 @@ func NewHandler(ctx context.Context, osHandler osProvider, unixHandler unixProvi
 	}, nil
 }
 
-// GetMoveables returns all [schema.Moveable] candidates for a [schema.Share] on a [schema.Storage].
+// GetMoveables returns all [schema.Moveable] candidates for a [schema.Share] on
+// a [schema.Storage].
 //
-// It is the principal method used for retrieving all [schema.Moveable] and their subelements for a
-// [schema.Share] on a [schema.Storage], including referencing any hard- and symlinks, establishing
-// metadata, as well as directory structure with parent/child relations for later allocation/recreation.
+// It is the principal method used for retrieving all [schema.Moveable] and
+// their subelements for a [schema.Share] on a [schema.Storage], including
+// referencing any hard- and symlinks, establishing metadata, as well as
+// directory structure with parent/child relations for later
+// allocation/recreation.
 //
-// For convenience, a destination [schema.Storage] can be set here, if it is already known at the time.
-// An example case would be directly allocating to one [schema.Pool] instead of multiple [schema.Disk].
+// For convenience, a destination [schema.Storage] can be set here, if it is
+// already known at the time. An example case would be directly allocating to
+// one [schema.Pool] instead of multiple [schema.Disk].
 func (f *Handler) GetMoveables(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) ([]*schema.Moveable, error) {
 	moveables := []*schema.Moveable{}
 

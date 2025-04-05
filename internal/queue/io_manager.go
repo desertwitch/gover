@@ -6,15 +6,16 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// IOManager is a queue manager for IO operations.
-// It is used to manage a number of different [IOTargetQueue] that
-// are each independent and bucketized by their target storage name.
+// IOManager is a queue manager for IO operations. It is used to manage a number
+// of different [IOTargetQueue] that are each independent and bucketized by
+// their target storage name.
 //
-// IOManager embeds a [GenericManager].
-// The manager is generally thread-safe and can be accessed concurrently.
+// IOManager embeds a [GenericManager]. The manager is generally thread-safe and
+// can be accessed concurrently.
 //
-// Beware that [IOTargetQueue] contained items can only be processed sequentially,
-// in order not to operate concurrently within the same destination target storage.
+// Beware that [IOTargetQueue] contained items can only be processed
+// sequentially, in order not to operate concurrently within the same
+// destination target storage.
 //
 // The items contained within [IOTargetQueue] are [schema.Moveable].
 type IOManager struct {

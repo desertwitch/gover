@@ -10,11 +10,13 @@ import (
 
 const (
 	// unixBasePerms defines the base Unix file permissions for calculations.
-	// This base is used to calculate the "Chmod" value when restoring permissions.
+	// This base is used to calculate the "Chmod" value when restoring
+	// permissions.
 	unixBasePerms = 0o777
 )
 
-// establishMetadata stores in a given [schema.Moveable] its filesystem metadata.
+// establishMetadata stores in a given [schema.Moveable] its filesystem
+// metadata.
 func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	metadata, err := f.getMetadata(m.SourcePath)
 	if err != nil {
@@ -31,7 +33,8 @@ func (f *Handler) establishMetadata(m *schema.Moveable) error {
 	return nil
 }
 
-// getMetadata retrieves for a given path the [schema.Metadata] from the filesystem.
+// getMetadata retrieves for a given path the [schema.Metadata] from the
+// filesystem.
 func (f *Handler) getMetadata(path string) (*schema.Metadata, error) {
 	var stat unix.Stat_t
 

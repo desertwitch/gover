@@ -2,8 +2,9 @@ package filesystem
 
 import "github.com/desertwitch/gover/internal/schema"
 
-// establishSymlinks cross-references a slice of [schema.Moveable] for symbolic links
-// pointing from one [schema.Moveable] to another [schema.Moveable], linking them with each other.
+// establishSymlinks cross-references a slice of [schema.Moveable] for symbolic
+// links pointing from one [schema.Moveable] to another [schema.Moveable],
+// linking them with each other.
 func establishSymlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	realFiles := make(map[string]*schema.Moveable)
 
@@ -26,8 +27,9 @@ func establishSymlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	}
 }
 
-// establishHardlinks cross-references a slice of [schema.Moveable] for hard links
-// pointing from one [schema.Moveable] to another [schema.Moveable], linking them with each other.
+// establishHardlinks cross-references a slice of [schema.Moveable] for hard
+// links pointing from one [schema.Moveable] to another [schema.Moveable],
+// linking them with each other.
 func establishHardlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	inodes := make(map[uint64]*schema.Moveable)
 
@@ -44,13 +46,15 @@ func establishHardlinks(moveables []*schema.Moveable, dst schema.Storage) {
 	}
 }
 
-// removeInternalLinks cleans up a slice of [schema.Moveable] removing all symbolic
-// and hard links, which were previously linked to another [schema.Moveable], so that only
-// [schema.Moveable] "parents" remain (with their internal link fields set to these links).
+// removeInternalLinks cleans up a slice of [schema.Moveable] removing all
+// symbolic and hard links, which were previously linked to another
+// [schema.Moveable], so that only [schema.Moveable] "parents" remain (with
+// their internal link fields set to these links).
 //
-// This is to ensure that only a group of "parent" [schema.Moveable] elements remain,
-// which are internally linked to their respective subelements. This allows for processing
-// them on their own, while being able to reconstruct all symbolic and hard link structures.
+// This is to ensure that only a group of "parent" [schema.Moveable] elements
+// remain, which are internally linked to their respective subelements. This
+// allows for processing them on their own, while being able to reconstruct all
+// symbolic and hard link structures.
 func removeInternalLinks(moveables []*schema.Moveable) []*schema.Moveable {
 	var filtered []*schema.Moveable
 

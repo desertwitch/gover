@@ -27,8 +27,7 @@ type DiskUsageCacher struct {
 	cache       map[string]*diskUsage
 }
 
-// DiskStats holds disk usage information.
-// It is meant to be passed by value.
+// DiskStats holds disk usage information. It is meant to be passed by value.
 type DiskStats struct {
 	TotalSize uint64
 	FreeSpace uint64
@@ -40,8 +39,9 @@ type diskUsage struct {
 	stats   DiskStats
 }
 
-// NewDiskUsageCacher returns a pointer to a new [DiskUsageCacher].
-// The update method is started, refreshing the cached data every [DiskUsageCacherInterval].
+// NewDiskUsageCacher returns a pointer to a new [DiskUsageCacher]. The update
+// method is started, refreshing the cached data every
+// [DiskUsageCacherInterval].
 func NewDiskUsageCacher(ctx context.Context, unixHandler unixStatfsProvider) *DiskUsageCacher {
 	cacher := &DiskUsageCacher{
 		unixHandler: unixHandler,
@@ -67,7 +67,8 @@ func (c *DiskUsageCacher) getDiskUsageFromOS(path string) (DiskStats, error) {
 	return stats, nil
 }
 
-// periodicUpdate calls [DiskUsageCacher.Update] at a defined [DiskUsageCacherInterval].
+// periodicUpdate calls [DiskUsageCacher.Update] at a defined
+// [DiskUsageCacherInterval].
 func (c *DiskUsageCacher) periodicUpdate(ctx context.Context) {
 	ticker := time.NewTicker(DiskUsageCacherInterval)
 	defer ticker.Stop()
@@ -82,8 +83,9 @@ func (c *DiskUsageCacher) periodicUpdate(ctx context.Context) {
 	}
 }
 
-// Update calls [DiskUsageCacher.getDiskUsageFromOS] on all cached [schema.Storage].
-// This means that the cache is refreshed with new disk usage statistics from the OS.
+// Update calls [DiskUsageCacher.getDiskUsageFromOS] on all cached
+// [schema.Storage]. This means that the cache is refreshed with new disk usage
+// statistics from the OS.
 func (c *DiskUsageCacher) Update() error {
 	c.Lock()
 	defer c.Unlock()
@@ -101,8 +103,9 @@ func (c *DiskUsageCacher) Update() error {
 	return nil
 }
 
-// GetDiskUsageFresh calls [DiskUsageCacher.getDiskUsageFromOS] for a specific [schema.Storage].
-// The result is stored in the [DiskUsageCacher]'s cache for later retrieval/periodic updating.
+// GetDiskUsageFresh calls [DiskUsageCacher.getDiskUsageFromOS] for a specific
+// [schema.Storage]. The result is stored in the [DiskUsageCacher]'s cache for
+// later retrieval/periodic updating.
 func (c *DiskUsageCacher) GetDiskUsageFresh(s schema.Storage) (DiskStats, error) {
 	c.Lock()
 	defer c.Unlock()
@@ -121,7 +124,8 @@ func (c *DiskUsageCacher) GetDiskUsageFresh(s schema.Storage) (DiskStats, error)
 }
 
 // GetDiskUsage gets the cached [DiskStats] for a [schema.Storage]. If none are
-// cached, fresh ones are retrieved and cached using [DiskUsageCacher.GetDiskUsageFresh].
+// cached, fresh ones are retrieved and cached using
+// [DiskUsageCacher.GetDiskUsageFresh].
 func (c *DiskUsageCacher) GetDiskUsage(s schema.Storage) (DiskStats, error) {
 	c.RLock()
 	if cachedStats, exists := c.cache[s.GetName()]; exists {
@@ -135,8 +139,9 @@ func (c *DiskUsageCacher) GetDiskUsage(s schema.Storage) (DiskStats, error) {
 	return c.GetDiskUsageFresh(s)
 }
 
-// HasEnoughFreeSpace is a helper method that allows checking if a certain [schema.Storage]
-// can house a certain fileSize without exceeding a certain minFree threshold (uses caching).
+// HasEnoughFreeSpace is a helper method that allows checking if a certain
+// [schema.Storage] can house a certain fileSize without exceeding a certain
+// minFree threshold (uses caching).
 func (c *DiskUsageCacher) HasEnoughFreeSpace(s schema.Storage, minFree uint64, fileSize uint64) (bool, error) {
 	stats, err := c.GetDiskUsage(s)
 	if err != nil {

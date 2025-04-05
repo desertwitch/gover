@@ -14,7 +14,8 @@ const (
 	// DecisionSkipped is returned by a processFunc when an item was skipped.
 	DecisionSkipped = 0
 
-	// DecisionRequeue is returned by a processFunc when an item needs requeueing.
+	// DecisionRequeue is returned by a processFunc when an item needs
+	// requeueing.
 	DecisionRequeue = -1
 )
 
@@ -51,7 +52,8 @@ func (q *GenericQueue[T]) HasRemainingItems() bool {
 	return true
 }
 
-// GetSuccessful returns a copy of the internal slice holding all successful items.
+// GetSuccessful returns a copy of the internal slice holding all successful
+// items.
 func (q *GenericQueue[T]) GetSuccessful() []T {
 	q.RLock()
 	defer q.RUnlock()
@@ -105,8 +107,8 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 	return item, true
 }
 
-// SetSuccess sets given in-progress queue items as successfully processed.
-// The items are removed from the in-progress map in the process.
+// SetSuccess sets given in-progress queue items as successfully processed. The
+// items are removed from the in-progress map in the process.
 func (q *GenericQueue[T]) SetSuccess(items ...T) {
 	q.Lock()
 	defer q.Unlock()
@@ -117,8 +119,8 @@ func (q *GenericQueue[T]) SetSuccess(items ...T) {
 	}
 }
 
-// SetSkipped sets given in-progress queue items as skipped.
-// The items are removed from the in-progress map in the process.
+// SetSkipped sets given in-progress queue items as skipped. The items are
+// removed from the in-progress map in the process.
 func (q *GenericQueue[T]) SetSkipped(items ...T) {
 	q.Lock()
 	defer q.Unlock()
@@ -193,11 +195,13 @@ func (q *GenericQueue[T]) Progress() Progress {
 	}
 }
 
-// DequeueAndProcess sequentially dequeues and processes items using the given processFunc.
-// An error is only returned in case of a context cancellation, the processFunc is otherwise
-// expected to return only an integer with the processing function's decision for that item.
+// DequeueAndProcess sequentially dequeues and processes items using the given
+// processFunc. An error is only returned in case of a context cancellation, the
+// processFunc is otherwise expected to return only an integer with the
+// processing function's decision for that item.
 //
-// Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped], [DecisionRequeue].
+// Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped],
+// [DecisionRequeue].
 func (q *GenericQueue[T]) DequeueAndProcess(ctx context.Context, processFunc func(T) int) error {
 	for {
 		if ctx.Err() != nil {
@@ -230,14 +234,17 @@ func (q *GenericQueue[T]) DequeueAndProcess(ctx context.Context, processFunc fun
 	return nil
 }
 
-// DequeueAndProcessConc concurrently dequeues and processes items using given processFunc.
-// An error is only returned in case of a context cancellation, the processFunc is otherwise
-// expected to return only an integer with the processing function's decision for that item.
+// DequeueAndProcessConc concurrently dequeues and processes items using given
+// processFunc. An error is only returned in case of a context cancellation, the
+// processFunc is otherwise expected to return only an integer with the
+// processing function's decision for that item.
 //
-// Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped], [DecisionRequeue].
+// Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped],
+// [DecisionRequeue].
 //
-// It is the responsibility of the processFunc to ensure thread-safety for anything happening
-// inside the processFunc, with the [GenericQueue] only guaranteeing thread-safety for itself.
+// It is the responsibility of the processFunc to ensure thread-safety for
+// anything happening inside the processFunc, with the [GenericQueue] only
+// guaranteeing thread-safety for itself.
 func (q *GenericQueue[T]) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(T) int) error {
 	var wg sync.WaitGroup
 

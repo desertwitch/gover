@@ -7,9 +7,10 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// getAllocatedsForSubpath is a thread-safe method to check if a certain subpath is
-// already allocated to one or multiple [schema.Disk] and returns those in a map
-// (map[diskName]schema.Disk) for later use in e.g. split-level allocation decisions.
+// getAllocatedsForSubpath is a thread-safe method to check if a certain subpath
+// is already allocated to one or multiple [schema.Disk] and returns those in a
+// map (map[diskName]schema.Disk) for later use in e.g. split-level allocation
+// decisions.
 func (a *Handler) getAllocatedsForSubpath(subPath string) map[string]schema.Disk {
 	a.RLock()
 	defer a.RUnlock()
@@ -36,7 +37,8 @@ func (a *Handler) getAllocatedSpace(disk schema.Disk) uint64 {
 }
 
 // addAllocated is a thread-safe method to add [allocInfo] for a specific
-// [schema.Moveable] to the [Handler] map of total [schema.Moveable] allocations.
+// [schema.Moveable] to the [Handler] map of total [schema.Moveable]
+// allocations.
 func (a *Handler) addAllocated(m *schema.Moveable, dst schema.Disk) {
 	a.Lock()
 	defer a.Unlock()
@@ -51,7 +53,8 @@ func (a *Handler) addAllocated(m *schema.Moveable, dst schema.Disk) {
 }
 
 // addAllocatedSpace is a thread-safe method to add allocation size for a
-// [schema.Disk] to the [Handler] map of total allocated space per [schema.Disk].
+// [schema.Disk] to the [Handler] map of total allocated space per
+// [schema.Disk].
 func (a *Handler) addAllocatedSpace(disk schema.Disk, size uint64) {
 	a.Lock()
 	defer a.Unlock()

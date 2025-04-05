@@ -38,7 +38,8 @@ func (m *GenericManager[E, T]) GetSuccessful() []E {
 	return result
 }
 
-// Enqueue bucketizes items into queues according to a getKeyFunc, creating new queues as required using a newQueueFunc.
+// Enqueue bucketizes items into queues according to a getKeyFunc, creating new
+// queues as required using a newQueueFunc.
 func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
 	m.Lock()
 	defer m.Unlock()
@@ -53,7 +54,8 @@ func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQue
 	m.queues[key].Enqueue(item)
 }
 
-// GetQueues returns a copy of the internal map holding pointers to all managed queues.
+// GetQueues returns a copy of the internal map holding pointers to all managed
+// queues.
 func (m *GenericManager[E, T]) GetQueues() map[string]T {
 	m.RLock()
 	defer m.RUnlock()

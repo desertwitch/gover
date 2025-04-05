@@ -28,7 +28,8 @@ type osProvider interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
-// unixProvider defines the Unix operating system methods needed for IO operations.
+// unixProvider defines the Unix operating system methods needed for IO
+// operations.
 type unixProvider interface {
 	Chmod(path string, mode uint32) error
 	Chown(path string, uid, gid int) error
@@ -39,13 +40,15 @@ type unixProvider interface {
 	UtimesNano(path string, times []unix.Timespec) error
 }
 
-// ioTargetQueue defines the methods an IO queue needs to have for IO operations.
+// ioTargetQueue defines the methods an IO queue needs to have for IO
+// operations.
 type ioTargetQueue interface {
 	AddBytesTransfered(bytes uint64)
 	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error
 }
 
-// fsElement defines the methods any filesystem element needs to have for IO operations.
+// fsElement defines the methods any filesystem element needs to have for IO
+// operations.
 type fsElement interface {
 	GetDestPath() string
 	GetMetadata() *schema.Metadata
@@ -53,7 +56,8 @@ type fsElement interface {
 }
 
 // Handler is the principal implementation for the IO services. It is safe for
-// concurrent use on grouped by target [schema.Storage] queues of [schema.Moveable].
+// concurrent use on grouped by target [schema.Storage] queues of
+// [schema.Moveable].
 type Handler struct {
 	sync.Mutex
 	fsHandler   fsProvider
@@ -70,12 +74,14 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-// ProcessTargetQueue processes an [ioTargetQueue], containing [schema.Moveable] grouped by
-// their respective destination [schema.Storage]. It is usually called concurrently, with
-// multiple ProcessTargetQueue functions processing multiple [schema.Storage] destinations.
+// ProcessTargetQueue processes an [ioTargetQueue], containing [schema.Moveable]
+// grouped by their respective destination [schema.Storage]. It is usually
+// called concurrently, with multiple ProcessTargetQueue functions processing
+// multiple [schema.Storage] destinations.
 //
-// It is important to note that this function should never operate concurrently on the
-// same target [schema.Storage], but follow a "read many, write once" approach instead.
+// It is important to note that this function should never operate concurrently
+// on the same target [schema.Storage], but follow a "read many, write once"
+// approach instead.
 func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool {
 	batch := &ioReport{}
 
@@ -136,7 +142,8 @@ func (i *Handler) processElement(ctx context.Context, elem *schema.Moveable, job
 	return nil
 }
 
-// processSubElement processes a dequeued "child" [schema.Moveable] (hard-/symlink) subelement.
+// processSubElement processes a dequeued "child" [schema.Moveable]
+// (hard-/symlink) subelement.
 func (i *Handler) processSubElement(ctx context.Context, subelem *schema.Moveable, elem *schema.Moveable, job *ioReport) error {
 	if err := i.processMoveable(ctx, subelem, job); err != nil {
 		slog.Warn("Skipped subjob: failure during processing",
@@ -165,7 +172,8 @@ func (i *Handler) processSubElement(ctx context.Context, subelem *schema.Moveabl
 	return nil
 }
 
-// processMoveable is the principal method for IO-processing a [schema.Moveable] of any supported type.
+// processMoveable is the principal method for IO-processing a [schema.Moveable]
+// of any supported type.
 func (i *Handler) processMoveable(ctx context.Context, m *schema.Moveable, job *ioReport) error {
 	var jobComplete bool
 

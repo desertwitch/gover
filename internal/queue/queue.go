@@ -23,8 +23,8 @@ func NewManager() *Manager {
 	}
 }
 
-// Progress holds information about the progress of a queue (or manager).
-// It is meant to be passed by value.
+// Progress holds information about the progress of a queue (or manager). It is
+// meant to be passed by value.
 type Progress struct {
 	HasStarted        bool
 	HasFinished       bool

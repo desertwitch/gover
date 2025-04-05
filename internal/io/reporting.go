@@ -4,7 +4,8 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
-// ioReport tracks both all creations and encountered directories during IO operations.
+// ioReport tracks both all creations and encountered directories during IO
+// operations.
 type ioReport struct {
 	AnyCreated       []fsElement
 	DirsCreated      []*schema.Directory

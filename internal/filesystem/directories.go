@@ -23,8 +23,8 @@ func (*fileWalker) WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
 }
 
-// establishRelatedDirs uses [Handler.walkParentDirs] to establish
-// all parent directories of a [schema.Moveable] up to a given base path.
+// establishRelatedDirs uses [Handler.walkParentDirs] to establish all parent
+// directories of a [schema.Moveable] up to a given base path.
 func (f *Handler) establishRelatedDirs(m *schema.Moveable, basePath string) error {
 	if err := f.walkParentDirs(m, basePath); err != nil {
 		slog.Warn("Skipped job: failed to get parent folders",
@@ -39,9 +39,10 @@ func (f *Handler) establishRelatedDirs(m *schema.Moveable, basePath string) erro
 	return nil
 }
 
-// walkParentDirs walks the parent directories of a [schema.Moveable] until a certain
-// base path is reached. Both parent/child relations and metadata of any walked folders
-// are established and recorded as part of that tree walking process, for reconstruction.
+// walkParentDirs walks the parent directories of a [schema.Moveable] until a
+// certain base path is reached. Both parent/child relations and metadata of any
+// walked folders are established and recorded as part of that tree walking
+// process, for reconstruction.
 func (f *Handler) walkParentDirs(m *schema.Moveable, basePath string) error {
 	var prevElement *schema.Directory
 
