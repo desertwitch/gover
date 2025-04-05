@@ -10,7 +10,7 @@ import (
 // EvaluationShareQueue embeds a [GenericQueue].
 // It is thread-safe and can both be accessed and processed concurrently.
 //
-// The items contained within the queue are tasks of type [schema.Moveable].
+// The items contained within [EvaluationShareQueue] are [schema.Moveable].
 type EvaluationShareQueue struct {
 	*GenericQueue[*schema.Moveable]
 }

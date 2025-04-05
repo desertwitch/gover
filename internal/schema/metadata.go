@@ -2,6 +2,7 @@ package schema
 
 import "golang.org/x/sys/unix"
 
+// Metadata is filesystem metadata for a filesystem element.
 type Metadata struct {
 	Inode      uint64
 	Perms      uint32

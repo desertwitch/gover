@@ -33,8 +33,6 @@ var (
 			Padding(0, 1)
 )
 
-type logMsg string
-
 type queueProgressMsg struct {
 	t               time.Time
 	enumerationData queue.Progress

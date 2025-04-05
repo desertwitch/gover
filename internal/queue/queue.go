@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Manager is the principal queue manager implementation.
 type Manager struct {
 	sync.Mutex
 	Mode               int
@@ -13,6 +14,7 @@ type Manager struct {
 	IOManager          *IOManager
 }
 
+// NewManager returns a pointer to a new queue [Manager].
 func NewManager() *Manager {
 	return &Manager{
 		EnumerationManager: NewEnumerationManager(),
@@ -21,6 +23,8 @@ func NewManager() *Manager {
 	}
 }
 
+// Progress holds information about the progress of a queue (or manager).
+// It is meant to be passed by value.
 type Progress struct {
 	HasStarted        bool
 	HasFinished       bool

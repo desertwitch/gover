@@ -7,7 +7,7 @@ package queue
 // EnumerationManager embeds a [GenericManager].
 // It is thread-safe and can both be accessed and processed concurrently.
 //
-// The items contained within the queues are tasks of type [EnumerationTask].
+// The items contained within [EnumerationSourceQueue] are [EnumerationTask].
 type EnumerationManager struct {
 	*GenericManager[*EnumerationTask, *EnumerationSourceQueue]
 }

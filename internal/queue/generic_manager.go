@@ -5,23 +5,27 @@ import (
 	"time"
 )
 
+// GenericQueueType defines methods that a managed queue needs to have.
 type GenericQueueType[E comparable] interface {
 	Enqueue(items ...E)
 	GetSuccessful() []E
 	Progress() Progress
 }
 
+// GenericManager is a generic queue manager for queues of [GenericQueueType].
 type GenericManager[E comparable, T GenericQueueType[E]] struct {
 	sync.RWMutex
 	queues map[string]T
 }
 
+// NewGenericManager returns a pointer to a new [GenericManager].
 func NewGenericManager[E comparable, T GenericQueueType[E]]() *GenericManager[E, T] {
 	return &GenericManager[E, T]{
 		queues: make(map[string]T),
 	}
 }
 
+// GetSuccessful returns a slice of all queues successfully processed items.
 func (m *GenericManager[E, T]) GetSuccessful() []E {
 	m.RLock()
 	defer m.RUnlock()
@@ -34,6 +38,7 @@ func (m *GenericManager[E, T]) GetSuccessful() []E {
 	return result
 }
 
+// Enqueue bucketizes items into queues according to a getKeyFunc, creating new queues as required using a newQueueFunc.
 func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
 	m.Lock()
 	defer m.Unlock()
@@ -66,8 +71,8 @@ func (m *GenericManager[E, T]) GetQueues() map[string]T {
 	return queues
 }
 
-//nolint:funlen
-func (m *GenericManager[E, T]) Progress() Progress {
+// Progress returns the [Progress] for the [GenericManager].
+func (m *GenericManager[E, T]) Progress() Progress { //nolint:funlen
 	m.RLock()
 	defer m.RUnlock()
 

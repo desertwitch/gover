@@ -6,17 +6,22 @@ import (
 	"sync"
 )
 
+// TaskManager is a simple task manager for delayed function execution.
 type TaskManager struct {
 	sync.Mutex
 	Tasks []func()
 }
 
+// NewTaskManager returns a pointer to a new [TaskManager].
 func NewTaskManager() *TaskManager {
 	return &TaskManager{
 		Tasks: []func(){},
 	}
 }
 
+// Add adds a new taskedFunc to the [TaskManager].
+// Functions with parameters can be added by invoking a parameterized function
+// that immediately returns a func(), capturing any parameters in the closure.
 func (t *TaskManager) Add(taskedFunc func()) {
 	t.Lock()
 	defer t.Unlock()
@@ -24,6 +29,8 @@ func (t *TaskManager) Add(taskedFunc func()) {
 	t.Tasks = append(t.Tasks, taskedFunc)
 }
 
+// Launch sequentially launches the functions stored in a [TaskManager].
+// An error is only returned in case of a mid-flight context cancellation.
 func (t *TaskManager) Launch(ctx context.Context) error {
 	t.Lock()
 	defer t.Unlock()
@@ -43,6 +50,11 @@ func (t *TaskManager) Launch(ctx context.Context) error {
 	return nil
 }
 
+// LaunchConcAndWait concurrently launches the functions stored in a [TaskManager].
+// An error is only returned in case of a mid-flight context cancellation.
+//
+// It is the responsibility of the taskedFunc to ensure thread-safety for anything happening
+// inside the taskedFunc, with the [TaskManager] only guaranteeing thread-safety for itself.
 func (t *TaskManager) LaunchConcAndWait(ctx context.Context, maxWorkers int) error {
 	t.Lock()
 	defer t.Unlock()

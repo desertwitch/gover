@@ -22,7 +22,7 @@ func (e *EnumerationTask) Run() int {
 // EnumerationSourceQueue embeds a [GenericQueue].
 // It is thread-safe and can both be accessed and processed concurrently.
 //
-// The items contained within the queue are tasks of type [EnumerationTask].
+// The items contained within [EnumerationSourceQueue] are [EnumerationTask].
 type EnumerationSourceQueue struct {
 	*GenericQueue[*EnumerationTask]
 }

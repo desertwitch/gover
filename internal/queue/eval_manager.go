@@ -11,7 +11,7 @@ import (
 // EvaluationManager embeds a [GenericManager].
 // It is thread-safe and can both be accessed and processed concurrently.
 //
-// The items contained within the queues are of type [schema.Moveable].
+// The items contained within [EvaluationShareQueue] are [schema.Moveable].
 type EvaluationManager struct {
 	*GenericManager[*schema.Moveable, *EvaluationShareQueue]
 }
@@ -21,6 +21,14 @@ func NewEvaluationManager() *EvaluationManager {
 	return &EvaluationManager{
 		GenericManager: NewGenericManager[*schema.Moveable, *EvaluationShareQueue](),
 	}
+}
+
+// Progress returns the [Progress] of the [EvaluationManager].
+func (m *EvaluationManager) Progress() Progress {
+	mProgress := m.GenericManager.Progress()
+	mProgress.TransferSpeedUnit = "tasks/sec"
+
+	return mProgress
 }
 
 // Enqueue adds [schema.Moveable](s) into the correct [EvaluationShareQueue],
