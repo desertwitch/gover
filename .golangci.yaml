@@ -4,6 +4,7 @@ linters:
             - depguard
             - dupl
             - exhaustruct
+            - goconst
             - tenv
             - varnamelen
             - wsl
