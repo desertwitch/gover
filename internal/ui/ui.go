@@ -9,6 +9,7 @@ import (
 	"github.com/desertwitch/gover/internal/queue"
 )
 
+// Handler is the principal implementation of a user interface [Handler].
 type Handler struct {
 	queueManager *queue.Manager
 	program      *tea.Program
@@ -19,6 +20,7 @@ type Handler struct {
 	Failed atomic.Bool
 }
 
+// NewHandler returns a pointer to a new user interface [Handler].
 func NewHandler(ctx context.Context, cancel context.CancelFunc, queueManager *queue.Manager) *Handler {
 	handler := &Handler{
 		queueManager: queueManager,
@@ -31,6 +33,7 @@ func NewHandler(ctx context.Context, cancel context.CancelFunc, queueManager *qu
 	return handler
 }
 
+// Launch starts the command-line user interface.
 func (uiHandler *Handler) Launch() error {
 	defer uiHandler.LogWriter.Stop()
 
