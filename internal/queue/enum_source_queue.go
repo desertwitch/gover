@@ -19,8 +19,8 @@ func (e *EnumerationTask) Run() int {
 // EnumerationSourceQueue is a queue where items of a common source storage
 // name were previously enqueued and aggregated by their [EnumerationManager].
 //
-// EnumerationSourceQueue embeds a [GenericQueue],
-// it is thread-safe and can both be accessed and processed concurrently.
+// EnumerationSourceQueue embeds a [GenericQueue].
+// It is thread-safe and can both be accessed and processed concurrently.
 //
 // The items contained within the queue are tasks of type [EnumerationTask].
 type EnumerationSourceQueue struct {
@@ -28,6 +28,7 @@ type EnumerationSourceQueue struct {
 }
 
 // NewEnumerationSourceQueue returns a pointer to a new [EnumerationSourceQueue].
+// This method is generally only called from the respective [EnumerationManager].
 func NewEnumerationSourceQueue() *EnumerationSourceQueue {
 	return &EnumerationSourceQueue{
 		GenericQueue: NewGenericQueue[*EnumerationTask](),

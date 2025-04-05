@@ -8,8 +8,8 @@ import (
 // It is used to manage a number of different [EvaluationShareQueue]
 // that are each independent and bucketized by using their share name.
 //
-// EvaluationManager embeds a [GenericManager],
-// it is thread-safe and can both be accessed and processed concurrently.
+// EvaluationManager embeds a [GenericManager].
+// It is thread-safe and can both be accessed and processed concurrently.
 //
 // The items contained within the queues are of type [schema.Moveable].
 type EvaluationManager struct {
@@ -24,7 +24,7 @@ func NewEvaluationManager() *EvaluationManager {
 }
 
 // Enqueue adds [schema.Moveable](s) into the correct [EvaluationShareQueue],
-// managed by [EvaluationManager], based on their respective share's names.
+// as managed by [EvaluationManager], based on their respective shares names.
 func (m *EvaluationManager) Enqueue(items ...*schema.Moveable) {
 	for _, item := range items {
 		m.GenericManager.Enqueue(item, func(m *schema.Moveable) string {

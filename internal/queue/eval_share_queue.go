@@ -7,8 +7,8 @@ import (
 // EvaluationShareQueue is a queue where items of a common share name
 // were previously enqueued and aggregated by their [EvaluationManager].
 //
-// EvaluationShareQueue embeds a [GenericQueue],
-// it is thread-safe and can both be accessed and processed concurrently.
+// EvaluationShareQueue embeds a [GenericQueue].
+// It is thread-safe and can both be accessed and processed concurrently.
 //
 // The items contained within the queue are tasks of type [schema.Moveable].
 type EvaluationShareQueue struct {
@@ -16,6 +16,7 @@ type EvaluationShareQueue struct {
 }
 
 // NewEvaluationShareQueue returns a pointer to a new [EvaluationShareQueue].
+// This method is generally only called from the respective [EvaluationManager].
 func NewEvaluationShareQueue() *EvaluationShareQueue {
 	return &EvaluationShareQueue{
 		GenericQueue: NewGenericQueue[*schema.Moveable](),

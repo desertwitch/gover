@@ -48,7 +48,7 @@ func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQue
 	m.queues[key].Enqueue(item)
 }
 
-// GetQueues returns a copy of the internal map holding pointers to all queues.
+// GetQueues returns a copy of the internal map holding pointers to all managed queues.
 func (m *GenericManager[E, T]) GetQueues() map[string]T {
 	m.RLock()
 	defer m.RUnlock()
