@@ -4,16 +4,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// logMsg is a regular string containing a log message. It is typed for
+// LogMsg is a regular string containing a log message. It is typed for
 // identification as [tea.Msg] within a [tea.Program].
-type logMsg string
+type LogMsg string
 
 // TeaLogWriter is an implementation of an [io.Writer], for use inside a
 // [slog.Handler], that sends any logs to a [tea.Program] as [tea.Msg].
 type TeaLogWriter struct {
 	program  *tea.Program
 	doneChan chan struct{}
-	logChan  chan logMsg
+	logChan  chan LogMsg
 }
 
 // NewTeaLogWriter returns a pointer to a new [TeaLogWriter]. It also starts the
@@ -23,7 +23,7 @@ func NewTeaLogWriter(program *tea.Program) *TeaLogWriter {
 	wr := &TeaLogWriter{
 		program:  program,
 		doneChan: make(chan struct{}),
-		logChan:  make(chan logMsg, 1000), //nolint:mnd
+		logChan:  make(chan LogMsg, 1000), //nolint:mnd
 	}
 
 	go wr.processLogs()
@@ -60,7 +60,7 @@ func (wr *TeaLogWriter) Write(p []byte) (int, error) {
 
 	select {
 	case <-wr.doneChan:
-	case wr.logChan <- logMsg(logStr):
+	case wr.logChan <- LogMsg(logStr):
 	}
 
 	return len(p), nil

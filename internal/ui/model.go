@@ -16,31 +16,37 @@ import (
 
 //nolint:gochecknoglobals
 var (
+	// titleStyle defines the style for a panel's title.
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Background(lipgloss.Color("#7D56F4"))
 
+	// borderStyle defines the style for a panel's borders.
 	borderStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#7D56F4"))
 
+	// infoStyle defines the style for a panel's text.
 	infoStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FAFAFA"))
 
+	// helpStyle defines the style for the help panel's text.
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262")).
 			Padding(0, 1)
 )
 
-type queueProgressMsg struct {
+// QueueProgressMsg is a [tea.Msg] containing [queue.Progress] information.
+type QueueProgressMsg struct {
 	t               time.Time
 	enumerationData queue.Progress
 	evaluationData  queue.Progress
 	ioData          queue.Progress
 }
 
-type teaModel struct {
+// TeaModel is the principal [tea.Model] for the command-line user interface.
+type TeaModel struct {
 	width  int
 	height int
 
@@ -65,8 +71,10 @@ type teaModel struct {
 	ready bool
 }
 
+// NewTeaModel returns an initial new [TeaModel].
+//
 //nolint:mnd
-func newTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context.CancelFunc) teaModel {
+func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context.CancelFunc) TeaModel {
 	enumerationProgress := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(80),
@@ -82,7 +90,7 @@ func newTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context
 
 	logsViewport := viewport.New(80, 20)
 
-	return teaModel{
+	return TeaModel{
 		uiHandler:           uiHandler,
 		queueManager:        queueManager,
 		enumerationProgress: enumerationProgress,
@@ -98,17 +106,20 @@ func newTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context
 	}
 }
 
-func (m teaModel) Init() tea.Cmd {
+// Init initializes the model within a [tea.Program].
+func (m TeaModel) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
 		updateQueueProgress(m.queueManager),
 	)
 }
 
-//nolint:mnd
+// updateQueueProgress produces a [tea.Cmd] for later scheduling in a
+// [tea.Program]. When executed, a [QueueProgressMsg] with a [queue.Manager]'s
+// [queue.Progress] is returned.
 func updateQueueProgress(q *queue.Manager) tea.Cmd {
-	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		queueProgressMsg := queueProgressMsg{
+	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg { //nolint:mnd
+		queueProgressMsg := QueueProgressMsg{
 			t:               t,
 			enumerationData: q.EnumerationManager.Progress(),
 			evaluationData:  q.EvaluationManager.Progress(),
@@ -119,8 +130,11 @@ func updateQueueProgress(q *queue.Manager) tea.Cmd {
 	})
 }
 
+// Update is the principal message handling method of the model.
+// It sets the internal state of the model, for later rendering.
+//
 //nolint:mnd,funlen,ireturn
-func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -173,7 +187,7 @@ func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.uiHandler.Ready.Store(true)
 		}
 
-	case queueProgressMsg:
+	case QueueProgressMsg:
 		m.enumerationData = msg.enumerationData
 		m.evaluationData = msg.evaluationData
 		m.ioData = msg.ioData
@@ -187,7 +201,7 @@ func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Queue the next update.
 		cmds = append(cmds, updateQueueProgress(m.queueManager))
 
-	case logMsg:
+	case LogMsg:
 		logMsg := string(msg)
 
 		if len(m.logs) >= 100 {
@@ -233,7 +247,8 @@ func (m teaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m teaModel) View() string {
+// View is the principal rendering function of the model.
+func (m TeaModel) View() string {
 	if !m.ready {
 		return "Loading the GUI..."
 	}
@@ -275,7 +290,8 @@ func (m teaModel) View() string {
 	return s.String()
 }
 
-func (m teaModel) formatProgressView(title string, progressBar string, progress queue.Progress) string {
+// formatProgressView is a helper function for rendering the progress panels.
+func (m TeaModel) formatProgressView(title string, progressBar string, progress queue.Progress) string {
 	var timeLeft time.Duration
 	var timeLeftMin float64
 

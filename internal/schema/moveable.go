@@ -12,42 +12,40 @@ package schema
 // processed independently of other [Moveable] elements, their directory
 // structures and other fields.
 type Moveable struct {
-	// Share is a [Share] the [Moveable] belongs to.
+	// Share is the [Share] the moveable belongs to.
 	Share Share
 
-	// Source is a [Storage] the [Moveable] is located on.
+	// Source is the [Storage] the moveable is located on.
 	Source Storage
 
-	// SourcePath is an absolute path the [Moveable] is located at.
+	// SourcePath is the absolute path the moveable is located at.
 	SourcePath string
 
-	// Dest is a [Storage] the [Moveable] is to be moved to.
+	// Dest is the [Storage] the moveable is to be moved to.
 	Dest Storage
 
-	// DestPath is an absolute path the [Moveable] is to be moved to.
+	// DestPath is the absolute path the moveable is to be moved to.
 	DestPath string
 
-	// Hardlinks is a slice of hardlink-type [Moveable] subelements.
+	// Hardlinks is a slice of hard-link type moveable subelements.
 	Hardlinks []*Moveable
 
-	// IsHardlink describes if the [Moveable] is a hard-link.
+	// IsHardlink describes if the moveable is a hard-link.
 	IsHardlink bool
 
-	// HardlinkTo describes the parent [Moveable] that the [Moveable] is linked
-	// to.
+	// HardlinkTo describes the parent moveable that the moveable is linked to.
 	HardlinkTo *Moveable
 
-	// Hardlinks is a slice of symlink-type [Moveable] subelements.
+	// Hardlinks is a slice of sym-link type moveable subelements.
 	Symlinks []*Moveable
 
-	// IsSymlink describes if the [Moveable] is a sym-link.
+	// IsSymlink describes if the moveable is a sym-link.
 	IsSymlink bool
 
-	// SymlinkTo describes the parent [Moveable] that the [Moveable] is linked
-	// to.
+	// SymlinkTo describes the parent moveable that the moveable is linked to.
 	SymlinkTo *Moveable
 
-	// Metadata is the filesystem [Metadata] for the specific [Moveable].
+	// Metadata is the filesystem [Metadata] for the specific moveable.
 	Metadata *Metadata
 
 	// RootDir is the shallowest [Directory], almost always a [Share] base
@@ -56,8 +54,8 @@ type Moveable struct {
 	// destination [Storage].
 	//
 	// [Directory] elements and their children are always unique to a specific
-	// [Moveable]. This allows for a [Moveable] and its subelements to be
-	// operated on fully autonomous.
+	// moveable. This allows for a moveable and its subelements to be operated
+	// on fully autonomous.
 	RootDir *Directory
 }
 
@@ -71,7 +69,7 @@ func (m *Moveable) GetSourcePath() string {
 	return m.SourcePath
 }
 
-// GetSourcePath returns the absolute destination path for a [Moveable].
+// GetDestPath returns the absolute destination path for a [Moveable].
 func (m *Moveable) GetDestPath() string {
 	return m.DestPath
 }

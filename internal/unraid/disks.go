@@ -6,24 +6,29 @@ import (
 	"regexp"
 )
 
+// Disk is an Unraid disk, as part of an Unraid [Array].
 type Disk struct {
 	Name   string
 	FSPath string
 }
 
+// IsDisk is a type identifier.
 func (d *Disk) IsDisk() bool {
 	return true
 }
 
+// GetName returns the disk name.
 func (d *Disk) GetName() string {
 	return d.Name
 }
 
+// GetFSPath returns an absolute filesystem path to the disk's mountpoint.
 func (d *Disk) GetFSPath() string {
 	return d.FSPath
 }
 
-// establishDisks returns a map of pointers to established Unraid disks.
+// establishDisks returns a map (map[diskName]*Disk) to all Unraid [Disk]. It is
+// the principal method for reading all disk information from the system.
 func (u *Handler) establishDisks() (map[string]*Disk, error) {
 	basePath := BasePathMounts
 	diskPattern := regexp.MustCompile(PatternDisks)

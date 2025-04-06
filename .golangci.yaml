@@ -59,3 +59,13 @@ linters-settings:
         # Default: []
         replace-allow-list:
         - github.com/charmbracelet/bubbletea
+
+issues:
+    include:
+        - EXC0002
+        - EXC0005
+        - EXC0011
+        - EXC0012
+        - EXC0013
+        - EXC0014
+        - EXC0015

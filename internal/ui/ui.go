@@ -26,14 +26,14 @@ func NewHandler(ctx context.Context, cancel context.CancelFunc, queueManager *qu
 		queueManager: queueManager,
 	}
 
-	model := newTeaModel(handler, queueManager, cancel)
+	model := NewTeaModel(handler, queueManager, cancel)
 	handler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
 	handler.LogWriter = NewTeaLogWriter(handler.program)
 
 	return handler
 }
 
-// Launch starts the command-line user interface.
+// Launch starts the command-line user interface (the [tea.Program]).
 func (uiHandler *Handler) Launch() error {
 	defer uiHandler.LogWriter.Stop()
 
