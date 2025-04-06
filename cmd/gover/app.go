@@ -13,6 +13,7 @@ import (
 	"github.com/desertwitch/gover/internal/ui"
 )
 
+// app is the principal implementation of the application.
 type app struct {
 	shares         map[string]schema.Share
 	fsHandler      *filesystem.Handler
@@ -23,6 +24,7 @@ type app struct {
 	uiHandler      *ui.Handler
 }
 
+// newApp returns a pointer to a new [app].
 func newApp(shares map[string]schema.Share,
 	fsHandler *filesystem.Handler,
 	allocHandler *allocation.Handler,
@@ -42,6 +44,7 @@ func newApp(shares map[string]schema.Share,
 	}
 }
 
+// Launch starts the application.
 func (app *app) Launch(ctx context.Context) error {
 	if err := app.Enumerate(ctx); err != nil {
 		return fmt.Errorf("(app) %w", err)
@@ -58,6 +61,7 @@ func (app *app) Launch(ctx context.Context) error {
 	return nil
 }
 
+// LaunchUI starts the application's command-line user interface.
 func (app *app) LaunchUI() error {
 	if err := app.uiHandler.Launch(); err != nil {
 		return fmt.Errorf("(app-ui) %w", err)

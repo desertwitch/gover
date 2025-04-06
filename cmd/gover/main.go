@@ -1,3 +1,7 @@
+/*
+gover is a mover-type application for moving files between various storage, and
+according to a defined set of rules, configuration and logical pathways.
+*/
 package main
 
 import (
@@ -25,6 +29,7 @@ import (
 )
 
 const (
+	// stackTraceBufMax is the limiting size for a requested stack trace.
 	stackTraceBufMax = 1 << 24
 )
 
@@ -34,14 +39,15 @@ var (
 	Version string
 
 	exitCode = 0
-
-	slogMan = newSlogManager()
+	slogMan  = newSlogManager()
 
 	uiEnabled  = flag.Bool("ui", true, "enable the UI")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 )
 
+// termLogging enables or disables logs to be sent to the terminal (via
+// [os.Stdout]).
 func termLogging(enabled bool) {
 	if enabled {
 		if _, ok := slogMan.GetHandler("term"); !ok {
@@ -58,6 +64,8 @@ func termLogging(enabled bool) {
 	}
 }
 
+// uiLogging enables or disables logs to be sent to a user interface (via
+// [ui.TeaLogWriter]).
 func uiLogging(enabled bool, writer *ui.TeaLogWriter) {
 	if enabled {
 		if _, ok := slogMan.GetHandler("ui"); !ok {
@@ -74,6 +82,10 @@ func uiLogging(enabled bool, writer *ui.TeaLogWriter) {
 	}
 }
 
+// setupSignalHandlers setups up operating system singal handling.
+//   - SIGTERM, SIGINT initiate graceful program teardown.
+//   - SIGUSR1 initiates printing of a stack trace.
+//   - SIGUSR2 initiates forced garbage collection.
 func setupSignalHandlers(cancel context.CancelFunc) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
@@ -102,6 +114,8 @@ func setupSignalHandlers(cancel context.CancelFunc) {
 	}()
 }
 
+// startApp is a helper function to start the application, waiting for the user
+// interface to come up or fail (if one was requested for the application).
 func startApp(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	defer wg.Done()
 
@@ -124,6 +138,8 @@ func startApp(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	}
 }
 
+// startUI is a helper function to start the application's user interface. If no
+// user interface was requested for the application, this function is a no-op.
 func startUI(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	defer wg.Done()
 
