@@ -8,6 +8,11 @@ import (
 	"github.com/desertwitch/gover/internal/queue"
 )
 
+// IO is the principal method for moving all [schema.Moveable] to their
+// respective target [schema.Storage]. This process happens concurrently,
+// meaning multiple (different) [schema.Storage] get written to at the same
+// time, but with only one I/O write operation ever happening per individual
+// [schema.Storage] (= sequential processing inside one [schema.Storage]).
 func (app *app) IO(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
@@ -23,7 +28,6 @@ func (app *app) IO(ctx context.Context) error {
 		)
 	}
 
-	// go app.IOProgress(ctx)
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
 		return fmt.Errorf("(app-io) %w", err)
 	}

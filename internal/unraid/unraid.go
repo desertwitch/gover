@@ -1,46 +1,22 @@
+// Package unraid implements structures and routines for defining and querying
+// of an Unraid-type storage system.
 package unraid
 
 import (
 	"os"
 )
 
-const (
-	ArrayStateFile        = "/var/local/emhttp/var.ini"
-	GlobalShareConfigFile = "/boot/config/share.cfg"
-
-	ConfigDirShares = "/boot/config/shares"
-	ConfigDirPools  = "/boot/config/pools"
-
-	BasePathMounts = "/mnt/"
-	PatternDisks   = `^disk[1-9][0-9]?$`
-
-	SettingGlobalShareIncludes = "shareUserInclude"
-	SettingGlobalShareExcludes = "shareUserExclude"
-
-	SettingShareUseCache   = "shareUseCache"
-	SettingShareAllocator  = "shareAllocator"
-	SettingShareCOW        = "shareCOW"
-	SettingShareSplitLevel = "shareSplitLevel"
-	SettingShareFloor      = "shareFloor"
-
-	SettingShareCachePool    = "shareCachePool"
-	SettingShareCachePool2   = "shareCachePool2"
-	SettingShareIncludeDisks = "shareInclude"
-	SettingShareExcludeDisks = "shareExclude"
-
-	StateArrayStatus    = "mdState"
-	StateTurboSetting   = "md_write_method"
-	StateParityPosition = "mdResyncPos"
-)
-
+// osProvider defines the needed operating system methods.
 type osProvider interface {
 	ReadDir(name string) ([]os.DirEntry, error)
 }
 
+// fsProvider defines the needed filesystem-related methods.
 type fsProvider interface {
 	Exists(path string) (bool, error)
 }
 
+// configProvider defines the needed configuration-related methods.
 type configProvider interface {
 	ReadGeneric(filenames ...string) (envMap map[string]string, err error)
 	MapKeyToString(envMap map[string]string, key string) string
@@ -49,12 +25,14 @@ type configProvider interface {
 	MapKeyToUInt64(envMap map[string]string, key string) uint64
 }
 
+// Handler is the principal implementation for the Unraid services.
 type Handler struct {
 	fsHandler     fsProvider
 	configHandler configProvider
 	osHandler     osProvider
 }
 
+// NewHandler returns a pointer to a new Unraid [Handler].
 func NewHandler(fsHandler fsProvider, configHandler configProvider, osHandler osProvider) *Handler {
 	return &Handler{
 		fsHandler:     fsHandler,

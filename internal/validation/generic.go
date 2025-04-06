@@ -8,6 +8,7 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// validateBasicAttributes validates the core information of a [schema.Moveable].
 func validateBasicAttributes(m *schema.Moveable) error {
 	if m.Share == nil {
 		return fmt.Errorf("(validation) %w", ErrNoShareInfo)
@@ -44,6 +45,7 @@ func validateBasicAttributes(m *schema.Moveable) error {
 	return nil
 }
 
+// validateLinks validates link information of a [schema.Moveable].
 func validateLinks(m *schema.Moveable) error {
 	if m.IsHardlink {
 		if m.HardlinkTo == nil {

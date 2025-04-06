@@ -1,3 +1,4 @@
+// Package validation implements routines for validation of [schema.Moveable].
 package validation
 
 import (
@@ -7,6 +8,8 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// ValidateMoveable is the principal function to validate a [schema.Moveable]
+// and its subelements.
 func ValidateMoveable(m *schema.Moveable) bool {
 	if err := validateMoveable(m); err != nil {
 		slog.Warn("Skipped job: failed pre-move validation",
@@ -65,6 +68,8 @@ func ValidateMoveable(m *schema.Moveable) bool {
 	return true
 }
 
+// validateMoveable is the principal function validate a single
+// [schema.Moveable].
 func validateMoveable(m *schema.Moveable) error {
 	if err := validateBasicAttributes(m); err != nil {
 		return fmt.Errorf("(validation) %w", err)

@@ -1,3 +1,4 @@
+// Package ui implements a command-line user interface using [tea].
 package ui
 
 import (

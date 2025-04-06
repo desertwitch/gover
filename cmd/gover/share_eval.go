@@ -11,6 +11,10 @@ import (
 	"github.com/desertwitch/gover/internal/validation"
 )
 
+// Evaluate is the principal method for filtering, allocating, pathing and
+// validating all previously collected [schema.Moveable] and enqueueing them
+// into the [queue.IOManager]. This process happens concurrently, meaning that
+// multiple [schema.Share]'s are processed at the same time.
 func (app *app) Evaluate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
@@ -31,6 +35,8 @@ func (app *app) Evaluate(ctx context.Context) error {
 	return nil
 }
 
+// processEvaluationQueue processes an [queue.EvaluationShareQueue]'s items
+// (which are [schema.Moveable] of one specific [schema.Share]).
 func (app *app) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) bool {
 	slog.Info("Evaluating share:",
 		"share", shareName,
@@ -52,6 +58,10 @@ func (app *app) processEvaluationQueue(ctx context.Context, shareName string, sh
 	return true
 }
 
+// evaluateToIO is the processing logic for an [queue.EvaluationShareQueue]. It
+// processes items of the [queue.EvaluationShareQueue] concurrently, meaning
+// that multiple [schema.Moveable] of one specific [schema.Share] are processed
+// at the same time.
 func (app *app) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue) error {
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
 		if m.Dest == nil {

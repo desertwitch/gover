@@ -1,3 +1,6 @@
+// Package pathing implements routines for translating abstract filesystem
+// elements within [schema.Moveable] into concrete and absolute (destination)
+// paths.
 package pathing
 
 import (

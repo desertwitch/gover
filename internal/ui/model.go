@@ -133,8 +133,8 @@ func updateQueueProgress(q *queue.Manager) tea.Cmd {
 // Update is the principal message handling method of the model.
 // It sets the internal state of the model, for later rendering.
 //
-//nolint:mnd,funlen,ireturn
-func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+//nolint:mnd,funlen
+func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 

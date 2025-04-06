@@ -10,6 +10,10 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// Enumerate is the principal method for querying [schema.Share] for candidate
+// [schema.Moveable] and enqueueing them into a [queue.EvaluationManager]. This
+// process happens concurrently, meaning multiple [schema.Storage] are read for
+// a [schema.Share] (and its candidate [schema.Moveable]) at the same time.
 func (app *app) Enumerate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
@@ -92,6 +96,11 @@ func (app *app) Enumerate(ctx context.Context) error {
 	return nil
 }
 
+// processEnumerationQueue processes an [queue.EnumerationSourceQueue]'s items
+// (which are [queue.EnumerationTask] of one specific source [schema.Storage])
+// and runs their contained enumeration functions concurrently. This means
+// multiple [schema.Share] on one source [schema.Storage] are read for their
+// [schema.Moveable] at the same time.
 func (app *app) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) bool {
 	slog.Info("Enumerating shares on source:",
 		"source", sourceName,
@@ -115,6 +124,9 @@ func (app *app) processEnumerationQueue(ctx context.Context, sourceName string, 
 	return true
 }
 
+// enumerateToEvaluation is the actual given to [queue.EnumerationTask] function
+// that collects all [schema.Moveable] for a [schema.Share] on a specific source
+// [schema.Storage] and enqueues the results into the [queue.EvaluationManager].
 func (app *app) enumerateToEvaluation(ctx context.Context, share schema.Share, src schema.Storage, dst schema.Storage) int {
 	slog.Info("Enumerating share on storage:",
 		"storage", src.GetName(),

@@ -7,6 +7,8 @@ import (
 	"github.com/desertwitch/gover/internal/schema"
 )
 
+// validateDirectories validates the entire [schema.Directory] structure of a
+// [schema.Moveable].
 func validateDirectories(m *schema.Moveable) error {
 	dir := m.RootDir
 
@@ -25,6 +27,7 @@ func validateDirectories(m *schema.Moveable) error {
 	return nil
 }
 
+// validateDirectory validates a single [schema.Directory].
 func validateDirectory(d *schema.Directory) error {
 	if d.Metadata == nil {
 		return fmt.Errorf("(validation) %w", ErrNoRelatedMetadata)
@@ -51,17 +54,20 @@ func validateDirectory(d *schema.Directory) error {
 	}
 
 	if !filepath.IsAbs(d.DestPath) {
-		return fmt.Errorf("(validation) %w", ErrDestPathRelative)
+		return fmt.Errorf("(validation) %w", ErrRelatedDestRelative)
 	}
 
 	return nil
 }
 
+// validateDirRootConnection validates if the constructed [schema.Directory]
+// structure for a [schema.Moveable] has the [Share] base path at its shallowest
+// [schema.Directory] (RootDir).
 func validateDirRootConnection(m *schema.Moveable) error {
 	shareDirSource := filepath.Join(m.Source.GetFSPath(), m.Share.GetName())
 
-	// Special case: Moveable is an empty share folder (the base).
-	// We allow this because no directory relations will be processed (later).
+	// Special case: Moveable is an empty share folder (the base). We allow this
+	// because no directory relations will be processed (later).
 	if m.SourcePath == shareDirSource {
 		return nil
 	}

@@ -1,3 +1,4 @@
+// Package configuration implements routines for handling configuration files.
 package configuration
 
 import (

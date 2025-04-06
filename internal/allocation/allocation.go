@@ -1,3 +1,6 @@
+// Package allocation implements routines for allocation of [schema.Moveable] to
+// a disk array, more specifically all included [schema.Disk] of a
+// [schema.Share].
 package allocation
 
 import (

@@ -1,3 +1,6 @@
+// Package queue implements structures and routines for organizing tasks and
+// items into managed queues. It also provides logic for obtaining progress
+// information and metrics on these managed queues.
 package queue
 
 import (

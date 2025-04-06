@@ -1,3 +1,6 @@
+// Package filesystem implements routines for translating filesystem elements
+// into [schema.Moveable] (by walking the filesystem), as well as helper
+// routines relating to information collection on associated filesystems.
 package filesystem
 
 import (

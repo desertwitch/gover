@@ -31,13 +31,13 @@ func (s *Share) GetUseCache() string {
 }
 
 // GetCachePool returns the primary cache [Pool]. If it is nil, the primary
-// cache pool is the [Array].
+// cache pool is the [Array] (just for interpretation, the pointer is nil).
 func (s *Share) GetCachePool() *Pool {
 	return s.CachePool
 }
 
 // GetCachePool2 returns the secondary cache [Pool]. If it is nil, the secondary
-// cache pool is the [Array].
+// cache pool is the [Array] (just for interpretation, the pointer is nil).
 func (s *Share) GetCachePool2() *Pool {
 	return s.CachePool2
 }

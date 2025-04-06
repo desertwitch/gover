@@ -30,8 +30,10 @@ const (
 
 //nolint:gochecknoglobals
 var (
-	ExitCode = 0
-	Version  string
+	// Version is the application's version (filled in during compilation).
+	Version string
+
+	exitCode = 0
 
 	slogMan = newSlogManager()
 
@@ -118,7 +120,7 @@ func startApp(ctx context.Context, wg *sync.WaitGroup, app *app) {
 	}
 
 	if err := app.Launch(ctx); err != nil {
-		ExitCode = 1
+		exitCode = 1
 	}
 }
 
@@ -166,7 +168,7 @@ func startUI(ctx context.Context, wg *sync.WaitGroup, app *app) {
 
 func main() {
 	defer func() {
-		os.Exit(ExitCode)
+		os.Exit(exitCode)
 	}()
 
 	slog.SetDefault(slog.New(slogMan))

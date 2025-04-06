@@ -7,24 +7,28 @@ import (
 	"runtime/pprof"
 )
 
-//nolint:containedctx
+// cpuProfiler is an implementation for a [pprof] CPU profiler.
 type cpuProfiler struct {
-	ctx      context.Context
+	ctx      context.Context //nolint:containedctx
 	cancel   context.CancelFunc
 	doneChan chan struct{}
 }
 
+// newCPUProfiler returns a pointer to a new [cpuProfiler]. The profiling is
+// started, if a given path is not empty or nil. The profiling needs to be
+// stopped by e.g. deferred calling [cpuProfiler.Stop] before program exit.
 func newCPUProfiler(ctx context.Context, path *string) *cpuProfiler {
 	cprof := &cpuProfiler{}
 	cprof.ctx, cprof.cancel = context.WithCancel(ctx)
 	cprof.doneChan = make(chan struct{})
 
-	go cprof.Profile(path)
+	go cprof.profile(path)
 
 	return cprof
 }
 
-func (cprof *cpuProfiler) Profile(path *string) {
+// profile is the principal method for the CPU profiling.
+func (cprof *cpuProfiler) profile(path *string) {
 	defer close(cprof.doneChan)
 
 	if path == nil || *path == "" {
@@ -50,29 +54,35 @@ func (cprof *cpuProfiler) Profile(path *string) {
 	<-cprof.ctx.Done()
 }
 
+// Stop signals for the CPU profiling to stop and be written out to the
+// profiling file.
 func (cprof *cpuProfiler) Stop() {
 	cprof.cancel()
 	<-cprof.doneChan
 }
 
-//nolint:containedctx
+// allocProfiler is an implementation for a [pprof] memory profiler.
 type allocProfiler struct {
-	ctx      context.Context
+	ctx      context.Context //nolint:containedctx
 	cancel   context.CancelFunc
 	doneChan chan struct{}
 }
 
+// newAllocProfiler returns a pointer to a new [allocProfiler]. The profiling is
+// started, if a given path is not empty or nil. The profiling needs to be
+// stopped by e.g. deferred calling [allocProfiler.Stop] before program exit.
 func newAllocProfiler(ctx context.Context, path *string) *allocProfiler {
 	aprof := &allocProfiler{}
 	aprof.ctx, aprof.cancel = context.WithCancel(ctx)
 	aprof.doneChan = make(chan struct{})
 
-	go aprof.Profile(path)
+	go aprof.profile(path)
 
 	return aprof
 }
 
-func (aprof *allocProfiler) Profile(path *string) {
+// profile is the principal method for the memory profiling.
+func (aprof *allocProfiler) profile(path *string) {
 	defer close(aprof.doneChan)
 
 	if path == nil || *path == "" {
@@ -92,6 +102,8 @@ func (aprof *allocProfiler) Profile(path *string) {
 	}
 }
 
+// Stop signals for the memory profiling to stop and be written out to the
+// profiling file.
 func (aprof *allocProfiler) Stop() {
 	aprof.cancel()
 	<-aprof.doneChan

@@ -1,3 +1,6 @@
+// Package io implements routines for moving [schema.Moveable] between
+// [schema.Storage]. It handles all filesystem manipulations and is designed to
+// interact closely with the package [queue] and its IO (target) queues.
 package io
 
 import (
@@ -74,14 +77,12 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 	}
 }
 
-// ProcessTargetQueue processes an [ioTargetQueue], containing [schema.Moveable]
-// grouped by their respective destination [schema.Storage]. It is usually
-// called concurrently, with multiple ProcessTargetQueue functions processing
-// multiple [schema.Storage] destinations.
+// ProcessTargetQueue sequentially processes an [ioTargetQueue], containing
+// [schema.Moveable] grouped by one respective destination [schema.Storage].
 //
-// It is important to note that this function should never operate concurrently
-// on the same target [schema.Storage], but follow a "read many, write once"
-// approach instead.
+// This method does not concurrently operate within a single [ioTargetQueue].
+// Hence this function is usually called on multiple [ioTargetQueue]
+// concurrently, but processing each respective [schema.Storage] in sequence.
 func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool {
 	batch := &ioReport{}
 
