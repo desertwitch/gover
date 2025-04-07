@@ -21,6 +21,7 @@ clean: ## Returns the application build stage to its original state (deleting fi
 	@rm -vf $(BINARY) || true
 
 clean-mocks: ## Returns the mock build stage to its original state (deleting files)
+	@find . -type f -name "mock_*.go" -exec rm -vf {} +
 	@find . -type d -name "mocks" -exec rm -vrf {} +
 
 debug: ## Builds the application in debug mode (with symbols, race checks, ...)

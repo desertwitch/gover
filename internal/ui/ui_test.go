@@ -9,7 +9,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/desertwitch/gover/internal/queue"
 	"github.com/desertwitch/gover/internal/schema"
-	"github.com/desertwitch/gover/internal/schema/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,13 +31,13 @@ func TestTeaUI_Integration(t *testing.T) {
 	handler.program = program
 	handler.LogWriter = NewTeaLogWriter(handler.program)
 
-	share1 := mocks.NewShare(t)
+	share1 := schema.NewMockShare(t)
 	share1.On("GetName").Return("share1")
 
-	share2 := mocks.NewShare(t)
+	share2 := schema.NewMockShare(t)
 	share2.On("GetName").Return("share2")
 
-	share3 := mocks.NewShare(t)
+	share3 := schema.NewMockShare(t)
 	share3.On("GetName").Return("share3")
 
 	go func() {

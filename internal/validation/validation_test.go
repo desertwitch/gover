@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/desertwitch/gover/internal/schema"
-	"github.com/desertwitch/gover/internal/schema/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,13 +13,13 @@ import (
 func TestValidateMoveable(t *testing.T) {
 	t.Parallel()
 
-	src := mocks.NewStorage(t)
+	src := schema.NewMockStorage(t)
 	src.On("GetFSPath").Return("/mnt/src")
 
-	dst := mocks.NewStorage(t)
+	dst := schema.NewMockStorage(t)
 	dst.On("GetFSPath").Return("/mnt/dst")
 
-	share := mocks.NewShare(t)
+	share := schema.NewMockShare(t)
 	share.On("GetName").Return("share")
 
 	basePath := filepath.Join(src.GetFSPath(), share.GetName())

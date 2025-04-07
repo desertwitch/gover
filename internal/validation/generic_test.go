@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/desertwitch/gover/internal/schema"
-	"github.com/desertwitch/gover/internal/schema/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,13 +13,13 @@ import (
 func TestValidateBasicAttributes_Success(t *testing.T) {
 	t.Parallel()
 
-	src := mocks.NewStorage(t)
+	src := schema.NewMockStorage(t)
 	src.On("GetFSPath").Return("/mnt/source")
 
-	dst := mocks.NewStorage(t)
+	dst := schema.NewMockStorage(t)
 	dst.On("GetFSPath").Return("/mnt/dest")
 
-	share := mocks.NewShare(t)
+	share := schema.NewMockShare(t)
 
 	valid := &schema.Moveable{
 		Share:      share,
@@ -45,13 +44,13 @@ func TestValidateBasicAttributes_Success(t *testing.T) {
 func TestValidateBasicAttributes_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
-	src := mocks.NewStorage(t)
+	src := schema.NewMockStorage(t)
 	src.On("GetFSPath").Return("/mnt/source")
 
-	dst := mocks.NewStorage(t)
+	dst := schema.NewMockStorage(t)
 	dst.On("GetFSPath").Return("/mnt/dest")
 
-	share := mocks.NewShare(t)
+	share := schema.NewMockShare(t)
 
 	valid := &schema.Moveable{
 		Share:      share,

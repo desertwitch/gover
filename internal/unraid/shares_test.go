@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/desertwitch/gover/internal/unraid/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,9 +15,9 @@ import (
 func TestEstablishShares_Success(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -88,9 +87,9 @@ func TestEstablishShares_Success(t *testing.T) {
 func TestEstablishShares_Success_NoIncludedDisks(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -158,9 +157,9 @@ func TestEstablishShares_Success_NoIncludedDisks(t *testing.T) {
 func TestEstablishShares_Success_ShareIncludes(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -238,9 +237,9 @@ func TestEstablishShares_Success_ShareIncludes(t *testing.T) {
 func TestEstablishShares_Success_ShareExcludes(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -318,9 +317,9 @@ func TestEstablishShares_Success_ShareExcludes(t *testing.T) {
 func TestEstablishShares_Success_GlobalIncludes(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -396,9 +395,9 @@ func TestEstablishShares_Success_GlobalIncludes(t *testing.T) {
 func TestEstablishShares_Success_GlobalExcludes(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -476,9 +475,9 @@ func TestEstablishShares_Success_GlobalExcludes(t *testing.T) {
 func TestEstablishShares_Success_MixedIncludesExcludes_1(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -556,9 +555,9 @@ func TestEstablishShares_Success_MixedIncludesExcludes_1(t *testing.T) {
 func TestEstablishShares_Success_MixedIncludesExcludes_2(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -637,9 +636,9 @@ func TestEstablishShares_Success_MixedIncludesExcludes_2(t *testing.T) {
 func TestEstablishShares_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(false, nil)
 
@@ -661,9 +660,9 @@ func TestEstablishShares_Fail_ConfigDirDoesNotExist(t *testing.T) {
 func TestEstablishShares_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	readErr := errors.New("read error")
@@ -688,9 +687,9 @@ func TestEstablishShares_Fail_ReadDirError(t *testing.T) {
 func TestEstablishShares_Fail_GlobalConfigError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -717,9 +716,9 @@ func TestEstablishShares_Fail_GlobalConfigError(t *testing.T) {
 func TestEstablishShares_Fail_ShareConfigError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -757,9 +756,9 @@ func TestEstablishShares_Fail_ShareConfigError(t *testing.T) {
 func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -809,9 +808,9 @@ func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
 func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -864,9 +863,9 @@ func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
 func TestEstablishShares_Fail_ShareIncludeError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -923,9 +922,9 @@ func TestEstablishShares_Fail_ShareIncludeError(t *testing.T) {
 func TestEstablishShares_Fail_ShareExcludeError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -983,9 +982,9 @@ func TestEstablishShares_Fail_ShareExcludeError(t *testing.T) {
 func TestEstablishShares_Fail_GlobalIncludeError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -1028,9 +1027,9 @@ func TestEstablishShares_Fail_GlobalIncludeError(t *testing.T) {
 func TestEstablishShares_Fail_GlobalExcludeError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
-	configMock := mocks.NewConfigProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	fsMock.On("Exists", ConfigDirShares).Return(true, nil)
 	fakeShareFile := fakeDirEntry{name: "share1.cfg", isDir: false}
@@ -1480,7 +1479,7 @@ func TestEstablishGlobalIncludesExcludes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			configMock := mocks.NewConfigProvider(t)
+			configMock := newMockConfigProvider(t)
 
 			configMock.On("ReadGeneric", GlobalShareConfigFile).Return(tt.configMap, tt.configReadError)
 

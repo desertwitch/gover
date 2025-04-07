@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/desertwitch/gover/internal/unraid/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,8 +16,8 @@ import (
 func TestEstablishPools_Success(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
 
 	handler := &Handler{
 		fsHandler: fsMock,
@@ -62,8 +61,8 @@ func TestEstablishPools_Success(t *testing.T) {
 func TestEstablishPools_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
 	handler := &Handler{
 		fsHandler: fsMock,
 		osHandler: osMock,
@@ -84,8 +83,8 @@ func TestEstablishPools_Fail_ConfigDirDoesNotExist(t *testing.T) {
 func TestEstablishPools_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
 	handler := &Handler{
 		fsHandler: fsMock,
 		osHandler: osMock,
@@ -110,8 +109,8 @@ func TestEstablishPools_Fail_ReadDirError(t *testing.T) {
 func TestEstablishPools_Fail_MountpointDoesNotExist(t *testing.T) {
 	t.Parallel()
 
-	fsMock := mocks.NewFsProvider(t)
-	osMock := mocks.NewOsProvider(t)
+	fsMock := newMockFsProvider(t)
+	osMock := newMockOsProvider(t)
 	handler := &Handler{
 		fsHandler: fsMock,
 		osHandler: osMock,

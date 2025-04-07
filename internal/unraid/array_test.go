@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/desertwitch/gover/internal/unraid/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,7 +12,7 @@ import (
 func TestEstablishArray_Success(t *testing.T) {
 	t.Parallel()
 
-	configMock := mocks.NewConfigProvider(t)
+	configMock := newMockConfigProvider(t)
 
 	disks := map[string]*Disk{
 		"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
@@ -47,7 +46,7 @@ func TestEstablishArray_Success(t *testing.T) {
 func TestEstablishArray_Fail_ReadConfigError(t *testing.T) {
 	t.Parallel()
 
-	configMock := mocks.NewConfigProvider(t)
+	configMock := newMockConfigProvider(t)
 	handler := &Handler{
 		configHandler: configMock,
 	}

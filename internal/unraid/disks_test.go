@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/desertwitch/gover/internal/unraid/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +31,7 @@ func (f fakeDirEntry) Info() (os.FileInfo, error) { return nil, nil } //nolint: 
 func TestEstablishDisks_Success(t *testing.T) {
 	t.Parallel()
 
-	osMock := mocks.NewOsProvider(t)
+	osMock := newMockOsProvider(t)
 
 	handler := &Handler{
 		osHandler: osMock,
@@ -68,7 +67,7 @@ func TestEstablishDisks_Success(t *testing.T) {
 func TestEstablishDisks_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
-	osMock := mocks.NewOsProvider(t)
+	osMock := newMockOsProvider(t)
 	handler := &Handler{
 		osHandler: osMock,
 	}
