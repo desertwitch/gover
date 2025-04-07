@@ -70,3 +70,6 @@ issues:
         - EXC0013
         - EXC0014
         - EXC0015
+
+    exclude-files:
+        - _test.go
