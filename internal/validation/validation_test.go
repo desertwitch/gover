@@ -48,19 +48,19 @@ func TestValidateMoveable(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "valid moveable with no links",
+			name:     "Success_Valid_NoLinks",
 			modify:   func(m *schema.Moveable) {},
 			expected: true,
 		},
 		{
-			name: "invalid root moveable (relative source path)",
+			name: "Fail_Elem_RelSourcePath",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = "relative/path"
 			},
 			expected: false,
 		},
 		{
-			name: "invalid hardlink fails moveable validation",
+			name: "Fail_Hardlink_FailsBasic",
 			modify: func(m *schema.Moveable) {
 				m.Hardlinks = []*schema.Moveable{
 					{
@@ -76,7 +76,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "invalid symlink fails moveable validation",
+			name: "Fail_Symlink_FailsBasic",
 			modify: func(m *schema.Moveable) {
 				m.Symlinks = []*schema.Moveable{
 					{
@@ -92,7 +92,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "valid moveable with valid hardlink and symlink",
+			name: "Success_Valid_With_Valid_Subelems",
 			modify: func(m *schema.Moveable) {
 				m.Hardlinks = []*schema.Moveable{makeValid(filepath.Join(src.GetFSPath(), "share/hardlink"))}
 				m.Symlinks = []*schema.Moveable{makeValid(filepath.Join(src.GetFSPath(), "share/symlink"))}
@@ -100,7 +100,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "link validation fails",
+			name: "Fail_Fails_LinkValid",
 			modify: func(m *schema.Moveable) {
 				m.IsHardlink = true
 				m.HardlinkTo = nil
@@ -108,7 +108,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "directory validation fails",
+			name: "Fail_Fails_DirValid",
 			modify: func(m *schema.Moveable) {
 				m.RootDir = &schema.Directory{
 					SourcePath: "not/abs",

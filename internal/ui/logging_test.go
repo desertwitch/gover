@@ -38,10 +38,10 @@ func TestTeaLogWriter_Write_Table(t *testing.T) {
 		name  string
 		input string
 	}{
-		{"empty message", ""},
-		{"short message", "log"},
-		{"long message", "this is a longer log message"},
-		{"日本", "this is a Japanese message - 日本!"},
+		{"Success_EmptyMessage", ""},
+		{"Success_ShortMessage", "log"},
+		{"Success_LongMessage", "this is a longer log message"},
+		{"Success_UnicodeMessage", "this is a Japanese message - 日本!"},
 	}
 
 	for _, tc := range testCases {

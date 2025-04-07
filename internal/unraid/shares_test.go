@@ -634,7 +634,7 @@ func TestEstablishShares_Success_MixedIncludesExcludes_2(t *testing.T) {
 
 // TestEstablishShares_ConfigDirDoesNotExist simulates that the share
 // configuration directory missing.
-func TestEstablishShares_ConfigDirDoesNotExist(t *testing.T) {
+func TestEstablishShares_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -658,7 +658,7 @@ func TestEstablishShares_ConfigDirDoesNotExist(t *testing.T) {
 
 // TestEstablishShares_ReadDirError simulates an error while reading the share
 // configuation directory.
-func TestEstablishShares_ReadDirError(t *testing.T) {
+func TestEstablishShares_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -685,7 +685,7 @@ func TestEstablishShares_ReadDirError(t *testing.T) {
 
 // TestEstablishShares_GlobalConfigError simulates a failure reading the global
 // share configuration.
-func TestEstablishShares_GlobalConfigError(t *testing.T) {
+func TestEstablishShares_Fail_GlobalConfigError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -714,7 +714,7 @@ func TestEstablishShares_GlobalConfigError(t *testing.T) {
 
 // TestEstablishShares_ShareConfigError simulates an error reading an individual
 // share configuration file.
-func TestEstablishShares_ShareConfigError(t *testing.T) {
+func TestEstablishShares_Fail_ShareConfigError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -754,7 +754,7 @@ func TestEstablishShares_ShareConfigError(t *testing.T) {
 // TestEstablishShares_PrimaryCacheError simulates a failure to resolve the
 // primary cache pool. Here we pass a pools map that does not contain the key
 // returned by the share config.
-func TestEstablishShares_PrimaryCacheError(t *testing.T) {
+func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -807,7 +807,7 @@ func TestEstablishShares_PrimaryCacheError(t *testing.T) {
 // TestEstablishShares_SecondaryCacheError simulates a failure to resolve the
 // secondary cache pool. Here we pass a pools map that does not contain the key
 // returned by the share config.
-func TestEstablishShares_SecondaryCacheError(t *testing.T) {
+func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -862,7 +862,7 @@ func TestEstablishShares_SecondaryCacheError(t *testing.T) {
 // TestEstablishShares_ShareIncludeError simulates a failure to resolve the
 // share's included disks. Here we pass a disks map that does not contain the
 // key returned by the share config.
-func TestEstablishShares_ShareIncludeError(t *testing.T) {
+func TestEstablishShares_Fail_ShareIncludeError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -921,7 +921,7 @@ func TestEstablishShares_ShareIncludeError(t *testing.T) {
 // TestEstablishShares_ShareExcludeError simulates a failure to resolve the
 // share's excluded disks. Here we pass a disks map that does not contain the
 // key returned by the share config.
-func TestEstablishShares_ShareExcludeError(t *testing.T) {
+func TestEstablishShares_Fail_ShareExcludeError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -981,7 +981,7 @@ func TestEstablishShares_ShareExcludeError(t *testing.T) {
 // TestEstablishShares_GlobalIncludeError simulates a failure to resolve the
 // global included disks. Here we pass a disks map that does not contain the key
 // returned by the share config.
-func TestEstablishShares_GlobalIncludeError(t *testing.T) {
+func TestEstablishShares_Fail_GlobalIncludeError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -1026,7 +1026,7 @@ func TestEstablishShares_GlobalIncludeError(t *testing.T) {
 // TestEstablishShares_GlobalExcludeError simulates a failure to resolve the
 // global excluded disks. Here we pass a disks map that does not contain the key
 // returned by the share config.
-func TestEstablishShares_GlobalExcludeError(t *testing.T) {
+func TestEstablishShares_Fail_GlobalExcludeError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -1067,4 +1067,452 @@ func TestEstablishShares_GlobalExcludeError(t *testing.T) {
 	fsMock.AssertExpectations(t)
 	osMock.AssertExpectations(t)
 	configMock.AssertExpectations(t)
+}
+
+// TestEstablishShareIncludes tests the establishShareIncludes method.
+func TestEstablishShareIncludes(t *testing.T) {
+	t.Parallel()
+
+	// Create test disk maps
+	disk1 := &Disk{Name: "disk1", FSPath: "/mnt/disk1"}
+	disk2 := &Disk{Name: "disk2", FSPath: "/mnt/disk2"}
+	disk3 := &Disk{Name: "disk3", FSPath: "/mnt/disk3"}
+	disk4 := &Disk{Name: "disk4", FSPath: "/mnt/disk4"}
+
+	allDisks := map[string]*Disk{
+		"disk1": disk1,
+		"disk2": disk2,
+		"disk3": disk3,
+		"disk4": disk4,
+	}
+
+	// Define test cases
+	tests := []struct {
+		name           string
+		allDisks       map[string]*Disk
+		config         *includesExcludesConfig
+		expectedResult map[string]*Disk
+	}{
+		{
+			name:     "Success_AllDisksIncluded",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes:  nil,
+				shareExcludes:  map[string]*Disk{},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk2": disk2,
+				"disk3": disk3,
+				"disk4": disk4,
+			},
+		},
+		{
+			name:     "Success_ShareIncludesOnly",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+				},
+				shareExcludes:  map[string]*Disk{},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk2": disk2,
+			},
+		},
+		{
+			name:     "Success_GlobalIncludesOnly",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: nil,
+				shareExcludes: map[string]*Disk{},
+				globalIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk3": disk3,
+				},
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk3": disk3,
+			},
+		},
+		{
+			name:     "Success_ShareExcludesOnly",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: nil,
+				shareExcludes: map[string]*Disk{
+					"disk3": disk3,
+				},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk2": disk2,
+				"disk4": disk4,
+			},
+		},
+		{
+			name:     "Success_GlobalExcludesOnly",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes:  nil,
+				shareExcludes:  map[string]*Disk{},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{
+					"disk4": disk4,
+				},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk2": disk2,
+				"disk3": disk3,
+			},
+		},
+		{
+			name:     "Success_ShareAndGlobalIncludes",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+					"disk3": disk3,
+				},
+				shareExcludes: map[string]*Disk{},
+				globalIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk3": disk3,
+				},
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk3": disk3,
+			},
+		},
+		{
+			name:     "Success_ShareAndGlobalExcludes",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: nil,
+				shareExcludes: map[string]*Disk{
+					"disk2": disk2,
+				},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{
+					"disk4": disk4,
+				},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk3": disk3,
+			},
+		},
+		{
+			name:     "Success_ShareIncludesAndExcludes",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+					"disk3": disk3,
+				},
+				shareExcludes: map[string]*Disk{
+					"disk3": disk3,
+				},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk2": disk2,
+			},
+		},
+		{
+			name:     "Success_GlobalIncludesAndExcludes",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: nil,
+				shareExcludes: map[string]*Disk{},
+				globalIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+					"disk3": disk3,
+				},
+				globalExcludes: map[string]*Disk{
+					"disk2": disk2,
+				},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+				"disk3": disk3,
+			},
+		},
+		{
+			name:     "Success_ComplexCombination",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+					"disk3": disk3,
+				},
+				shareExcludes: map[string]*Disk{
+					"disk3": disk3,
+				},
+				globalIncludes: map[string]*Disk{
+					"disk1": disk1,
+					"disk2": disk2,
+				},
+				globalExcludes: map[string]*Disk{
+					"disk2": disk2,
+				},
+			},
+			expectedResult: map[string]*Disk{
+				"disk1": disk1,
+			},
+		},
+		{
+			name:     "Success_EmptyResult",
+			allDisks: allDisks,
+			config: &includesExcludesConfig{
+				shareIncludes: map[string]*Disk{
+					"disk1": disk1,
+				},
+				shareExcludes: map[string]*Disk{
+					"disk1": disk1,
+				},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{},
+		},
+		{
+			name:     "Success_EmptyAllDisks",
+			allDisks: map[string]*Disk{},
+			config: &includesExcludesConfig{
+				shareIncludes:  nil,
+				shareExcludes:  map[string]*Disk{},
+				globalIncludes: nil,
+				globalExcludes: map[string]*Disk{},
+			},
+			expectedResult: map[string]*Disk{},
+		},
+	}
+
+	// Run tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &Handler{}
+			result := handler.establishShareIncludes(tt.allDisks, tt.config)
+			assert.Equal(t, tt.expectedResult, result)
+		})
+	}
+}
+
+// TestEstablishGlobalIncludesExcludes tests the establishGlobalIncludesExcludes method.
+func TestEstablishGlobalIncludesExcludes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                string
+		configMap           map[string]string
+		configReadError     error
+		disks               map[string]*Disk
+		globalIncludesValue string
+		globalExcludesValue string
+		expectError         bool
+		expectErrorContains string
+		expectedGlobalInc   map[string]*Disk
+		expectedGlobalExc   map[string]*Disk
+	}{
+		{
+			name: "Success_EmptyValues",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "",
+				SettingGlobalShareExcludes: "",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "",
+			globalExcludesValue: "",
+			expectError:         false,
+			expectedGlobalInc:   nil,
+			expectedGlobalExc:   nil,
+		},
+		{
+			name: "Success_OnlyIncludes",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "disk1",
+				SettingGlobalShareExcludes: "",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "disk1",
+			globalExcludesValue: "",
+			expectError:         false,
+			expectedGlobalInc: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+			},
+			expectedGlobalExc: nil,
+		},
+		{
+			name: "Success_OnlyExcludes",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "",
+				SettingGlobalShareExcludes: "disk2",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "",
+			globalExcludesValue: "disk2",
+			expectError:         false,
+			expectedGlobalInc:   nil,
+			expectedGlobalExc: map[string]*Disk{
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+		},
+		{
+			name: "Success_BothIncludesAndExcludes",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "disk1",
+				SettingGlobalShareExcludes: "disk2",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "disk1",
+			globalExcludesValue: "disk2",
+			expectError:         false,
+			expectedGlobalInc: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+			},
+			expectedGlobalExc: map[string]*Disk{
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+		},
+		{
+			name: "Success_MultipleValues",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "disk1,disk3",
+				SettingGlobalShareExcludes: "disk2,disk4",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+				"disk3": {Name: "disk3", FSPath: "/mnt/disk3"},
+				"disk4": {Name: "disk4", FSPath: "/mnt/disk4"},
+			},
+			globalIncludesValue: "disk1,disk3",
+			globalExcludesValue: "disk2,disk4",
+			expectError:         false,
+			expectedGlobalInc: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk3": {Name: "disk3", FSPath: "/mnt/disk3"},
+			},
+			expectedGlobalExc: map[string]*Disk{
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+				"disk4": {Name: "disk4", FSPath: "/mnt/disk4"},
+			},
+		},
+		{
+			name:            "Fail_ConfigReadFails",
+			configMap:       nil,
+			configReadError: errors.New("config read failed"),
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			expectError:         true,
+			expectErrorContains: "failed to read global share config",
+		},
+		{
+			name: "Fail_InvalidIncludeDisk",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "nonexistentdisk",
+				SettingGlobalShareExcludes: "",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "nonexistentdisk",
+			globalExcludesValue: "",
+			expectError:         true,
+			expectErrorContains: "failed to deref global included disks",
+		},
+		{
+			name: "Fail_InvalidExcludeDisk",
+			configMap: map[string]string{
+				SettingGlobalShareIncludes: "",
+				SettingGlobalShareExcludes: "nonexistentdisk",
+			},
+			configReadError: nil,
+			disks: map[string]*Disk{
+				"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
+				"disk2": {Name: "disk2", FSPath: "/mnt/disk2"},
+			},
+			globalIncludesValue: "",
+			globalExcludesValue: "nonexistentdisk",
+			expectError:         true,
+			expectErrorContains: "failed to deref global excluded disks",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			configMock := mocks.NewConfigProvider(t)
+
+			configMock.On("ReadGeneric", GlobalShareConfigFile).Return(tt.configMap, tt.configReadError)
+
+			if !tt.expectError || tt.expectErrorContains != "failed to read global share config" {
+				configMock.On("MapKeyToString", tt.configMap, SettingGlobalShareIncludes).Return(tt.globalIncludesValue)
+				if tt.expectErrorContains != "failed to deref global included disks" {
+					configMock.On("MapKeyToString", tt.configMap, SettingGlobalShareExcludes).Return(tt.globalExcludesValue)
+				}
+			}
+
+			handler := &Handler{
+				configHandler: configMock,
+			}
+
+			result, err := handler.establishGlobalIncludesExcludes(tt.disks)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectErrorContains)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, result)
+				assert.Equal(t, tt.expectedGlobalInc, result.globalIncludes)
+				assert.Equal(t, tt.expectedGlobalExc, result.globalExcludes)
+			}
+
+			configMock.AssertExpectations(t)
+		})
+	}
 }

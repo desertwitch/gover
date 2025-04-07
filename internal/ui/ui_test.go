@@ -14,8 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestTeaUI is an integration test for the command-line user interface.
-func TestTeaUI(t *testing.T) {
+// TestTeaUI_Integration is an integration test for the command-line user
+// interface.
+func TestTeaUI_Integration(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
@@ -118,10 +119,10 @@ func TestTeaUI(t *testing.T) {
 	share3.AssertExpectations(t)
 }
 
-// TestTeaUI_Ctrl_C is an integration test for the command-line user interface.
-// A Ctrl+C keypress is simulated, which should trigger upstream Context
-// cancellation for signalling application teardown.
-func TestTeaUI_Ctrl_C(t *testing.T) {
+// TestTeaUI_Integration_Ctrl_C is an integration test for the command-line user
+// interface. A Ctrl+C keypress is simulated, which should trigger upstream
+// Context cancellation for signalling application teardown.
+func TestTeaUI_Integration_Ctrl_C(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer

@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestValidateDirectories_Valid simulates a successful validation of related
+// TestValidateDirectories_Success simulates a successful validation of related
 // directories.
-func TestValidateDirectories_Valid(t *testing.T) {
+func TestValidateDirectories_Success(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -28,7 +28,7 @@ func TestValidateDirectories_Valid(t *testing.T) {
 		build func() *schema.Moveable
 	}{
 		{
-			name: "valid directory chain",
+			name: "Success_ValidDirChain",
 			build: func() *schema.Moveable {
 				dir2 := &schema.Directory{
 					SourcePath: filepath.Join(src.GetFSPath(), "share/dir2"),
@@ -54,7 +54,7 @@ func TestValidateDirectories_Valid(t *testing.T) {
 			},
 		},
 		{
-			name: "valid with nil RootDir (SourcePath = base of Share)",
+			name: "Success_SourceIsBaseRootIsNil",
 			build: func() *schema.Moveable {
 				return &schema.Moveable{
 					RootDir:    nil,
@@ -81,9 +81,9 @@ func TestValidateDirectories_Valid(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateDirectories_Errors tests a range of related directory validation
+// TestValidateDirectories_Fail_Errors tests a range of related directory validation
 // errors.
-func TestValidateDirectories_Errors(t *testing.T) {
+func TestValidateDirectories_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -100,7 +100,7 @@ func TestValidateDirectories_Errors(t *testing.T) {
 		expected error
 	}{
 		{
-			name: "invalid root connection (src)",
+			name: "Fail_ErrSourceNotConnectBase",
 			modify: func(m *schema.Moveable) {
 				m.RootDir = &schema.Directory{
 					SourcePath: "/mnt/source/share/foo",
@@ -113,7 +113,7 @@ func TestValidateDirectories_Errors(t *testing.T) {
 			expected: ErrSourceNotConnectBase,
 		},
 		{
-			name: "invalid directory metadata (nil)",
+			name: "Fail_ErrNoRelatedMetadata",
 			modify: func(m *schema.Moveable) {
 				m.RootDir = &schema.Directory{
 					Metadata: nil,
@@ -144,9 +144,9 @@ func TestValidateDirectories_Errors(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateDirectory_Valid simulates a successful validation of a single
+// TestValidateDirectory_Success simulates a successful validation of a single
 // related directory.
-func TestValidateDirectory_Valid(t *testing.T) {
+func TestValidateDirectory_Success(t *testing.T) {
 	t.Parallel()
 
 	dir := &schema.Directory{
@@ -161,9 +161,9 @@ func TestValidateDirectory_Valid(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestValidateDirectory_Errors simulates a series of validation failures for a
+// TestValidateDirectory_Fail_Errors simulates a series of validation failures for a
 // single related directory.
-func TestValidateDirectory_Errors(t *testing.T) {
+func TestValidateDirectory_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -171,13 +171,13 @@ func TestValidateDirectory_Errors(t *testing.T) {
 		dir  *schema.Directory
 		want error
 	}{
-		{"related dir has no metadata", &schema.Directory{Metadata: nil}, ErrNoRelatedMetadata},
-		{"related dir is symlink", &schema.Directory{Metadata: &schema.Metadata{IsSymlink: true, IsDir: false}}, ErrRelatedDirSymlink},
-		{"related dir not a dir", &schema.Directory{Metadata: &schema.Metadata{IsDir: false}}, ErrRelatedDirNotDir},
-		{"related dir empty source path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: ""}, ErrNoRelatedSourcePath},
-		{"related dir source path relative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "foo"}, ErrRelatedSourceRelative},
-		{"related dir empty dest path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs"}, ErrNoRelatedDestPath},
-		{"related dir dest path relative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs", DestPath: "foo"}, ErrRelatedDestRelative},
+		{"Fail_ErrNoRelatedMetadata", &schema.Directory{Metadata: nil}, ErrNoRelatedMetadata},
+		{"Fail_ErrRelatedDirSymlink", &schema.Directory{Metadata: &schema.Metadata{IsSymlink: true, IsDir: false}}, ErrRelatedDirSymlink},
+		{"Fail_ErrRelatedDirNotDir", &schema.Directory{Metadata: &schema.Metadata{IsDir: false}}, ErrRelatedDirNotDir},
+		{"Fail_ErrNoRelatedSourcePath", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: ""}, ErrNoRelatedSourcePath},
+		{"Fail_ErrRelatedSourceRelative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "foo"}, ErrRelatedSourceRelative},
+		{"Fail_ErrNoRelatedDestPath", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs"}, ErrNoRelatedDestPath},
+		{"Fail_ErrRelatedDestRelative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs", DestPath: "foo"}, ErrRelatedDestRelative},
 	}
 
 	for _, tt := range tests {
@@ -188,9 +188,9 @@ func TestValidateDirectory_Errors(t *testing.T) {
 	}
 }
 
-// TestValidateDirRootConnection_Valid simulates a successful validation of a
+// TestValidateDirRootConnection_Success simulates a successful validation of a
 // share base connection.
-func TestValidateDirRootConnection_Valid(t *testing.T) {
+func TestValidateDirRootConnection_Success(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -209,13 +209,13 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 		rootDir    *schema.Directory
 	}{
 		{
-			name:       "source path is share base, root dir is nil",
+			name:       "Success_SourceIsBase_RootNil",
 			sourcePath: filepath.Join(src.GetFSPath(), share.GetName()),
 			destPath:   filepath.Join(dst.GetFSPath(), share.GetName()),
 			rootDir:    nil,
 		},
 		{
-			name:       "source path is deeper path, root dir is share base",
+			name:       "Success_BothDeep_RootBase",
 			sourcePath: filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar"),
 			destPath:   filepath.Join(dst.GetFSPath(), share.GetName(), "foo/bar"),
 			rootDir: &schema.Directory{
@@ -247,9 +247,9 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateDirRootConnection_Errors simulates a series of failures regarding
+// TestValidateDirRootConnection_Fail_Errors simulates a series of failures regarding
 // share base connection.
-func TestValidateDirRootConnection_Errors(t *testing.T) {
+func TestValidateDirRootConnection_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -267,7 +267,7 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "source path is deeper path, root dir src is not share base",
+			name: "Fail_SourceIsDeep_RootNotBase",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.RootDir = &schema.Directory{
@@ -279,7 +279,7 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 			wantErr: ErrSourceNotConnectBase,
 		},
 		{
-			name: "source path is deeper path, root dir is nil",
+			name: "Fail_SourceIsDeep_RootNil",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.RootDir = nil
@@ -287,7 +287,7 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 			wantErr: ErrSourceNotConnectBase,
 		},
 		{
-			name: "dest path is deeper path, root dir dest is not share base",
+			name: "Fail_DestIsDeep_RootNotBase",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.DestPath = filepath.Join(dst.GetFSPath(), share.GetName(), "foo/bar/baz.txt")

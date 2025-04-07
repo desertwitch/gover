@@ -59,7 +59,7 @@ func TestEstablishPools_Success(t *testing.T) {
 
 // TestEstablishPools_ConfigDirDoesNotExist simulates the scenario where the
 // pools configuration directory does not exist.
-func TestEstablishPools_ConfigDirDoesNotExist(t *testing.T) {
+func TestEstablishPools_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -81,7 +81,7 @@ func TestEstablishPools_ConfigDirDoesNotExist(t *testing.T) {
 
 // TestEstablishPools_ReadDirError simulates an error while reading the pools
 // configuration directory.
-func TestEstablishPools_ReadDirError(t *testing.T) {
+func TestEstablishPools_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)
@@ -107,7 +107,7 @@ func TestEstablishPools_ReadDirError(t *testing.T) {
 
 // TestEstablishPools_MountpointDoesNotExist simulates a scenario where a pool's
 // mountpoint is missing.
-func TestEstablishPools_MountpointDoesNotExist(t *testing.T) {
+func TestEstablishPools_Fail_MountpointDoesNotExist(t *testing.T) {
 	t.Parallel()
 
 	fsMock := mocks.NewFsProvider(t)

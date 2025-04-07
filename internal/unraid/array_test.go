@@ -42,9 +42,9 @@ func TestEstablishArray_Success(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishArray_ReadGenericError simulates an error reading the array
+// TestEstablishArray_ReadConfigError simulates an error reading the array
 // state file.
-func TestEstablishArray_ReadGenericError(t *testing.T) {
+func TestEstablishArray_Fail_ReadConfigError(t *testing.T) {
 	t.Parallel()
 
 	configMock := mocks.NewConfigProvider(t)

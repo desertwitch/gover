@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestValidateBasicAttributes_Valid simulates successful validation of basic attributes.
-func TestValidateBasicAttributes_Valid(t *testing.T) {
+// TestValidateBasicAttributes_Success simulates successful validation of basic attributes.
+func TestValidateBasicAttributes_Success(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -30,7 +30,7 @@ func TestValidateBasicAttributes_Valid(t *testing.T) {
 		DestPath:   filepath.Join(dst.GetFSPath(), "share/file"),
 	}
 
-	t.Run("valid moveable", func(t *testing.T) {
+	t.Run("Success_ValidMoveable", func(t *testing.T) {
 		assert.NoError(t, validateBasicAttributes(valid))
 	})
 
@@ -39,8 +39,8 @@ func TestValidateBasicAttributes_Valid(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateBasicAttributes_Errors simulates a row of failures of basic attribute validation.
-func TestValidateBasicAttributes_Errors(t *testing.T) {
+// TestValidateBasicAttributes_Fail_Errors simulates a row of failures of basic attribute validation.
+func TestValidateBasicAttributes_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
 	src := mocks.NewStorage(t)
@@ -65,14 +65,14 @@ func TestValidateBasicAttributes_Errors(t *testing.T) {
 		mod  func(m *schema.Moveable)
 		want error
 	}{
-		{"missing share", func(m *schema.Moveable) { m.Share = nil }, ErrNoShareInfo},
-		{"missing metadata", func(m *schema.Moveable) { m.Metadata = nil }, ErrNoMetadata},
-		{"missing source", func(m *schema.Moveable) { m.Source = nil; m.SourcePath = "" }, ErrNoSource},
-		{"relative source path", func(m *schema.Moveable) { m.SourcePath = "relative/path" }, ErrSourcePathRelative},
-		{"source mismatch", func(m *schema.Moveable) { m.SourcePath = "/wrong/source" }, ErrSourceMismatch},
-		{"missing dest", func(m *schema.Moveable) { m.Dest = nil; m.DestPath = "" }, ErrNoDestination},
-		{"relative dest path", func(m *schema.Moveable) { m.DestPath = "rel/path" }, ErrDestPathRelative},
-		{"dest mismatch", func(m *schema.Moveable) { m.DestPath = "/wrong/dest" }, ErrDestMismatch},
+		{"Fail_ErrNoShareInfo", func(m *schema.Moveable) { m.Share = nil }, ErrNoShareInfo},
+		{"Fail_ErrNoMetadata", func(m *schema.Moveable) { m.Metadata = nil }, ErrNoMetadata},
+		{"Fail_ErrNoSource", func(m *schema.Moveable) { m.Source = nil; m.SourcePath = "" }, ErrNoSource},
+		{"Fail_ErrSourcePathRelative", func(m *schema.Moveable) { m.SourcePath = "relative/path" }, ErrSourcePathRelative},
+		{"Fail_ErrSourceMismatch", func(m *schema.Moveable) { m.SourcePath = "/wrong/source" }, ErrSourceMismatch},
+		{"Fail_ErrNoDestination", func(m *schema.Moveable) { m.Dest = nil; m.DestPath = "" }, ErrNoDestination},
+		{"Fail_ErrDestPathRelative", func(m *schema.Moveable) { m.DestPath = "rel/path" }, ErrDestPathRelative},
+		{"Fail_ErrDestMismatch", func(m *schema.Moveable) { m.DestPath = "/wrong/dest" }, ErrDestMismatch},
 	}
 
 	for _, tt := range tests {
@@ -99,17 +99,17 @@ func TestValidateLinks(t *testing.T) {
 		expected error
 	}{
 		{
-			name:     "not a link",
+			name:     "Success_NotALink",
 			moveable: &schema.Moveable{},
 			expected: nil,
 		},
 		{
-			name:     "hardlink: missing target",
+			name:     "Fail_ErrNoHardlinkTarget",
 			moveable: &schema.Moveable{IsHardlink: true},
 			expected: ErrNoHardlinkTarget,
 		},
 		{
-			name: "hardlink: has sublinks",
+			name: "Fail_ErrHardlinkHasSublinks",
 			moveable: &schema.Moveable{
 				IsHardlink: true,
 				HardlinkTo: &schema.Moveable{},
@@ -118,17 +118,17 @@ func TestValidateLinks(t *testing.T) {
 			expected: ErrHardlinkHasSublinks,
 		},
 		{
-			name:     "hardlink set without flag",
+			name:     "Fail_ErrHardlinkSetTarget",
 			moveable: &schema.Moveable{HardlinkTo: &schema.Moveable{}},
 			expected: ErrHardlinkSetTarget,
 		},
 		{
-			name:     "symlink: missing target",
+			name:     "Fail_ErrNoSymlinkTarget",
 			moveable: &schema.Moveable{IsSymlink: true},
 			expected: ErrNoSymlinkTarget,
 		},
 		{
-			name: "symlink: has sublinks",
+			name: "Fail_ErrSymlinkHasSublinks",
 			moveable: &schema.Moveable{
 				IsSymlink: true,
 				SymlinkTo: &schema.Moveable{},
@@ -137,7 +137,7 @@ func TestValidateLinks(t *testing.T) {
 			expected: ErrSymlinkHasSublinks,
 		},
 		{
-			name:     "symlink set without flag",
+			name:     "Fail_ErrSymlinkSetTarget",
 			moveable: &schema.Moveable{SymlinkTo: &schema.Moveable{}},
 			expected: ErrSymlinkSetTarget,
 		},
