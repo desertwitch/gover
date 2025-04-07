@@ -2,7 +2,6 @@ package queue
 
 import (
 	"context"
-	"errors"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,6 +11,8 @@ import (
 )
 
 func TestNewGenericQueue_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 
 	assert.NotNil(t, q)
@@ -25,11 +26,13 @@ func TestNewGenericQueue_Success(t *testing.T) {
 }
 
 func TestEnqueueDequeue_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 
 	q.Enqueue("item1", "item2", "item3")
 
-	assert.Equal(t, 3, len(q.items))
+	assert.Len(t, q.items, 3)
 	assert.Equal(t, []string{"item1", "item2", "item3"}, q.items)
 
 	item, ok := q.Dequeue()
@@ -58,6 +61,8 @@ func TestEnqueueDequeue_Success(t *testing.T) {
 }
 
 func TestHasRemainingItems_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	assert.False(t, q.HasRemainingItems())
@@ -75,6 +80,8 @@ func TestHasRemainingItems_Success(t *testing.T) {
 }
 
 func TestGetSuccessful_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	success := q.GetSuccessful()
@@ -91,6 +98,8 @@ func TestGetSuccessful_Success(t *testing.T) {
 }
 
 func TestSetProcessing_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 
 	assert.Empty(t, q.inProgress)
@@ -104,6 +113,8 @@ func TestSetProcessing_Success(t *testing.T) {
 }
 
 func TestSetSuccess_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 
 	q.SetProcessing("item1", "item2")
@@ -122,6 +133,8 @@ func TestSetSuccess_Success(t *testing.T) {
 }
 
 func TestSetSkipped_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 
 	q.SetProcessing("item1", "item2")
@@ -140,12 +153,14 @@ func TestSetSkipped_Success(t *testing.T) {
 }
 
 func TestProgress_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	progress := q.Progress()
 	assert.False(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
-	assert.Equal(t, 0.0, progress.ProgressPct)
+	assert.InDelta(t, 0.0, progress.ProgressPct, 0)
 	assert.Equal(t, 0, progress.TotalItems)
 	assert.Equal(t, 0, progress.ProcessedItems)
 	assert.Equal(t, 0, progress.SuccessItems)
@@ -163,7 +178,7 @@ func TestProgress_Success(t *testing.T) {
 	progress = q.Progress()
 	assert.True(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
-	assert.Equal(t, 75.0, progress.ProgressPct)
+	assert.InDelta(t, 75.0, progress.ProgressPct, 0)
 	assert.Equal(t, 4, progress.TotalItems)
 	assert.Equal(t, 3, progress.ProcessedItems)
 	assert.Equal(t, 1, progress.SuccessItems)
@@ -176,10 +191,12 @@ func TestProgress_Success(t *testing.T) {
 	progress = q.Progress()
 	assert.True(t, progress.HasStarted)
 	assert.True(t, progress.HasFinished)
-	assert.Equal(t, 100.0, progress.ProgressPct)
+	assert.InDelta(t, 100.0, progress.ProgressPct, 0)
 }
 
 func TestDequeueAndProcess_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 	q.Enqueue("success", "skip", "requeue", "success2")
 
@@ -203,13 +220,13 @@ func TestDequeueAndProcess_Success(t *testing.T) {
 		}
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	err := q.DequeueAndProcess(ctx, processFunc)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, q.HasRemainingItems())
-	assert.Equal(t, 3, len(q.success))
-	assert.Equal(t, 1, len(q.skipped))
+	assert.Len(t, q.success, 3)
+	assert.Len(t, q.skipped, 1)
 	assert.Equal(t, 2, processed["requeue"]) // Should be processed twice due to requeue
 
 	assert.True(t, q.hasStarted)
@@ -219,10 +236,12 @@ func TestDequeueAndProcess_Success(t *testing.T) {
 }
 
 func TestDequeueAndProcess_Fail_CtxCancel(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 	q.Enqueue(1, 2, 3, 4, 5)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	processFunc := func(item int) int {
 		if item == 3 {
@@ -234,8 +253,8 @@ func TestDequeueAndProcess_Fail_CtxCancel(t *testing.T) {
 
 	err := q.DequeueAndProcess(ctx, processFunc)
 
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, context.Canceled))
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 
 	assert.True(t, q.HasRemainingItems())
 
@@ -244,6 +263,8 @@ func TestDequeueAndProcess_Fail_CtxCancel(t *testing.T) {
 }
 
 func TestDequeueAndProcessConc_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	const itemCount = 100
@@ -281,10 +302,10 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 		return DecisionSuccess
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	err := q.DequeueAndProcessConc(ctx, 10, processFunc)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, q.HasRemainingItems())
 
 	progress := q.Progress()
@@ -302,6 +323,8 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 }
 
 func TestDequeueAndProcessConc_Fail_CtxCancel(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	const itemCount = 50
@@ -309,7 +332,7 @@ func TestDequeueAndProcessConc_Fail_CtxCancel(t *testing.T) {
 		q.Enqueue(i)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*50)
 	defer cancel()
 
 	processFunc := func(item int) int {
@@ -320,14 +343,16 @@ func TestDequeueAndProcessConc_Fail_CtxCancel(t *testing.T) {
 
 	err := q.DequeueAndProcessConc(ctx, 5, processFunc)
 
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, context.DeadlineExceeded))
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 
 	assert.True(t, q.hasStarted)
 	assert.False(t, q.hasFinished)
 }
 
 func TestRequeueAndReprocess_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[string]()
 	q.Enqueue("item1", "item2", "item3", "requeueMe")
 
@@ -344,12 +369,12 @@ func TestRequeueAndReprocess_Success(t *testing.T) {
 		return DecisionSuccess
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	err := q.DequeueAndProcessConc(ctx, 2, processFunc)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, 4, len(q.success))
+	assert.Len(t, q.success, 4)
 	assert.Equal(t, 3, attempts["requeueMe"])
 	assert.Equal(t, 1, attempts["item1"])
 	assert.Equal(t, 1, attempts["item2"])
@@ -362,6 +387,8 @@ func TestRequeueAndReprocess_Success(t *testing.T) {
 }
 
 func TestEnqueueAfterFinish_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	q.Dequeue()
@@ -378,10 +405,12 @@ func TestEnqueueAfterFinish_Success(t *testing.T) {
 	assert.True(t, q.hasFinished)
 	assert.True(t, q.hasStarted)
 
-	assert.Equal(t, 3, len(q.success))
+	assert.Len(t, q.success, 3)
 }
 
 func TestQueueWithCustomType_Success(t *testing.T) {
+	t.Parallel()
+
 	type CustomItem struct {
 		ID   int
 		Name string
@@ -395,7 +424,7 @@ func TestQueueWithCustomType_Success(t *testing.T) {
 	}
 
 	q.Enqueue(items...)
-	assert.Equal(t, 3, len(q.items))
+	assert.Len(t, q.items, 3)
 
 	item, ok := q.Dequeue()
 	assert.True(t, ok)
@@ -406,6 +435,8 @@ func TestQueueWithCustomType_Success(t *testing.T) {
 }
 
 func TestProgressCalculation_Success(t *testing.T) {
+	t.Parallel()
+
 	q := NewGenericQueue[int]()
 
 	const itemCount = 100
@@ -413,7 +444,7 @@ func TestProgressCalculation_Success(t *testing.T) {
 		q.Enqueue(i)
 	}
 
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		item, ok := q.Dequeue()
 		require.True(t, ok)
 		q.SetSuccess(item)
@@ -422,7 +453,7 @@ func TestProgressCalculation_Success(t *testing.T) {
 	assert.True(t, q.hasStarted)
 
 	progress := q.Progress()
-	assert.Equal(t, 50.0, progress.ProgressPct)
+	assert.InDelta(t, 50.0, progress.ProgressPct, 0)
 	assert.True(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
 	assert.Equal(t, itemCount, progress.TotalItems)
@@ -443,7 +474,7 @@ func TestProgressCalculation_Success(t *testing.T) {
 	}
 
 	progress = q.Progress()
-	assert.Equal(t, 100.0, progress.ProgressPct)
+	assert.InDelta(t, 100.0, progress.ProgressPct, 0)
 	assert.True(t, progress.HasStarted)
 	assert.True(t, progress.HasFinished)
 	assert.Equal(t, itemCount, progress.TotalItems)
