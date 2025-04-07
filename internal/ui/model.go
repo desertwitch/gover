@@ -52,8 +52,7 @@ type TeaModel struct {
 
 	cancel context.CancelFunc
 
-	uiHandler    *Handler
-	queueManager *queue.Manager
+	uiHandler *Handler
 
 	fullWidthWithBorders  int
 	splitWidthWithBorders int
@@ -68,13 +67,14 @@ type TeaModel struct {
 	logsViewport        viewport.Model
 	logs                []string
 
-	ready bool
+	initialized bool
+	ready       bool
 }
 
 // NewTeaModel returns an initial new [TeaModel].
 //
 //nolint:mnd
-func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context.CancelFunc) TeaModel {
+func NewTeaModel(uiHandler *Handler, cancel context.CancelFunc) TeaModel {
 	enumerationProgress := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(80),
@@ -92,7 +92,6 @@ func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context
 
 	return TeaModel{
 		uiHandler:           uiHandler,
-		queueManager:        queueManager,
 		enumerationProgress: enumerationProgress,
 		evaluationProgress:  evaluationProgress,
 		ioProgress:          ioProgress,
@@ -110,7 +109,7 @@ func NewTeaModel(uiHandler *Handler, queueManager *queue.Manager, cancel context
 func (m TeaModel) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
-		updateQueueProgress(m.queueManager),
+		updateQueueProgress(m.uiHandler.queueManager),
 	)
 }
 
@@ -137,6 +136,11 @@ func updateQueueProgress(q *queue.Manager) tea.Cmd {
 func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	if !m.initialized {
+		m.initialized = true
+		m.uiHandler.Initialized.Store(true)
+	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -199,7 +203,7 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn
 		)
 
 		// Queue the next update.
-		cmds = append(cmds, updateQueueProgress(m.queueManager))
+		cmds = append(cmds, updateQueueProgress(m.uiHandler.queueManager))
 
 	case LogMsg:
 		logMsg := string(msg)

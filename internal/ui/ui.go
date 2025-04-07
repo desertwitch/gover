@@ -17,8 +17,9 @@ type Handler struct {
 
 	LogWriter *TeaLogWriter
 
-	Ready  atomic.Bool
-	Failed atomic.Bool
+	Initialized atomic.Bool
+	Ready       atomic.Bool
+	Failed      atomic.Bool
 }
 
 // NewHandler returns a pointer to a new user interface [Handler].
@@ -27,7 +28,7 @@ func NewHandler(ctx context.Context, cancel context.CancelFunc, queueManager *qu
 		queueManager: queueManager,
 	}
 
-	model := NewTeaModel(handler, queueManager, cancel)
+	model := NewTeaModel(handler, cancel)
 	handler.program = tea.NewProgram(model, tea.WithAltScreen(), tea.WithContext(ctx))
 	handler.LogWriter = NewTeaLogWriter(handler.program)
 
