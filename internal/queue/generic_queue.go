@@ -88,12 +88,14 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 	if q.head >= len(q.items) {
 		var zeroVal T
 
+		return zeroVal, false
+	}
+
+	if q.head == len(q.items)-1 {
 		if !q.hasFinished {
 			q.finishTime = time.Now()
 			q.hasFinished = true
 		}
-
-		return zeroVal, false
 	}
 
 	if !q.hasStarted {
