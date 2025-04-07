@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateBasicAttributes(t *testing.T) {
+func TestValidateBasicAttributes_Valid(t *testing.T) {
 	sourceBase := "/mnt/src"
 	destBase := "/mnt/dst"
 
@@ -24,6 +24,20 @@ func TestValidateBasicAttributes(t *testing.T) {
 	t.Run("valid moveable", func(t *testing.T) {
 		assert.NoError(t, validateBasicAttributes(valid))
 	})
+}
+
+func TestValidateBasicAttributes_Errors(t *testing.T) {
+	sourceBase := "/mnt/src"
+	destBase := "/mnt/dst"
+
+	valid := &schema.Moveable{
+		Share:      &fakeShare{"share"},
+		Metadata:   &schema.Metadata{},
+		Source:     &fakeStorage{name: "source", path: "/mnt/src"},
+		SourcePath: filepath.Join(sourceBase, "share/file"),
+		Dest:       &fakeStorage{name: "dest", path: "/mnt/dst"},
+		DestPath:   filepath.Join(destBase, "share/file"),
+	}
 
 	tests := []struct {
 		name string
@@ -54,42 +68,58 @@ func TestValidateLinks(t *testing.T) {
 	t.Run("normal file", func(t *testing.T) {
 		assert.NoError(t, validateLinks(&schema.Moveable{}))
 	})
+}
 
-	t.Run("hardlink: missing target", func(t *testing.T) {
-		m := &schema.Moveable{IsHardlink: true}
-		assert.ErrorIs(t, validateLinks(m), ErrNoHardlinkTarget)
-	})
+func TestValidateLinks_Errors(t *testing.T) {
+	tests := []struct {
+		name     string
+		moveable *schema.Moveable
+		expected error
+	}{
+		{
+			name:     "hardlink: missing target",
+			moveable: &schema.Moveable{IsHardlink: true},
+			expected: ErrNoHardlinkTarget,
+		},
+		{
+			name: "hardlink: has sublinks",
+			moveable: &schema.Moveable{
+				IsHardlink: true,
+				HardlinkTo: &schema.Moveable{},
+				Hardlinks:  []*schema.Moveable{{}},
+			},
+			expected: ErrHardlinkHasSublinks,
+		},
+		{
+			name:     "hardlink set without flag",
+			moveable: &schema.Moveable{HardlinkTo: &schema.Moveable{}},
+			expected: ErrHardlinkSetTarget,
+		},
+		{
+			name:     "symlink: missing target",
+			moveable: &schema.Moveable{IsSymlink: true},
+			expected: ErrNoSymlinkTarget,
+		},
+		{
+			name: "symlink: has sublinks",
+			moveable: &schema.Moveable{
+				IsSymlink: true,
+				SymlinkTo: &schema.Moveable{},
+				Symlinks:  []*schema.Moveable{{}},
+			},
+			expected: ErrSymlinkHasSublinks,
+		},
+		{
+			name:     "symlink set without flag",
+			moveable: &schema.Moveable{SymlinkTo: &schema.Moveable{}},
+			expected: ErrSymlinkSetTarget,
+		},
+	}
 
-	t.Run("hardlink: has sublinks", func(t *testing.T) {
-		m := &schema.Moveable{
-			IsHardlink: true,
-			HardlinkTo: &schema.Moveable{},
-			Hardlinks:  []*schema.Moveable{{}},
-		}
-		assert.ErrorIs(t, validateLinks(m), ErrHardlinkHasSublinks)
-	})
-
-	t.Run("hardlink set without flag", func(t *testing.T) {
-		m := &schema.Moveable{HardlinkTo: &schema.Moveable{}}
-		assert.ErrorIs(t, validateLinks(m), ErrHardlinkSetTarget)
-	})
-
-	t.Run("symlink: missing target", func(t *testing.T) {
-		m := &schema.Moveable{IsSymlink: true}
-		assert.ErrorIs(t, validateLinks(m), ErrNoSymlinkTarget)
-	})
-
-	t.Run("symlink: has sublinks", func(t *testing.T) {
-		m := &schema.Moveable{
-			IsSymlink: true,
-			SymlinkTo: &schema.Moveable{},
-			Symlinks:  []*schema.Moveable{{}},
-		}
-		assert.ErrorIs(t, validateLinks(m), ErrSymlinkHasSublinks)
-	})
-
-	t.Run("symlink set without flag", func(t *testing.T) {
-		m := &schema.Moveable{SymlinkTo: &schema.Moveable{}}
-		assert.ErrorIs(t, validateLinks(m), ErrSymlinkSetTarget)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateLinks(tt.moveable)
+			assert.ErrorIs(t, err, tt.expected)
+		})
+	}
 }

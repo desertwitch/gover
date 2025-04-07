@@ -9,52 +9,113 @@ import (
 )
 
 func TestValidateDirectories_Valid(t *testing.T) {
-	src := &fakeStorage{"source", "/mnt/source"}
-	dst := &fakeStorage{"dest", "/mnt/dest"}
-	share := &fakeShare{"share"}
+	src := &fakeStorage{name: "source", path: "/mnt/source"}
+	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
+	share := &fakeShare{name: "share"}
 
-	dir2 := &schema.Directory{
-		SourcePath: "/mnt/source/share/dir2",
-		DestPath:   "/mnt/dest/share/dir2",
-		Metadata:   &schema.Metadata{IsDir: true},
-	}
-	dir1 := &schema.Directory{
-		SourcePath: "/mnt/source/share",
-		DestPath:   "/mnt/dest/share",
-		Metadata:   &schema.Metadata{IsDir: true},
-		Child:      dir2,
-	}
-	dir2.Parent = dir1
+	tests := []struct {
+		name  string
+		build func() *schema.Moveable
+	}{
+		{
+			name: "valid directory chain",
+			build: func() *schema.Moveable {
+				dir2 := &schema.Directory{
+					SourcePath: filepath.Join(src.path, "share/dir2"),
+					DestPath:   filepath.Join(dst.path, "share/dir2"),
+					Metadata:   &schema.Metadata{IsDir: true},
+				}
+				dir1 := &schema.Directory{
+					SourcePath: filepath.Join(src.path, "share"),
+					DestPath:   filepath.Join(dst.path, "share"),
+					Metadata:   &schema.Metadata{IsDir: true},
+					Child:      dir2,
+				}
+				dir2.Parent = dir1
 
-	moveable := &schema.Moveable{
-		RootDir:    dir1,
-		Source:     src,
-		Dest:       dst,
-		Share:      share,
-		SourcePath: "/mnt/source/share",
-		DestPath:   "/mnt/dest/share",
+				return &schema.Moveable{
+					RootDir:    dir1,
+					Source:     src,
+					Dest:       dst,
+					Share:      share,
+					SourcePath: filepath.Join(src.path, "share"),
+					DestPath:   filepath.Join(dst.path, "share"),
+				}
+			},
+		},
+		{
+			name: "valid with nil RootDir (empty base)",
+			build: func() *schema.Moveable {
+				return &schema.Moveable{
+					RootDir:    nil,
+					Source:     src,
+					Dest:       dst,
+					Share:      share,
+					SourcePath: filepath.Join(src.path, "share"),
+					DestPath:   filepath.Join(dst.path, "share"),
+				}
+			},
+		},
 	}
 
-	err := validateDirectories(moveable)
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			moveable := tt.build()
+			err := validateDirectories(moveable)
+			assert.NoError(t, err)
+		})
+	}
 }
 
-func TestValidateDirectories_Valid_NilRoot(t *testing.T) {
-	src := &fakeStorage{"source", "/mnt/source"}
-	dst := &fakeStorage{"dest", "/mnt/dest"}
-	share := &fakeShare{"share"}
+func TestValidateDirectories_Errors(t *testing.T) {
+	src := &fakeStorage{name: "source", path: "/mnt/source"}
+	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
+	share := &fakeShare{name: "share"}
 
-	moveable := &schema.Moveable{
-		RootDir:    nil,
-		Source:     src,
-		Dest:       dst,
-		Share:      share,
-		SourcePath: "/mnt/source/share",
-		DestPath:   "/mnt/dest/share",
+	tests := []struct {
+		name     string
+		modify   func(m *schema.Moveable)
+		expected error
+	}{
+		{
+			name: "invalid root connection",
+			modify: func(m *schema.Moveable) {
+				m.RootDir = &schema.Directory{
+					SourcePath: "/mnt/source/share/foo",
+					DestPath:   "/mnt/dest/share",
+					Metadata:   &schema.Metadata{IsDir: true},
+				}
+				m.SourcePath = "/mnt/source/share/foo/bar/baz.txt"
+				m.DestPath = "/mnt/dest/share/foo/bar/baz.txt"
+			},
+			expected: ErrSourceNotConnectBase,
+		},
+		{
+			name: "invalid directory metadata (nil)",
+			modify: func(m *schema.Moveable) {
+				m.RootDir = &schema.Directory{
+					Metadata: nil,
+				}
+				m.SourcePath = "/mnt/source/share"
+				m.DestPath = "/mnt/dest/share"
+			},
+			expected: ErrNoRelatedMetadata,
+		},
 	}
 
-	err := validateDirectories(moveable)
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &schema.Moveable{
+				Source: src,
+				Dest:   dst,
+				Share:  share,
+			}
+			tt.modify(m)
+
+			err := validateDirectories(m)
+			assert.ErrorIs(t, err, tt.expected)
+		})
+	}
 }
 
 func TestValidateDirectory_Valid(t *testing.T) {

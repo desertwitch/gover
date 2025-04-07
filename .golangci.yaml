@@ -71,5 +71,11 @@ issues:
         - EXC0014
         - EXC0015
 
-    exclude-files:
-        - _test.go
+    exclude-rules:
+        # Exclude some linters from running on tests files.
+        - path: _test\.go
+          linters:
+            - paralleltest
+            - revive
+            - funlen
+            - ireturn
