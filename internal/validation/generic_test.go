@@ -65,17 +65,16 @@ func TestValidateBasicAttributes_Errors(t *testing.T) {
 }
 
 func TestValidateLinks(t *testing.T) {
-	t.Run("normal file", func(t *testing.T) {
-		assert.NoError(t, validateLinks(&schema.Moveable{}))
-	})
-}
-
-func TestValidateLinks_Errors(t *testing.T) {
 	tests := []struct {
 		name     string
 		moveable *schema.Moveable
 		expected error
 	}{
+		{
+			name:     "not a link",
+			moveable: &schema.Moveable{},
+			expected: nil,
+		},
 		{
 			name:     "hardlink: missing target",
 			moveable: &schema.Moveable{IsHardlink: true},

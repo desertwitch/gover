@@ -44,7 +44,7 @@ func TestValidateDirectories_Valid(t *testing.T) {
 			},
 		},
 		{
-			name: "valid with nil RootDir (empty base)",
+			name: "valid with nil RootDir (SourcePath = base of Share)",
 			build: func() *schema.Moveable {
 				return &schema.Moveable{
 					RootDir:    nil,
@@ -78,7 +78,7 @@ func TestValidateDirectories_Errors(t *testing.T) {
 		expected error
 	}{
 		{
-			name: "invalid root connection",
+			name: "invalid root connection (src)",
 			modify: func(m *schema.Moveable) {
 				m.RootDir = &schema.Directory{
 					SourcePath: "/mnt/source/share/foo",
@@ -137,13 +137,13 @@ func TestValidateDirectory_Errors(t *testing.T) {
 		dir  *schema.Directory
 		want error
 	}{
-		{"nil metadata", &schema.Directory{Metadata: nil}, ErrNoRelatedMetadata},
-		{"symlink", &schema.Directory{Metadata: &schema.Metadata{IsSymlink: true, IsDir: false}}, ErrRelatedDirSymlink},
-		{"not a dir", &schema.Directory{Metadata: &schema.Metadata{IsDir: false}}, ErrRelatedDirNotDir},
-		{"empty source path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: ""}, ErrNoRelatedSourcePath},
-		{"relative source path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "foo"}, ErrRelatedSourceRelative},
-		{"empty dest path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs"}, ErrNoRelatedDestPath},
-		{"relative dest path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs", DestPath: "foo"}, ErrRelatedDestRelative},
+		{"related dir has no metadata", &schema.Directory{Metadata: nil}, ErrNoRelatedMetadata},
+		{"related dir is symlink", &schema.Directory{Metadata: &schema.Metadata{IsSymlink: true, IsDir: false}}, ErrRelatedDirSymlink},
+		{"related dir not a dir", &schema.Directory{Metadata: &schema.Metadata{IsDir: false}}, ErrRelatedDirNotDir},
+		{"related dir empty source path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: ""}, ErrNoRelatedSourcePath},
+		{"related dir source path relative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "foo"}, ErrRelatedSourceRelative},
+		{"related dir empty dest path", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs"}, ErrNoRelatedDestPath},
+		{"related dir dest path relative", &schema.Directory{Metadata: &schema.Metadata{IsDir: true}, SourcePath: "/abs", DestPath: "foo"}, ErrRelatedDestRelative},
 	}
 
 	for _, tt := range tests {
@@ -162,14 +162,24 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 	tests := []struct {
 		name       string
 		sourcePath string
+		destPath   string
+		rootDir    *schema.Directory
 	}{
 		{
-			name:       "Root dir matches base exactly",
+			name:       "source path is share base, root dir is nil",
 			sourcePath: filepath.Join(src.GetFSPath(), share.GetName()),
+			destPath:   filepath.Join(dst.GetFSPath(), share.GetName()),
+			rootDir:    nil,
 		},
 		{
-			name:       "Root dir is an ancestor of deeper path",
+			name:       "source path is deeper path, root dir is share base",
 			sourcePath: filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar"),
+			destPath:   filepath.Join(dst.GetFSPath(), share.GetName(), "foo/bar"),
+			rootDir: &schema.Directory{
+				SourcePath: filepath.Join(src.GetFSPath(), share.GetName()),
+				DestPath:   filepath.Join(dst.GetFSPath(), share.GetName()),
+				Metadata:   &schema.Metadata{IsDir: true},
+			},
 		},
 	}
 
@@ -180,11 +190,8 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 				Source:     src,
 				Dest:       dst,
 				SourcePath: tt.sourcePath,
-				RootDir: &schema.Directory{
-					SourcePath: filepath.Join(src.GetFSPath(), share.GetName()),
-					DestPath:   filepath.Join(dst.GetFSPath(), share.GetName()),
-					Metadata:   &schema.Metadata{IsDir: true},
-				},
+				DestPath:   tt.destPath,
+				RootDir:    tt.rootDir,
 			}
 
 			err := validateDirRootConnection(m)
@@ -204,7 +211,7 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "RootDir present, but not base of SourcePath",
+			name: "source path is deeper path, root dir src is not share base",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.RootDir = &schema.Directory{
@@ -216,7 +223,7 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 			wantErr: ErrSourceNotConnectBase,
 		},
 		{
-			name: "RootDir is nil",
+			name: "source path is deeper path, root dir is nil",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.RootDir = nil
@@ -224,9 +231,10 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 			wantErr: ErrSourceNotConnectBase,
 		},
 		{
-			name: "RootDir present, but not base of DestPath",
+			name: "dest path is deeper path, root dir dest is not share base",
 			modify: func(m *schema.Moveable) {
 				m.SourcePath = filepath.Join(src.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
+				m.DestPath = filepath.Join(dst.GetFSPath(), share.GetName(), "foo/bar/baz.txt")
 				m.RootDir = &schema.Directory{
 					SourcePath: filepath.Join(src.GetFSPath(), share.GetName()),
 					DestPath:   filepath.Join(dst.GetFSPath(), "foo"),

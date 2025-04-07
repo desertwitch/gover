@@ -72,7 +72,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "invalid hardlink fails validation",
+			name: "invalid hardlink fails moveable validation",
 			modify: func(m *schema.Moveable) {
 				m.Hardlinks = []*schema.Moveable{
 					{
@@ -88,7 +88,7 @@ func TestValidateMoveable(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "invalid symlink fails validation",
+			name: "invalid symlink fails moveable validation",
 			modify: func(m *schema.Moveable) {
 				m.Symlinks = []*schema.Moveable{
 					{
