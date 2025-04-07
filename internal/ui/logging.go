@@ -4,6 +4,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// teaProgramProvider defines methods an UI program needs to have.
+type teaProgramProvider interface {
+	Send(msg tea.Msg)
+}
+
 // LogMsg is a regular string containing a log message. It is typed for
 // identification as [tea.Msg] within a [tea.Program].
 type LogMsg string
@@ -11,7 +16,7 @@ type LogMsg string
 // TeaLogWriter is an implementation of an [io.Writer], for use inside a
 // [slog.Handler], that sends any logs to a [tea.Program] as [tea.Msg].
 type TeaLogWriter struct {
-	program  *tea.Program
+	program  teaProgramProvider
 	doneChan chan struct{}
 	logChan  chan LogMsg
 }
@@ -19,7 +24,7 @@ type TeaLogWriter struct {
 // NewTeaLogWriter returns a pointer to a new [TeaLogWriter]. It also starts the
 // internal log processing function, which should eventually be stopped e.g.
 // with a deferred [TeaLogWriter.Stop] call.
-func NewTeaLogWriter(program *tea.Program) *TeaLogWriter {
+func NewTeaLogWriter(program teaProgramProvider) *TeaLogWriter {
 	wr := &TeaLogWriter{
 		program:  program,
 		doneChan: make(chan struct{}),

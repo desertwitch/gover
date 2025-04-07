@@ -42,7 +42,8 @@ mocks: ## Generates the mocks for the application code
 	@mockery --config .mockery.yaml
 
 test: ## Runs all written tests for and on the application code
-	@go test -failfast -race -covermode=atomic ./...
+	@PKGS=$$(go list ./... | grep -v '/mocks$$'); \
+	go test -failfast -race -covermode=atomic $$PKGS
 
 vendor: ## Pulls the (remote) dependencies into the local vendor folder
 	@go mod tidy
