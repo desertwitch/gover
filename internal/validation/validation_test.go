@@ -30,7 +30,11 @@ func (s *fakeShare) GetSpaceFloor() uint64                    { return 0 }
 func (s *fakeShare) GetDisableCOW() bool                      { return false }
 func (s *fakeShare) GetIncludedDisks() map[string]schema.Disk { return nil }
 
+// TestValidateMoveable tests validation of a [schema.Moveable] with and without
+// subelements.
 func TestValidateMoveable(t *testing.T) {
+	t.Parallel()
+
 	src := &fakeStorage{name: "src", path: "/mnt/src"}
 	dst := &fakeStorage{name: "dst", path: "/mnt/dst"}
 	share := &fakeShare{name: "share"}

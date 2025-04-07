@@ -8,7 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestValidateDirectories_Valid simulates a successful validation of related
+// directories.
 func TestValidateDirectories_Valid(t *testing.T) {
+	t.Parallel()
+
 	src := &fakeStorage{name: "source", path: "/mnt/source"}
 	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
 	share := &fakeShare{name: "share"}
@@ -67,7 +71,11 @@ func TestValidateDirectories_Valid(t *testing.T) {
 	}
 }
 
+// TestValidateDirectories_Errors tests a range of related directory validation
+// errors.
 func TestValidateDirectories_Errors(t *testing.T) {
+	t.Parallel()
+
 	src := &fakeStorage{name: "source", path: "/mnt/source"}
 	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
 	share := &fakeShare{name: "share"}
@@ -118,7 +126,11 @@ func TestValidateDirectories_Errors(t *testing.T) {
 	}
 }
 
+// TestValidateDirectory_Valid simulates a successful validation of a single
+// related directory.
 func TestValidateDirectory_Valid(t *testing.T) {
+	t.Parallel()
+
 	dir := &schema.Directory{
 		SourcePath: "/mnt/data/share/folder",
 		DestPath:   "/mnt/dest/share/folder",
@@ -131,7 +143,11 @@ func TestValidateDirectory_Valid(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// TestValidateDirectory_Errors simulates a series of validation failures for a
+// single related directory.
 func TestValidateDirectory_Errors(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		dir  *schema.Directory
@@ -154,7 +170,11 @@ func TestValidateDirectory_Errors(t *testing.T) {
 	}
 }
 
+// TestValidateDirRootConnection_Valid simulates a successful validation of a
+// share base connection.
 func TestValidateDirRootConnection_Valid(t *testing.T) {
+	t.Parallel()
+
 	src := &fakeStorage{name: "src", path: "/mnt/src"}
 	dst := &fakeStorage{name: "dst", path: "/mnt/dst"}
 	share := &fakeShare{name: "share"}
@@ -200,7 +220,11 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 	}
 }
 
+// TestValidateDirRootConnection_Errors simulates a series of failures regarding
+// share base connection.
 func TestValidateDirRootConnection_Errors(t *testing.T) {
+	t.Parallel()
+
 	src := &fakeStorage{name: "src", path: "/mnt/src"}
 	dst := &fakeStorage{name: "dst", path: "/mnt/dst"}
 	share := &fakeShare{name: "share"}

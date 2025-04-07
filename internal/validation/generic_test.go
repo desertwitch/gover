@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestValidateBasicAttributes_Valid simulates successful validation of basic attributes.
 func TestValidateBasicAttributes_Valid(t *testing.T) {
+	t.Parallel()
+
 	sourceBase := "/mnt/src"
 	destBase := "/mnt/dst"
 
@@ -26,7 +29,10 @@ func TestValidateBasicAttributes_Valid(t *testing.T) {
 	})
 }
 
+// TestValidateBasicAttributes_Errors simulates a row of failures of basic attribute validation.
 func TestValidateBasicAttributes_Errors(t *testing.T) {
+	t.Parallel()
+
 	sourceBase := "/mnt/src"
 	destBase := "/mnt/dst"
 
@@ -64,7 +70,10 @@ func TestValidateBasicAttributes_Errors(t *testing.T) {
 	}
 }
 
+// TestValidateLinks tests the validation of links.
 func TestValidateLinks(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		moveable *schema.Moveable

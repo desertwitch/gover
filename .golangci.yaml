@@ -61,6 +61,9 @@ linters-settings:
         replace-allow-list:
         - github.com/charmbracelet/bubbletea
 
+    paralleltest:
+        ignore-missing-subtests: true
+
 issues:
     include:
         - EXC0002
@@ -75,7 +78,8 @@ issues:
         # Exclude some linters from running on tests files.
         - path: _test\.go
           linters:
-            - paralleltest
+            - tparallel
             - revive
             - funlen
             - ireturn
+            - err113
