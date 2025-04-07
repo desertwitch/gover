@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/desertwitch/gover/internal/schema"
+	"github.com/desertwitch/gover/internal/schema/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,37 +13,51 @@ import (
 func TestValidateBasicAttributes_Valid(t *testing.T) {
 	t.Parallel()
 
-	sourceBase := "/mnt/src"
-	destBase := "/mnt/dst"
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/source")
+
+	dst := mocks.NewStorage(t)
+	dst.On("GetFSPath").Return("/mnt/dest")
+
+	share := mocks.NewShare(t)
 
 	valid := &schema.Moveable{
-		Share:      &fakeShare{"share"},
+		Share:      share,
 		Metadata:   &schema.Metadata{},
-		Source:     &fakeStorage{name: "source", path: "/mnt/src"},
-		SourcePath: filepath.Join(sourceBase, "share/file"),
-		Dest:       &fakeStorage{name: "dest", path: "/mnt/dst"},
-		DestPath:   filepath.Join(destBase, "share/file"),
+		Source:     src,
+		SourcePath: filepath.Join(src.GetFSPath(), "share/file"),
+		Dest:       dst,
+		DestPath:   filepath.Join(dst.GetFSPath(), "share/file"),
 	}
 
 	t.Run("valid moveable", func(t *testing.T) {
 		assert.NoError(t, validateBasicAttributes(valid))
 	})
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
 
 // TestValidateBasicAttributes_Errors simulates a row of failures of basic attribute validation.
 func TestValidateBasicAttributes_Errors(t *testing.T) {
 	t.Parallel()
 
-	sourceBase := "/mnt/src"
-	destBase := "/mnt/dst"
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/source")
+
+	dst := mocks.NewStorage(t)
+	dst.On("GetFSPath").Return("/mnt/dest")
+
+	share := mocks.NewShare(t)
 
 	valid := &schema.Moveable{
-		Share:      &fakeShare{"share"},
+		Share:      share,
 		Metadata:   &schema.Metadata{},
-		Source:     &fakeStorage{name: "source", path: "/mnt/src"},
-		SourcePath: filepath.Join(sourceBase, "share/file"),
-		Dest:       &fakeStorage{name: "dest", path: "/mnt/dst"},
-		DestPath:   filepath.Join(destBase, "share/file"),
+		Source:     src,
+		SourcePath: filepath.Join(src.GetFSPath(), "share/file"),
+		Dest:       dst,
+		DestPath:   filepath.Join(dst.GetFSPath(), "share/file"),
 	}
 
 	tests := []struct {
@@ -68,6 +83,10 @@ func TestValidateBasicAttributes_Errors(t *testing.T) {
 			assert.ErrorIs(t, err, tt.want)
 		})
 	}
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
 
 // TestValidateLinks tests the validation of links.

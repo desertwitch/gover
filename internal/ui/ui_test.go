@@ -3,28 +3,16 @@ package ui
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/desertwitch/gover/internal/queue"
 	"github.com/desertwitch/gover/internal/schema"
+	"github.com/desertwitch/gover/internal/schema/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-type fakeShare struct {
-	name string
-}
-
-func (s *fakeShare) GetName() string                          { return s.name }
-func (s *fakeShare) GetUseCache() string                      { return "" }
-func (s *fakeShare) GetCachePool() schema.Pool                { return nil }
-func (s *fakeShare) GetCachePool2() schema.Pool               { return nil }
-func (s *fakeShare) GetAllocator() string                     { return "" }
-func (s *fakeShare) GetSplitLevel() int                       { return 0 }
-func (s *fakeShare) GetSpaceFloor() uint64                    { return 0 }
-func (s *fakeShare) GetDisableCOW() bool                      { return false }
-func (s *fakeShare) GetIncludedDisks() map[string]schema.Disk { return nil }
 
 // TestTeaUI is an integration test for the command-line user interface.
 func TestTeaUI(t *testing.T) {
@@ -43,6 +31,15 @@ func TestTeaUI(t *testing.T) {
 	handler.program = program
 	handler.LogWriter = NewTeaLogWriter(handler.program)
 
+	share1 := mocks.NewShare(t)
+	share1.On("GetName").Return("share1")
+
+	share2 := mocks.NewShare(t)
+	share2.On("GetName").Return("share2")
+
+	share3 := mocks.NewShare(t)
+	share3.On("GetName").Return("share3")
+
 	go func() {
 		// Simulate some progress work for the UI to render.
 		for {
@@ -51,13 +48,13 @@ func TestTeaUI(t *testing.T) {
 				time.Sleep(time.Millisecond)
 				handler.queueManager.EvaluationManager.Enqueue(
 					&schema.Moveable{
-						Share: &fakeShare{name: "share1"},
+						Share: share1,
 					},
 					&schema.Moveable{
-						Share: &fakeShare{name: "share2"},
+						Share: share2,
 					},
 					&schema.Moveable{
-						Share: &fakeShare{name: "share3"},
+						Share: share3,
 					},
 				)
 				for _, q := range handler.queueManager.EvaluationManager.GetQueues() {
@@ -105,27 +102,20 @@ func TestTeaUI(t *testing.T) {
 		}
 	}()
 
-	if err := handler.Launch(); err != nil {
-		t.Fatalf("Expected nil, got %v", err)
-	}
+	err := handler.Launch()
 
-	if buf.Len() == 0 {
-		t.Fatal("UI generated no output at all")
-	}
+	require.NoError(t, err, "Handler launch should succeed")
+	require.NotZero(t, buf.Len(), "UI should generate output")
 
 	by := buf.Bytes()
 
-	if !bytes.Contains(by, []byte("log1")) {
-		t.Fatal("UI did not show the first log message sent (via program.Send)")
-	}
+	assert.Contains(t, string(by), "log1", "UI should show the first log message")
+	assert.Contains(t, string(by), "log2", "UI should show the second log message")
+	assert.Contains(t, string(by), "Finished", "UI should show progress as finished")
 
-	if !bytes.Contains(by, []byte("log2")) {
-		t.Fatal("UI did not show the second log message sent (via LogWriter)")
-	}
-
-	if !bytes.Contains(by, []byte("Finished")) {
-		t.Fatal("UI did not update the progress panels.")
-	}
+	share1.AssertExpectations(t)
+	share2.AssertExpectations(t)
+	share3.AssertExpectations(t)
 }
 
 // TestTeaUI_Ctrl_C is an integration test for the command-line user interface.
@@ -164,15 +154,6 @@ func TestTeaUI_Ctrl_C(t *testing.T) {
 
 	err := handler.Launch()
 
-	if err == nil {
-		t.Fatalf("Expected %v, got nil", context.Canceled)
-	}
-
-	if !errors.Is(err, context.Canceled) {
-		t.Fatalf("Expected %v, got %v", context.Canceled, err)
-	}
-
-	if buf.Len() == 0 {
-		t.Fatal("UI generated no output at all")
-	}
+	require.ErrorIs(t, err, context.Canceled, "UI should cancel external context")
+	require.NotZero(t, buf.Len(), "UI should generate output")
 }

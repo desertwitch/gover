@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/desertwitch/gover/internal/schema"
+	"github.com/desertwitch/gover/internal/schema/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +14,14 @@ import (
 func TestValidateDirectories_Valid(t *testing.T) {
 	t.Parallel()
 
-	src := &fakeStorage{name: "source", path: "/mnt/source"}
-	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
-	share := &fakeShare{name: "share"}
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/source")
+
+	dst := mocks.NewStorage(t)
+	dst.On("GetFSPath").Return("/mnt/dest")
+
+	share := mocks.NewShare(t)
+	share.On("GetName").Return("share")
 
 	tests := []struct {
 		name  string
@@ -25,13 +31,13 @@ func TestValidateDirectories_Valid(t *testing.T) {
 			name: "valid directory chain",
 			build: func() *schema.Moveable {
 				dir2 := &schema.Directory{
-					SourcePath: filepath.Join(src.path, "share/dir2"),
-					DestPath:   filepath.Join(dst.path, "share/dir2"),
+					SourcePath: filepath.Join(src.GetFSPath(), "share/dir2"),
+					DestPath:   filepath.Join(dst.GetFSPath(), "share/dir2"),
 					Metadata:   &schema.Metadata{IsDir: true},
 				}
 				dir1 := &schema.Directory{
-					SourcePath: filepath.Join(src.path, "share"),
-					DestPath:   filepath.Join(dst.path, "share"),
+					SourcePath: filepath.Join(src.GetFSPath(), "share"),
+					DestPath:   filepath.Join(dst.GetFSPath(), "share"),
 					Metadata:   &schema.Metadata{IsDir: true},
 					Child:      dir2,
 				}
@@ -42,8 +48,8 @@ func TestValidateDirectories_Valid(t *testing.T) {
 					Source:     src,
 					Dest:       dst,
 					Share:      share,
-					SourcePath: filepath.Join(src.path, "share"),
-					DestPath:   filepath.Join(dst.path, "share"),
+					SourcePath: filepath.Join(src.GetFSPath(), "share"),
+					DestPath:   filepath.Join(dst.GetFSPath(), "share"),
 				}
 			},
 		},
@@ -55,8 +61,8 @@ func TestValidateDirectories_Valid(t *testing.T) {
 					Source:     src,
 					Dest:       dst,
 					Share:      share,
-					SourcePath: filepath.Join(src.path, "share"),
-					DestPath:   filepath.Join(dst.path, "share"),
+					SourcePath: filepath.Join(src.GetFSPath(), "share"),
+					DestPath:   filepath.Join(dst.GetFSPath(), "share"),
 				}
 			},
 		},
@@ -69,6 +75,10 @@ func TestValidateDirectories_Valid(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
 
 // TestValidateDirectories_Errors tests a range of related directory validation
@@ -76,9 +86,13 @@ func TestValidateDirectories_Valid(t *testing.T) {
 func TestValidateDirectories_Errors(t *testing.T) {
 	t.Parallel()
 
-	src := &fakeStorage{name: "source", path: "/mnt/source"}
-	dst := &fakeStorage{name: "dest", path: "/mnt/dest"}
-	share := &fakeShare{name: "share"}
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/source")
+
+	dst := mocks.NewStorage(t)
+
+	share := mocks.NewShare(t)
+	share.On("GetName").Return("share")
 
 	tests := []struct {
 		name     string
@@ -124,6 +138,10 @@ func TestValidateDirectories_Errors(t *testing.T) {
 			assert.ErrorIs(t, err, tt.expected)
 		})
 	}
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
 
 // TestValidateDirectory_Valid simulates a successful validation of a single
@@ -175,9 +193,14 @@ func TestValidateDirectory_Errors(t *testing.T) {
 func TestValidateDirRootConnection_Valid(t *testing.T) {
 	t.Parallel()
 
-	src := &fakeStorage{name: "src", path: "/mnt/src"}
-	dst := &fakeStorage{name: "dst", path: "/mnt/dst"}
-	share := &fakeShare{name: "share"}
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/src")
+
+	dst := mocks.NewStorage(t)
+	dst.On("GetFSPath").Return("/mnt/dst")
+
+	share := mocks.NewShare(t)
+	share.On("GetName").Return("share")
 
 	tests := []struct {
 		name       string
@@ -218,6 +241,10 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
 
 // TestValidateDirRootConnection_Errors simulates a series of failures regarding
@@ -225,9 +252,14 @@ func TestValidateDirRootConnection_Valid(t *testing.T) {
 func TestValidateDirRootConnection_Errors(t *testing.T) {
 	t.Parallel()
 
-	src := &fakeStorage{name: "src", path: "/mnt/src"}
-	dst := &fakeStorage{name: "dst", path: "/mnt/dst"}
-	share := &fakeShare{name: "share"}
+	src := mocks.NewStorage(t)
+	src.On("GetFSPath").Return("/mnt/src")
+
+	dst := mocks.NewStorage(t)
+	dst.On("GetFSPath").Return("/mnt/dst")
+
+	share := mocks.NewShare(t)
+	share.On("GetName").Return("share")
 
 	tests := []struct {
 		name    string
@@ -283,4 +315,8 @@ func TestValidateDirRootConnection_Errors(t *testing.T) {
 			assert.ErrorIs(t, err, tt.wantErr)
 		})
 	}
+
+	src.AssertExpectations(t)
+	dst.AssertExpectations(t)
+	share.AssertExpectations(t)
 }
