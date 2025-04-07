@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestGetPools tests the [System.GetPools] method.
-func TestGetPools(t *testing.T) {
+// TestGetPools_Success tests the [System.GetPools] method.
+func TestGetPools_Success(t *testing.T) {
 	t.Parallel()
 
 	// When Pools is nil, GetPools should return nil.
@@ -26,8 +26,8 @@ func TestGetPools(t *testing.T) {
 	assert.NotEqual(t, fmt.Sprintf("%p", origPools), fmt.Sprintf("%p", copiedPools), "Copied pools map should not be the same instance")
 }
 
-// TestGetShares tests the [System.GetShares] method.
-func TestGetShares(t *testing.T) {
+// TestGetShares_Success tests the [System.GetShares] method.
+func TestGetShares_Success(t *testing.T) {
 	t.Parallel()
 
 	// When Shares is nil, GetShares should return nil.

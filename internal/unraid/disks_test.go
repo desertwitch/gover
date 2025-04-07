@@ -63,7 +63,8 @@ func TestEstablishDisks_Success(t *testing.T) {
 	osMock.AssertExpectations(t)
 }
 
-// TestEstablishDisks_ReadDirError simulates an error reading the mount base.
+// TestEstablishDisks_Fail_ReadDirError simulates an error reading the mount
+// base.
 func TestEstablishDisks_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 

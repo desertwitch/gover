@@ -42,7 +42,7 @@ func TestEstablishArray_Success(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishArray_ReadConfigError simulates an error reading the array
+// TestEstablishArray_Fail_ReadConfigError simulates an error reading the array
 // state file.
 func TestEstablishArray_Fail_ReadConfigError(t *testing.T) {
 	t.Parallel()

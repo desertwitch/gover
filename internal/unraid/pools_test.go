@@ -12,8 +12,8 @@ import (
 )
 
 // TestEstablishPools_Success verifies that establishPools returns a map of
-// pools, when the configuration directory exists and valid pool config files are
-// found.
+// pools, when the configuration directory exists and valid pool config files
+// are found.
 func TestEstablishPools_Success(t *testing.T) {
 	t.Parallel()
 
@@ -57,8 +57,8 @@ func TestEstablishPools_Success(t *testing.T) {
 	osMock.AssertExpectations(t)
 }
 
-// TestEstablishPools_ConfigDirDoesNotExist simulates the scenario where the
-// pools configuration directory does not exist.
+// TestEstablishPools_Fail_ConfigDirDoesNotExist simulates the scenario where
+// the pools configuration directory does not exist.
 func TestEstablishPools_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
 
@@ -79,8 +79,8 @@ func TestEstablishPools_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	fsMock.AssertExpectations(t)
 }
 
-// TestEstablishPools_ReadDirError simulates an error while reading the pools
-// configuration directory.
+// TestEstablishPools_Fail_ReadDirError simulates an error while reading the
+// pools configuration directory.
 func TestEstablishPools_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
 
@@ -105,8 +105,8 @@ func TestEstablishPools_Fail_ReadDirError(t *testing.T) {
 	osMock.AssertExpectations(t)
 }
 
-// TestEstablishPools_MountpointDoesNotExist simulates a scenario where a pool's
-// mountpoint is missing.
+// TestEstablishPools_Fail_MountpointDoesNotExist simulates a scenario where a
+// pool's mountpoint is missing.
 func TestEstablishPools_Fail_MountpointDoesNotExist(t *testing.T) {
 	t.Parallel()
 

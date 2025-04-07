@@ -25,9 +25,9 @@ func (fp *fakeProgram) Send(msg tea.Msg) {
 	fp.msgs <- msg
 }
 
-// TestTeaLogWriter_Write_Table verifies that calls to Write send the expected
+// TestTeaLogWriter_Success_Write verifies that calls to Write send the expected
 // messages.
-func TestTeaLogWriter_Write_Table(t *testing.T) {
+func TestTeaLogWriter_Success_Write(t *testing.T) {
 	t.Parallel()
 
 	fp := newFakeProgram()
@@ -60,9 +60,9 @@ func TestTeaLogWriter_Write_Table(t *testing.T) {
 	}
 }
 
-// TestTeaLogWriter_Stop verifies that after Stop is called, subsequent Write
-// calls do not send messages.
-func TestTeaLogWriter_Stop(t *testing.T) {
+// TestTeaLogWriter_Success_Stop verifies that after Stop is called, subsequent
+// Write calls do not send messages.
+func TestTeaLogWriter_Success_Stop(t *testing.T) {
 	t.Parallel()
 
 	fp := newFakeProgram()

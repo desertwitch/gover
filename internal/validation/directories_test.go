@@ -81,8 +81,8 @@ func TestValidateDirectories_Success(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateDirectories_Fail_Errors tests a range of related directory validation
-// errors.
+// TestValidateDirectories_Fail_Errors tests a range of related directory
+// validation errors.
 func TestValidateDirectories_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
@@ -161,8 +161,8 @@ func TestValidateDirectory_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestValidateDirectory_Fail_Errors simulates a series of validation failures for a
-// single related directory.
+// TestValidateDirectory_Fail_Errors simulates a series of validation failures
+// for a single related directory.
 func TestValidateDirectory_Fail_Errors(t *testing.T) {
 	t.Parallel()
 
@@ -247,8 +247,8 @@ func TestValidateDirRootConnection_Success(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateDirRootConnection_Fail_Errors simulates a series of failures regarding
-// share base connection.
+// TestValidateDirRootConnection_Fail_Errors simulates a series of failures
+// regarding share base connection.
 func TestValidateDirRootConnection_Fail_Errors(t *testing.T) {
 	t.Parallel()
 

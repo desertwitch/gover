@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestValidateBasicAttributes_Success simulates successful validation of basic attributes.
+// TestValidateBasicAttributes_Success simulates successful validation of basic
+// attributes.
 func TestValidateBasicAttributes_Success(t *testing.T) {
 	t.Parallel()
 
@@ -39,7 +40,8 @@ func TestValidateBasicAttributes_Success(t *testing.T) {
 	share.AssertExpectations(t)
 }
 
-// TestValidateBasicAttributes_Fail_Errors simulates a row of failures of basic attribute validation.
+// TestValidateBasicAttributes_Fail_Errors simulates a row of failures of basic
+// attribute validation.
 func TestValidateBasicAttributes_Fail_Errors(t *testing.T) {
 	t.Parallel()
 

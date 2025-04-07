@@ -632,7 +632,7 @@ func TestEstablishShares_Success_MixedIncludesExcludes_2(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_ConfigDirDoesNotExist simulates that the share
+// TestEstablishShares_Fail_ConfigDirDoesNotExist simulates that the share
 // configuration directory missing.
 func TestEstablishShares_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	t.Parallel()
@@ -656,7 +656,7 @@ func TestEstablishShares_Fail_ConfigDirDoesNotExist(t *testing.T) {
 	fsMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_ReadDirError simulates an error while reading the share
+// TestEstablishShares_Fail_ReadDirError simulates an error while reading the share
 // configuation directory.
 func TestEstablishShares_Fail_ReadDirError(t *testing.T) {
 	t.Parallel()
@@ -683,7 +683,7 @@ func TestEstablishShares_Fail_ReadDirError(t *testing.T) {
 	osMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_GlobalConfigError simulates a failure reading the global
+// TestEstablishShares_Fail_GlobalConfigError simulates a failure reading the global
 // share configuration.
 func TestEstablishShares_Fail_GlobalConfigError(t *testing.T) {
 	t.Parallel()
@@ -712,7 +712,7 @@ func TestEstablishShares_Fail_GlobalConfigError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_ShareConfigError simulates an error reading an individual
+// TestEstablishShares_Fail_ShareConfigError simulates an error reading an individual
 // share configuration file.
 func TestEstablishShares_Fail_ShareConfigError(t *testing.T) {
 	t.Parallel()
@@ -751,7 +751,7 @@ func TestEstablishShares_Fail_ShareConfigError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_PrimaryCacheError simulates a failure to resolve the
+// TestEstablishShares_Fail_PrimaryCacheError simulates a failure to resolve the
 // primary cache pool. Here we pass a pools map that does not contain the key
 // returned by the share config.
 func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
@@ -783,11 +783,10 @@ func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
 	configMock.On("MapKeyToInt", shareConfigMap, SettingShareSplitLevel).Return(0)
 	configMock.On("MapKeyToUInt64", shareConfigMap, SettingShareFloor).Return(uint64(10000000))
 
-	// Provide an empty pools map so that lookup for "cache" fails.
 	disks := map[string]*Disk{
 		"disk1": {Name: "disk1", FSPath: "/mnt/disk1"},
 	}
-	pools := map[string]*Pool{} // "cache" is missing
+	pools := map[string]*Pool{}
 
 	handler := &Handler{
 		fsHandler:     fsMock,
@@ -804,7 +803,7 @@ func TestEstablishShares_Fail_PrimaryCacheError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_SecondaryCacheError simulates a failure to resolve the
+// TestEstablishShares_Fail_SecondaryCacheError simulates a failure to resolve the
 // secondary cache pool. Here we pass a pools map that does not contain the key
 // returned by the share config.
 func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
@@ -842,7 +841,7 @@ func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
 	}
 	pools := map[string]*Pool{
 		"cache": {Name: "cache", FSPath: "/mnt/cache"},
-	} // "cache2" is missing
+	}
 
 	handler := &Handler{
 		fsHandler:     fsMock,
@@ -859,7 +858,7 @@ func TestEstablishShares_Fail_SecondaryCacheError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_ShareIncludeError simulates a failure to resolve the
+// TestEstablishShares_Fail_ShareIncludeError simulates a failure to resolve the
 // share's included disks. Here we pass a disks map that does not contain the
 // key returned by the share config.
 func TestEstablishShares_Fail_ShareIncludeError(t *testing.T) {
@@ -918,7 +917,7 @@ func TestEstablishShares_Fail_ShareIncludeError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_ShareExcludeError simulates a failure to resolve the
+// TestEstablishShares_Fail_ShareExcludeError simulates a failure to resolve the
 // share's excluded disks. Here we pass a disks map that does not contain the
 // key returned by the share config.
 func TestEstablishShares_Fail_ShareExcludeError(t *testing.T) {
@@ -978,7 +977,7 @@ func TestEstablishShares_Fail_ShareExcludeError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_GlobalIncludeError simulates a failure to resolve the
+// TestEstablishShares_Fail_GlobalIncludeError simulates a failure to resolve the
 // global included disks. Here we pass a disks map that does not contain the key
 // returned by the share config.
 func TestEstablishShares_Fail_GlobalIncludeError(t *testing.T) {
@@ -1023,7 +1022,7 @@ func TestEstablishShares_Fail_GlobalIncludeError(t *testing.T) {
 	configMock.AssertExpectations(t)
 }
 
-// TestEstablishShares_GlobalExcludeError simulates a failure to resolve the
+// TestEstablishShares_Fail_GlobalExcludeError simulates a failure to resolve the
 // global excluded disks. Here we pass a disks map that does not contain the key
 // returned by the share config.
 func TestEstablishShares_Fail_GlobalExcludeError(t *testing.T) {
@@ -1073,7 +1072,6 @@ func TestEstablishShares_Fail_GlobalExcludeError(t *testing.T) {
 func TestEstablishShareIncludes(t *testing.T) {
 	t.Parallel()
 
-	// Create test disk maps
 	disk1 := &Disk{Name: "disk1", FSPath: "/mnt/disk1"}
 	disk2 := &Disk{Name: "disk2", FSPath: "/mnt/disk2"}
 	disk3 := &Disk{Name: "disk3", FSPath: "/mnt/disk3"}
@@ -1308,7 +1306,6 @@ func TestEstablishShareIncludes(t *testing.T) {
 		},
 	}
 
-	// Run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := &Handler{}
