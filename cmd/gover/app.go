@@ -15,36 +15,43 @@ import (
 
 // app is the principal implementation of the application.
 type app struct {
-	shares         map[string]schema.Share
+	// shares is a map of all [schema.Share] that will be checked.
+	shares map[string]schema.Share // map[shareName]schema.Share
+
+	// queueManager is a [queue.Manager] for all application operations.
+	queueManager *queue.Manager
+
 	fsHandler      *filesystem.Handler
 	allocHandler   *allocation.Handler
 	pathingHandler *pathing.Handler
 	ioHandler      *io.Handler
-	queueManager   *queue.Manager
 	uiHandler      *ui.Handler
 }
 
 // newApp returns a pointer to a new [app].
 func newApp(shares map[string]schema.Share,
+	queueManager *queue.Manager,
 	fsHandler *filesystem.Handler,
 	allocHandler *allocation.Handler,
 	pathingHandler *pathing.Handler,
 	ioHandler *io.Handler,
-	queueManager *queue.Manager,
 	uiHandler *ui.Handler,
 ) *app {
 	return &app{
 		shares:         shares,
+		queueManager:   queueManager,
 		fsHandler:      fsHandler,
 		allocHandler:   allocHandler,
 		pathingHandler: pathingHandler,
 		ioHandler:      ioHandler,
-		queueManager:   queueManager,
 		uiHandler:      uiHandler,
 	}
 }
 
-// Launch starts the application.
+// Launch starts the application and it's subtasks:
+//   - Enumeration to collect all [schema.Moveable] candidates.
+//   - Evaluation to sort, allocate and validate all [schema.Moveable].
+//   - IO to move all [schema.Moveable] to their final destinations.
 func (app *app) Launch(ctx context.Context) error {
 	if err := app.Enumerate(ctx); err != nil {
 		return fmt.Errorf("(app) %w", err)

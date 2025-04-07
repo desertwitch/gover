@@ -8,13 +8,21 @@ import (
 	"time"
 )
 
-// Manager is the principal queue manager implementation.
+// Manager is the principal queue manager implementation containing:
+//   - [queue.EnumerationManager] for enumeration of all [schema.Moveable].
+//   - [queue.EvaluationManager] for sorting, allocating and validating them.
+//   - [queue.IOManager] for moving all [schema.Moveable] to their destinations.
 type Manager struct {
 	sync.Mutex
-	Mode               int
+
+	// EnumerationManager contains all enumeration tasks.
 	EnumerationManager *EnumerationManager
-	EvaluationManager  *EvaluationManager
-	IOManager          *IOManager
+
+	// EvaluationManager contains all [schema.Moveable] candidates.
+	EvaluationManager *EvaluationManager
+
+	// IOManager contains all sorted, allocated and validated [schema.Moveable].
+	IOManager *IOManager
 }
 
 // NewManager returns a pointer to a new queue [Manager].

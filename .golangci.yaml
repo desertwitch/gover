@@ -7,6 +7,7 @@ linters:
             - goconst
             - tenv
             - varnamelen
+            - testpackage
             - wsl
 
 linters-settings:

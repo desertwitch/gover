@@ -247,7 +247,7 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	app := newApp(shareAdapters, fsHandler, allocHandler, pathingHandler, ioHandler, queueManager, uiHandler)
+	app := newApp(shareAdapters, queueManager, fsHandler, allocHandler, pathingHandler, ioHandler, uiHandler)
 
 	wg.Add(1)
 	go startUI(ctx, &wg, app)
