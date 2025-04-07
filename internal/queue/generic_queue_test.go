@@ -405,7 +405,7 @@ func TestQueueWithCustomType_Success(t *testing.T) {
 	assert.False(t, q.hasFinished)
 }
 
-func TestProgressCalculation(t *testing.T) {
+func TestProgressCalculation_Success(t *testing.T) {
 	q := NewGenericQueue[int]()
 
 	const itemCount = 100

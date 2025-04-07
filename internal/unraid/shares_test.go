@@ -1084,7 +1084,6 @@ func TestEstablishShareIncludes(t *testing.T) {
 		"disk4": disk4,
 	}
 
-	// Define test cases
 	tests := []struct {
 		name           string
 		allDisks       map[string]*Disk
