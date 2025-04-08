@@ -8,6 +8,8 @@ import (
 
 // TestNewHandler_Success tests the factory function.
 func TestNewHandler_Success(t *testing.T) {
+	t.Parallel()
+
 	mockFS := newMockFsProvider(t)
 	mockConfig := newMockConfigProvider(t)
 	mockOS := newMockOsProvider(t)
