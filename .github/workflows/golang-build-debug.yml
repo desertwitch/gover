@@ -20,5 +20,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Run all Go tests
         run: make test
+      - name: Vendor the application for debug
+        run: make vendor
       - name: Build the application for debug
         run: make debug
