@@ -43,7 +43,7 @@ mocks: ## Generates the mocks for the application code
 	@mockery --config .mockery.yaml
 
 test: ## Runs all written tests for and on the application code
-	@go test -failfast -race -covermode=atomic
+	@go test -failfast -race -covermode=atomic ./...
 
 test-coverage: ## Runs all coverage tests for and on the application code
 	@go test -failfast -race -covermode=atomic -coverprofile=coverage.tmp ./... && \
