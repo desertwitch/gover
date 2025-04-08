@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -375,8 +376,13 @@ func TestRequeueAndReprocess_Success(t *testing.T) {
 	q := NewGenericQueue[string]()
 	q.Enqueue("item1", "item2", "item3", "requeueMe")
 
+	var mu sync.Mutex
 	attempts := make(map[string]int)
+
 	processFunc := func(item string) int {
+		mu.Lock()
+		defer mu.Unlock()
+
 		attempts[item]++
 
 		if item == "requeueMe" {
