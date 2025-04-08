@@ -9,6 +9,7 @@ linters:
             - varnamelen
             - testpackage
             - wsl
+            - gochecknoglobals
 
 linters-settings:
     cyclop:

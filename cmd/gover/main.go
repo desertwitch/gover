@@ -33,7 +33,6 @@ const (
 	stackTraceBufMax = 1 << 24
 )
 
-//nolint:gochecknoglobals
 var (
 	// Version is the application's version (filled in during compilation).
 	Version string

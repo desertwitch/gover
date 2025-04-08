@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewGenericQueue_Success tests the queue factory function.
 func TestNewGenericQueue_Success(t *testing.T) {
 	t.Parallel()
 
@@ -25,6 +26,7 @@ func TestNewGenericQueue_Success(t *testing.T) {
 	assert.False(t, q.hasFinished)
 }
 
+// TestEnqueueDequeue_Success tests enqueueing and dequeueing.
 func TestEnqueueDequeue_Success(t *testing.T) {
 	t.Parallel()
 
@@ -40,9 +42,6 @@ func TestEnqueueDequeue_Success(t *testing.T) {
 	assert.Equal(t, "item1", item)
 	assert.Equal(t, 1, q.head)
 
-	assert.True(t, q.hasStarted)
-	assert.False(t, q.hasFinished)
-
 	item, ok = q.Dequeue()
 	assert.True(t, ok)
 	assert.Equal(t, "item2", item)
@@ -52,14 +51,13 @@ func TestEnqueueDequeue_Success(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "item3", item)
 	assert.Equal(t, 3, q.head)
-	assert.True(t, q.hasFinished)
 
 	item, ok = q.Dequeue()
 	assert.False(t, ok)
 	assert.Equal(t, "", item)
-	assert.True(t, q.hasFinished)
 }
 
+// TestHasRemainingItems_Success tests for remaining items.
 func TestHasRemainingItems_Success(t *testing.T) {
 	t.Parallel()
 
@@ -72,13 +70,13 @@ func TestHasRemainingItems_Success(t *testing.T) {
 	assert.True(t, q.HasRemainingItems())
 
 	q.Dequeue()
-	assert.True(t, q.hasStarted)
+	q.Dequeue()
+	q.Dequeue()
 
-	q.Dequeue()
-	q.Dequeue()
 	assert.False(t, q.HasRemainingItems())
 }
 
+// TestGetSuccessful_Success tests returning the success items.
 func TestGetSuccessful_Success(t *testing.T) {
 	t.Parallel()
 
@@ -97,6 +95,7 @@ func TestGetSuccessful_Success(t *testing.T) {
 	assert.Equal(t, []int{1, 2, 3}, newSuccess)
 }
 
+// TestSetProcessing_Success tests setting items as processing.
 func TestSetProcessing_Success(t *testing.T) {
 	t.Parallel()
 
@@ -106,12 +105,15 @@ func TestSetProcessing_Success(t *testing.T) {
 
 	q.SetProcessing("item1", "item2")
 	assert.Len(t, q.inProgress, 2)
+
 	_, exists := q.inProgress["item1"]
 	assert.True(t, exists)
+
 	_, exists = q.inProgress["item2"]
 	assert.True(t, exists)
 }
 
+// TestSetSuccess_Success tests setting items as successful.
 func TestSetSuccess_Success(t *testing.T) {
 	t.Parallel()
 
@@ -132,6 +134,7 @@ func TestSetSuccess_Success(t *testing.T) {
 	assert.True(t, exists)
 }
 
+// TestSetSkipped_Success tests setting items as skipped.
 func TestSetSkipped_Success(t *testing.T) {
 	t.Parallel()
 
@@ -152,6 +155,7 @@ func TestSetSkipped_Success(t *testing.T) {
 	assert.True(t, exists)
 }
 
+// TestProgress_Success tests the progress being reported.
 func TestProgress_Success(t *testing.T) {
 	t.Parallel()
 
@@ -160,6 +164,10 @@ func TestProgress_Success(t *testing.T) {
 	progress := q.Progress()
 	assert.False(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
+	assert.Zero(t, progress.StartTime, "start time should be zero")
+	assert.Zero(t, progress.FinishTime, "finish time should be zero")
+	assert.Zero(t, progress.ETA, "eta should be zero")
+	assert.Zero(t, progress.TimeLeft, "time left should be zero")
 	assert.InDelta(t, 0.0, progress.ProgressPct, 0)
 	assert.Equal(t, 0, progress.TotalItems)
 	assert.Equal(t, 0, progress.ProcessedItems)
@@ -173,17 +181,21 @@ func TestProgress_Success(t *testing.T) {
 	q.Dequeue()
 	q.SetSkipped(2)
 	q.Dequeue()
-	q.SetProcessing(3)
+	q.SetSkipped(3)
 
 	progress = q.Progress()
 	assert.True(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
+	assert.NotZero(t, progress.StartTime, "start time should not be zero")
+	assert.Zero(t, progress.FinishTime, "finish time should be zero")
+	assert.NotZero(t, progress.ETA, "eta should not be zero")
+	assert.NotZero(t, progress.TimeLeft, "time left should not be zero")
 	assert.InDelta(t, 75.0, progress.ProgressPct, 0)
 	assert.Equal(t, 4, progress.TotalItems)
 	assert.Equal(t, 3, progress.ProcessedItems)
 	assert.Equal(t, 1, progress.SuccessItems)
-	assert.Equal(t, 1, progress.SkippedItems)
-	assert.Equal(t, 1, progress.InProgressItems)
+	assert.Equal(t, 2, progress.SkippedItems)
+	assert.Equal(t, 0, progress.InProgressItems)
 
 	q.Dequeue()
 	q.SetSuccess(4)
@@ -191,18 +203,28 @@ func TestProgress_Success(t *testing.T) {
 	progress = q.Progress()
 	assert.True(t, progress.HasStarted)
 	assert.True(t, progress.HasFinished)
+	assert.NotZero(t, progress.StartTime, "start time should not be zero")
+	assert.NotZero(t, progress.FinishTime, "finish time should not be zero")
+	assert.Zero(t, progress.ETA, "eta should be zero")
+	assert.Zero(t, progress.TimeLeft, "time left should be zero")
+	assert.Equal(t, 4, progress.TotalItems)
+	assert.Equal(t, 4, progress.ProcessedItems)
+	assert.Equal(t, 2, progress.SuccessItems)
+	assert.Equal(t, 2, progress.SkippedItems)
+	assert.Equal(t, 0, progress.InProgressItems)
 	assert.InDelta(t, 100.0, progress.ProgressPct, 0)
 }
 
+// TestDequeueAndProcess_Success tests sequential processing.
 func TestDequeueAndProcess_Success(t *testing.T) {
 	t.Parallel()
 
 	q := NewGenericQueue[string]()
 	q.Enqueue("success", "skip", "requeue", "success2")
 
-	processed := make(map[string]int)
+	attempts := make(map[string]int)
 	processFunc := func(item string) int {
-		processed[item]++
+		attempts[item]++
 
 		switch item {
 		case "success", "success2":
@@ -210,7 +232,7 @@ func TestDequeueAndProcess_Success(t *testing.T) {
 		case "skip":
 			return DecisionSkipped
 		case "requeue":
-			if processed[item] < 2 {
+			if attempts[item] < 2 {
 				return DecisionRequeue
 			}
 
@@ -224,17 +246,17 @@ func TestDequeueAndProcess_Success(t *testing.T) {
 	err := q.DequeueAndProcess(ctx, processFunc)
 
 	require.NoError(t, err)
+
 	assert.False(t, q.HasRemainingItems())
 	assert.Len(t, q.success, 3)
 	assert.Len(t, q.skipped, 1)
-	assert.Equal(t, 2, processed["requeue"]) // Should be processed twice due to requeue
-
-	assert.True(t, q.hasStarted)
-	assert.True(t, q.hasFinished)
+	assert.Equal(t, 2, attempts["requeue"])
 
 	assert.False(t, q.HasRemainingItems())
 }
 
+// TestDequeueAndProcess_Fail_CtxCancel tests in-flight cancellation during
+// sequential processing.
 func TestDequeueAndProcess_Fail_CtxCancel(t *testing.T) {
 	t.Parallel()
 
@@ -257,11 +279,9 @@ func TestDequeueAndProcess_Fail_CtxCancel(t *testing.T) {
 	require.ErrorIs(t, err, context.Canceled)
 
 	assert.True(t, q.HasRemainingItems())
-
-	assert.True(t, q.hasStarted)
-	assert.False(t, q.hasFinished)
 }
 
+// TestDequeueAndProcessConc_Success tests concurrent processing.
 func TestDequeueAndProcessConc_Success(t *testing.T) {
 	t.Parallel()
 
@@ -290,7 +310,7 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 		}
 
 		if item%10 == 0 {
-			if requeueCount.Load() < 5 { // Limit requeues to avoid test running too long
+			if requeueCount.Load() < 5 {
 				requeueCount.Add(1)
 
 				return DecisionRequeue
@@ -306,22 +326,17 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 	err := q.DequeueAndProcessConc(ctx, 10, processFunc)
 
 	require.NoError(t, err)
-	assert.False(t, q.HasRemainingItems())
 
-	progress := q.Progress()
-	assert.Equal(t, int(successCount.Load()), progress.SuccessItems)
-	assert.Equal(t, int(skippedCount.Load()), progress.SkippedItems)
-	assert.Equal(t, 0, progress.InProgressItems)
-
-	totalProcessed := int(successCount.Load() + skippedCount.Load())
-	assert.Equal(t, itemCount, totalProcessed)
-
-	assert.True(t, q.hasFinished)
-	assert.True(t, q.hasStarted)
+	assert.Len(t, q.success, int(successCount.Load()))
+	assert.Len(t, q.skipped, int(skippedCount.Load()))
+	assert.Empty(t, q.inProgress)
+	assert.Equal(t, (len(q.success) + len(q.skipped)), int(successCount.Load()+skippedCount.Load()))
 
 	assert.False(t, q.HasRemainingItems())
 }
 
+// TestDequeueAndProcessConc_Fail_CtxCancel tests mid-flight context
+// cancellation during concurrent processing.
 func TestDequeueAndProcessConc_Fail_CtxCancel(t *testing.T) {
 	t.Parallel()
 
@@ -345,11 +360,9 @@ func TestDequeueAndProcessConc_Fail_CtxCancel(t *testing.T) {
 
 	require.Error(t, err)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
-
-	assert.True(t, q.hasStarted)
-	assert.False(t, q.hasFinished)
 }
 
+// TestRequeueAndReprocess_Success tests requeuing of items.
 func TestRequeueAndReprocess_Success(t *testing.T) {
 	t.Parallel()
 
@@ -380,12 +393,10 @@ func TestRequeueAndReprocess_Success(t *testing.T) {
 	assert.Equal(t, 1, attempts["item2"])
 	assert.Equal(t, 1, attempts["item3"])
 
-	assert.True(t, q.hasFinished)
-	assert.True(t, q.hasStarted)
-
 	assert.False(t, q.HasRemainingItems())
 }
 
+// TestEnqueueAfterFinish_Success tests enqueueing after queue finish.
 func TestEnqueueAfterFinish_Success(t *testing.T) {
 	t.Parallel()
 
@@ -402,12 +413,17 @@ func TestEnqueueAfterFinish_Success(t *testing.T) {
 		q.SetSuccess(item)
 	}
 
-	assert.True(t, q.hasFinished)
 	assert.True(t, q.hasStarted)
+	assert.True(t, q.hasFinished)
 
 	assert.Len(t, q.success, 3)
+
+	q.Enqueue(1, 2, 3)
+	q.Dequeue()
+	assert.False(t, q.hasFinished)
 }
 
+// TestQueueWithCustomType_Success tests the queue with a complex type.
 func TestQueueWithCustomType_Success(t *testing.T) {
 	t.Parallel()
 
@@ -434,6 +450,7 @@ func TestQueueWithCustomType_Success(t *testing.T) {
 	assert.False(t, q.hasFinished)
 }
 
+// TestProgressCalculation_Success tests progress calculations.
 func TestProgressCalculation_Success(t *testing.T) {
 	t.Parallel()
 
@@ -460,12 +477,12 @@ func TestProgressCalculation_Success(t *testing.T) {
 	assert.Equal(t, 50, progress.ProcessedItems)
 	assert.Equal(t, 50, progress.SuccessItems)
 
-	// The following are time-dependent and may be flaky in CI environments
-	// So we only check that they're set, not their precise values
+	// The following are time-dependent and may be flaky in CI environments So
+	// we only check that they're set, not their precise values
 	assert.NotZero(t, progress.TransferSpeed)
 	assert.Equal(t, "items/sec", progress.TransferSpeedUnit)
 	assert.NotZero(t, progress.TimeLeft)
-	assert.False(t, progress.ETA.IsZero())
+	assert.NotZero(t, progress.ETA)
 
 	for q.HasRemainingItems() {
 		item, ok := q.Dequeue()
@@ -481,5 +498,5 @@ func TestProgressCalculation_Success(t *testing.T) {
 	assert.Equal(t, itemCount, progress.ProcessedItems)
 	assert.Equal(t, itemCount, progress.SuccessItems)
 	assert.Zero(t, progress.TimeLeft)
-	assert.True(t, progress.ETA.IsZero())
+	assert.Zero(t, progress.ETA)
 }

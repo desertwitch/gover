@@ -14,7 +14,6 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-//nolint:gochecknoglobals
 var (
 	// titleStyle defines the style for a panel's title.
 	titleStyle = lipgloss.NewStyle().
