@@ -13,6 +13,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewHandler_Success tests the factory function.
+func TestNewHandler_Success(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	cancel := func() {}
+
+	mockQueueManager := &queue.Manager{}
+
+	handler := NewHandler(ctx, cancel, mockQueueManager)
+	defer handler.LogWriter.Stop()
+
+	require.NotNil(t, handler, "Handler should not be nil")
+	assert.Equal(t, mockQueueManager, handler.queueManager, "QueueManager should be correctly assigned")
+	require.NotNil(t, handler.program, "Program should be initialized")
+	require.NotNil(t, handler.LogWriter, "LogWriter should be initialized")
+}
+
 // TestTeaUI_Integration is an integration test for the command-line user
 // interface.
 func TestTeaUI_Integration(t *testing.T) {
