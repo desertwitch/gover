@@ -1,4 +1,4 @@
-name: golang-tests
+name: golang-coverage
 on:
   push:
     branches:
@@ -19,4 +19,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run all Go tests
-        run: make test
+        run: make test-coverage
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
