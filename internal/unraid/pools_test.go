@@ -44,13 +44,15 @@ func TestEstablishPools_Success(t *testing.T) {
 
 	pool1, ok := pools["pool1"]
 	require.True(t, ok, "expected pool1 not found")
-	assert.Equal(t, "pool1", pool1.Name)
-	assert.Equal(t, filepath.Join("/mnt", "pool1"), pool1.FSPath)
+	assert.True(t, pool1.IsPool())
+	assert.Equal(t, "pool1", pool1.GetName())
+	assert.Equal(t, filepath.Join("/mnt", "pool1"), pool1.GetFSPath())
 
 	pool2, ok := pools["pool2"]
 	require.True(t, ok, "expected pool2 not found")
-	assert.Equal(t, "pool2", pool2.Name)
-	assert.Equal(t, filepath.Join("/mnt", "pool2"), pool2.FSPath)
+	assert.True(t, pool2.IsPool())
+	assert.Equal(t, "pool2", pool2.GetName())
+	assert.Equal(t, filepath.Join("/mnt", "pool2"), pool2.GetFSPath())
 
 	fsMock.AssertExpectations(t)
 	osMock.AssertExpectations(t)
