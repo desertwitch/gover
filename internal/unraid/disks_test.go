@@ -55,6 +55,11 @@ func TestEstablishDisks_Success(t *testing.T) {
 	for _, name := range expectedDiskNames {
 		disk, ok := disks[name]
 		assert.True(t, ok, "expected disk %s not found", name)
+
+		assert.True(t, disk.IsDisk())
+		assert.NotEmpty(t, disk.GetName())
+		assert.NotEmpty(t, disk.GetFSPath())
+
 		expectedFSPath := filepath.Join(BasePathMounts, name)
 		assert.Equal(t, expectedFSPath, disk.FSPath, "disk %s FSPath mismatch", name)
 	}
