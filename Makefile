@@ -5,9 +5,9 @@ SRC_DIR = ./cmd/gover
 
 VERSION := $(shell git rev-parse --short=7 HEAD)
 
-.PHONY: all clean check debug help info lint mocks test vendor
+.PHONY: all $(BINARY) check clean clean-mocks debug help info lint mocks test test-coverage vendor
 
-all: vendor mocks check $(BINARY) ## Runs the entire build chain for the application
+all: vendor $(BINARY) ## Runs the entire build chain for the application
 
 $(BINARY): ## Builds the application
 	CGO_ENABLED=0 GOFLAGS="-mod=vendor" go build -ldflags="-w -s -X main.Version=$(VERSION) -buildid=" -trimpath -o $(BINARY) $(SRC_DIR)
