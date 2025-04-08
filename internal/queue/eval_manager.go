@@ -26,7 +26,7 @@ func NewEvaluationManager() *EvaluationManager {
 // Progress returns the [Progress] of the [EvaluationManager].
 func (m *EvaluationManager) Progress() Progress {
 	mProgress := m.GenericManager.Progress()
-	mProgress.TransferSpeedUnit = "tasks/sec"
+	mProgress.TransferSpeedUnit = "items/sec"
 
 	return mProgress
 }

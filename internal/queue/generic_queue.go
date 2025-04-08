@@ -151,7 +151,7 @@ func (q *GenericQueue[T]) Progress() Progress {
 	hasStarted := q.hasStarted
 	totalItems := len(q.items)
 
-	processedItems := q.head
+	processedItems := len(q.success) + len(q.skipped)
 	processedItems = min(processedItems, totalItems)
 
 	var progressPct float64

@@ -296,9 +296,13 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 	var skippedCount atomic.Int32
 	var requeueCount atomic.Int32
 	var processedCount atomic.Int32
+	var inFlightCount atomic.Int32
 
 	processFunc := func(item int) int {
 		processedCount.Add(1)
+
+		inFlightCount.Add(1)
+		defer inFlightCount.Add(-1)
 
 		// Artificial delay to test concurrency
 		time.Sleep(time.Millisecond * 5)
@@ -316,6 +320,8 @@ func TestDequeueAndProcessConc_Success(t *testing.T) {
 				return DecisionRequeue
 			}
 		}
+
+		require.LessOrEqual(t, int(inFlightCount.Load()), 10, "inFlight should not exceed maxWorkers")
 
 		successCount.Add(1)
 

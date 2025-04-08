@@ -157,15 +157,16 @@ func TestGenericManager_Progress_Success(t *testing.T) {
 	progress = qm.Progress()
 	assert.True(t, progress.HasStarted)
 	assert.False(t, progress.HasFinished)
-	assert.InDelta(t, 75.0, progress.ProgressPct, 0)
+	assert.InDelta(t, 50.0, progress.ProgressPct, 0)
 	assert.Equal(t, 4, progress.TotalItems)
-	assert.Equal(t, 3, progress.ProcessedItems)
+	assert.Equal(t, 2, progress.ProcessedItems)
 	assert.Equal(t, 1, progress.SuccessItems)
 	assert.Equal(t, 1, progress.SkippedItems)
 	assert.Equal(t, 1, progress.InProgressItems)
 	assert.NotZero(t, progress.StartTime, "start time should not be zero")
 	assert.NotZero(t, progress.ETA, "eta should not be zero")
 
+	qm.queues["C"].SetSuccess(8)
 	qm.queues["D"].Dequeue()
 	qm.queues["D"].SetSuccess(20)
 
