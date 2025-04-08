@@ -46,7 +46,7 @@ test: ## Runs all written tests for and on the application code
 	@go test -failfast -race -covermode=atomic ./...
 
 test-coverage: ## Runs all coverage tests for and on the application code
-	@go test -failfast -race -covermode=atomic -coverprofile=coverage.tmp ./... && \
+	@go test -failfast -race -covermode=atomic -coverpkg=./... -coverprofile=coverage.tmp ./... && \
 	grep -v "mock_" coverage.tmp > coverage.txt && \
 	rm coverage.tmp
 
