@@ -4,10 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"log/slog"
 
 	"github.com/desertwitch/gover/internal/schema"
 	"golang.org/x/sys/unix"
 )
+
+// cleanFileAfterFailure removes after a failure the destination file, provided
+// that the respective source file still exists.
+func (i *Handler) cleanFileAfterFailure(m *schema.Moveable) {
+	if _, err := i.osHandler.Stat(m.SourcePath); err == nil {
+		if err := i.osHandler.Remove(m.DestPath); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				slog.Warn("Failure removing destination file cleaning after failure (skipped)",
+					"path", m.DestPath,
+					"err", err,
+				)
+			}
+		}
+	}
+}
 
 // processFile is the principal method for IO-processing a file-type
 // [schema.Moveable]. Apart from moving the file itself, it handles both
@@ -24,11 +41,13 @@ func (i *Handler) processFile(ctx context.Context, m *schema.Moveable) error {
 	if err := i.moveFile(ctx, m); err != nil {
 		return fmt.Errorf("(io-file) failed to move file: %w", err)
 	}
-	if err := i.osHandler.Remove(m.SourcePath); err != nil {
-		return fmt.Errorf("(io-file) failed to remove src after move: %w", err)
-	}
+
 	if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
 		return fmt.Errorf("(io-file) failed to ensure permissions: %w", err)
+	}
+
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
+		return fmt.Errorf("(io-file) failed to remove src after move: %w", err)
 	}
 
 	return nil
@@ -47,14 +66,14 @@ func (i *Handler) processDirectory(m *schema.Moveable) error {
 		dirExisted = true
 	}
 
-	if err := i.osHandler.Remove(m.SourcePath); err != nil {
-		return fmt.Errorf("(io-dir) failed to remove src after move: %w", err)
-	}
-
 	if !dirExisted {
 		if err := i.ensurePermissions(m.DestPath, m.Metadata); err != nil {
 			return fmt.Errorf("(io-dir) failed to ensure permissions: %w", err)
 		}
+	}
+
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
+		return fmt.Errorf("(io-dir) failed to remove src after move: %w", err)
 	}
 
 	return nil
@@ -67,17 +86,19 @@ func (i *Handler) processHardlink(m *schema.Moveable) error {
 	if err := i.unixHandler.Link(m.HardlinkTo.DestPath, m.DestPath); err != nil {
 		return fmt.Errorf("(io-hardl) failed to link: %w", err)
 	}
-	if err := i.osHandler.Remove(m.SourcePath); err != nil {
-		return fmt.Errorf("(io-hardl) failed to remove src after move: %w", err)
-	}
+
 	if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 		return fmt.Errorf("(io-hardl) failed to ensure permissions: %w", err)
+	}
+
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
+		return fmt.Errorf("(io-hardl) failed to remove src after move: %w", err)
 	}
 
 	return nil
 }
 
-// processHardlink is the principal method for IO-processing a symlink-type
+// processSymlink is the principal method for IO-processing a symlink-type
 // [schema.Moveable]. Apart from recreating the symlink itself, it handles both
 // permissioning and cleanup as well.
 func (i *Handler) processSymlink(m *schema.Moveable, internalLink bool) error {
@@ -91,12 +112,12 @@ func (i *Handler) processSymlink(m *schema.Moveable, internalLink bool) error {
 		}
 	}
 
-	if err := i.osHandler.Remove(m.SourcePath); err != nil {
-		return fmt.Errorf("(io-syml) failed to remove src after move: %w", err)
-	}
-
 	if err := i.ensureLinkPermissions(m.DestPath, m.Metadata); err != nil {
 		return fmt.Errorf("(io-syml) failed to ensure permissions: %w", err)
+	}
+
+	if err := i.osHandler.Remove(m.SourcePath); err != nil {
+		return fmt.Errorf("(io-syml) failed to remove src after move: %w", err)
 	}
 
 	return nil

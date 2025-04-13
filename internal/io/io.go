@@ -185,6 +185,7 @@ func (i *Handler) processMoveable(ctx context.Context, m *schema.Moveable, job *
 			addToIOReport(intermediateJob, m)
 			mergeIOReports(job, intermediateJob)
 		} else {
+			i.cleanFileAfterFailure(m)
 			i.cleanDirectoriesAfterFailure(intermediateJob)
 		}
 	}()
