@@ -11,6 +11,8 @@ import (
 )
 
 func TestEnsureDirectoryStructure_Success_Nil(t *testing.T) {
+	t.Parallel()
+
 	handler := NewHandler(
 		newMockFsProvider(t),
 		newMockOsProvider(t),
@@ -27,6 +29,8 @@ func TestEnsureDirectoryStructure_Success_Nil(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Success_NoExist(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -88,13 +92,13 @@ func TestEnsureDirectoryStructure_Success_NoExist(t *testing.T) {
 	require.NoError(t, err, "no error should occur")
 
 	require.Len(t, ioReport.AnyCreated, 3)
-	assert.Equal(t, ioReport.AnyCreated, []fsElement{dir1, dir2, dir3})
+	assert.Equal(t, []fsElement{dir1, dir2, dir3}, ioReport.AnyCreated)
 
 	require.Len(t, ioReport.DirsCreated, 3)
-	assert.Equal(t, ioReport.DirsCreated, []*schema.Directory{dir1, dir2, dir3})
+	assert.Equal(t, []*schema.Directory{dir1, dir2, dir3}, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 3)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1, dir2, dir3})
+	assert.Equal(t, []*schema.Directory{dir1, dir2, dir3}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
@@ -102,6 +106,8 @@ func TestEnsureDirectoryStructure_Success_NoExist(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Success_AllExist(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -155,7 +161,7 @@ func TestEnsureDirectoryStructure_Success_AllExist(t *testing.T) {
 	require.Empty(t, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 3)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1, dir2, dir3})
+	assert.Equal(t, []*schema.Directory{dir1, dir2, dir3}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
@@ -163,6 +169,8 @@ func TestEnsureDirectoryStructure_Success_AllExist(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Success_Mixed(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -221,13 +229,13 @@ func TestEnsureDirectoryStructure_Success_Mixed(t *testing.T) {
 	require.NoError(t, err, "no error should occur")
 
 	require.Len(t, ioReport.AnyCreated, 2)
-	assert.Equal(t, ioReport.AnyCreated, []fsElement{dir1, dir3})
+	assert.Equal(t, []fsElement{dir1, dir3}, ioReport.AnyCreated)
 
 	require.Len(t, ioReport.DirsCreated, 2)
-	assert.Equal(t, ioReport.DirsCreated, []*schema.Directory{dir1, dir3})
+	assert.Equal(t, []*schema.Directory{dir1, dir3}, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 3)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1, dir2, dir3})
+	assert.Equal(t, []*schema.Directory{dir1, dir2, dir3}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
@@ -235,6 +243,8 @@ func TestEnsureDirectoryStructure_Success_Mixed(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Fail_StatError(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -288,13 +298,13 @@ func TestEnsureDirectoryStructure_Fail_StatError(t *testing.T) {
 	require.Error(t, err, "an error should occur")
 
 	require.Len(t, ioReport.AnyCreated, 1)
-	assert.Equal(t, ioReport.AnyCreated, []fsElement{dir1})
+	assert.Equal(t, []fsElement{dir1}, ioReport.AnyCreated)
 
 	require.Len(t, ioReport.DirsCreated, 1)
-	assert.Equal(t, ioReport.DirsCreated, []*schema.Directory{dir1})
+	assert.Equal(t, []*schema.Directory{dir1}, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 1)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1})
+	assert.Equal(t, []*schema.Directory{dir1}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
@@ -302,6 +312,8 @@ func TestEnsureDirectoryStructure_Fail_StatError(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Fail_MkdirError(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -356,13 +368,13 @@ func TestEnsureDirectoryStructure_Fail_MkdirError(t *testing.T) {
 	require.Error(t, err, "an error should occur")
 
 	require.Len(t, ioReport.AnyCreated, 1)
-	assert.Equal(t, ioReport.AnyCreated, []fsElement{dir1})
+	assert.Equal(t, []fsElement{dir1}, ioReport.AnyCreated)
 
 	require.Len(t, ioReport.DirsCreated, 1)
-	assert.Equal(t, ioReport.DirsCreated, []*schema.Directory{dir1})
+	assert.Equal(t, []*schema.Directory{dir1}, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 1)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1})
+	assert.Equal(t, []*schema.Directory{dir1}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
@@ -370,6 +382,8 @@ func TestEnsureDirectoryStructure_Fail_MkdirError(t *testing.T) {
 }
 
 func TestEnsureDirectoryStructure_Fail_PermError(t *testing.T) {
+	t.Parallel()
+
 	fsProv := newMockFsProvider(t)
 	osProv := newMockOsProvider(t)
 	unixProv := newMockUnixProvider(t)
@@ -425,13 +439,13 @@ func TestEnsureDirectoryStructure_Fail_PermError(t *testing.T) {
 	require.Error(t, err, "an error should occur")
 
 	require.Len(t, ioReport.AnyCreated, 2)
-	assert.Equal(t, ioReport.AnyCreated, []fsElement{dir1, dir2})
+	assert.Equal(t, []fsElement{dir1, dir2}, ioReport.AnyCreated)
 
 	require.Len(t, ioReport.DirsCreated, 2)
-	assert.Equal(t, ioReport.DirsCreated, []*schema.Directory{dir1, dir2})
+	assert.Equal(t, []*schema.Directory{dir1, dir2}, ioReport.DirsCreated)
 
 	require.Len(t, ioReport.DirsWalked, 2)
-	assert.Equal(t, ioReport.DirsWalked, []*schema.Directory{dir1, dir2})
+	assert.Equal(t, []*schema.Directory{dir1, dir2}, ioReport.DirsWalked)
 
 	fsProv.AssertExpectations(t)
 	osProv.AssertExpectations(t)
