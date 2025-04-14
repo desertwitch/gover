@@ -4,9 +4,7 @@
 - io: flock/unlock file on transfer?
 - pkg: configuration handling
 - pkg: progress handling to json/websocket?
-- progress: multi-step queue each completion is 25% of total completion (for 4 subtasks?)
-- progress: show total progress for enum and io through GetProgress() function - interface?
-- progress: maybe also sub-progress for individual per-disk workers? could also be for enumeration subqueues?
+- progress: total progress across all managers?
 - feature: sort by file size (large files get moved first)
 - feature: sort by share (certain share gets moved first)
 - feature: drain mode (dump all files to different disks as fast as possible)
