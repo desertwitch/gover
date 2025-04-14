@@ -4,6 +4,8 @@
 </div>
 
 <div align="center">
+    <img alt="Go Version" src="https://img.shields.io/badge/Go-%3E%3D%201.24.1-%23007d9c">
+    <img alt="Lint" src="https://github.com/desertwitch/gover/actions/workflows/golangci-lint.yml/badge.svg">
     <img alt="Tests" src="https://github.com/desertwitch/gover/actions/workflows/golang-tests.yml/badge.svg">
     <img alt="Coverage" src="https://github.com/desertwitch/gover/actions/workflows/golang-coverage.yml/badge.svg">
     <br />
