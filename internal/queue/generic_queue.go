@@ -20,28 +20,28 @@ const (
 )
 
 // GenericQueue is a generic queue that can hold any comparable type of items.
-type GenericQueue[T comparable] struct {
+type GenericQueue[V comparable] struct {
 	sync.RWMutex
 	hasStarted  bool
 	hasFinished bool
 	startTime   time.Time
 	finishTime  time.Time
 	head        int
-	items       []T
-	success     []T
-	skipped     []T
-	inProgress  map[T]struct{}
+	items       []V
+	success     []V
+	skipped     []V
+	inProgress  map[V]struct{}
 }
 
 // NewGenericQueue returns a pointer to a new [GenericQueue].
-func NewGenericQueue[T comparable]() *GenericQueue[T] {
-	return &GenericQueue[T]{
-		inProgress: make(map[T]struct{}),
+func NewGenericQueue[V comparable]() *GenericQueue[V] {
+	return &GenericQueue[V]{
+		inProgress: make(map[V]struct{}),
 	}
 }
 
 // HasRemainingItems returns whether a queue has remaining items to process.
-func (q *GenericQueue[T]) HasRemainingItems() bool {
+func (q *GenericQueue[V]) HasRemainingItems() bool {
 	q.RLock()
 	defer q.RUnlock()
 
@@ -54,18 +54,18 @@ func (q *GenericQueue[T]) HasRemainingItems() bool {
 
 // GetSuccessful returns a copy of the internal slice holding all successful
 // items.
-func (q *GenericQueue[T]) GetSuccessful() []T {
+func (q *GenericQueue[V]) GetSuccessful() []V {
 	q.RLock()
 	defer q.RUnlock()
 
-	result := make([]T, len(q.success))
+	result := make([]V, len(q.success))
 	copy(result, q.success)
 
 	return result
 }
 
 // Enqueue adds items to the queue.
-func (q *GenericQueue[T]) Enqueue(items ...T) {
+func (q *GenericQueue[V]) Enqueue(items ...V) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -81,12 +81,12 @@ func (q *GenericQueue[T]) Enqueue(items ...T) {
 }
 
 // Dequeue returns an item from the queue and advances the queue head.
-func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
+func (q *GenericQueue[V]) Dequeue() (V, bool) { //nolint:ireturn
 	q.Lock()
 	defer q.Unlock()
 
 	if q.head >= len(q.items) {
-		var zeroVal T
+		var zeroVal V
 
 		return zeroVal, false
 	}
@@ -111,7 +111,7 @@ func (q *GenericQueue[T]) Dequeue() (T, bool) { //nolint:ireturn
 
 // SetSuccess sets given in-progress queue items as successfully processed. The
 // items are removed from the in-progress map in the process.
-func (q *GenericQueue[T]) SetSuccess(items ...T) {
+func (q *GenericQueue[V]) SetSuccess(items ...V) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -123,7 +123,7 @@ func (q *GenericQueue[T]) SetSuccess(items ...T) {
 
 // SetSkipped sets given in-progress queue items as skipped. The items are
 // removed from the in-progress map in the process.
-func (q *GenericQueue[T]) SetSkipped(items ...T) {
+func (q *GenericQueue[V]) SetSkipped(items ...V) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -134,7 +134,7 @@ func (q *GenericQueue[T]) SetSkipped(items ...T) {
 }
 
 // SetProcessing sets given items as in progress (processing).
-func (q *GenericQueue[T]) SetProcessing(items ...T) {
+func (q *GenericQueue[V]) SetProcessing(items ...V) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -144,7 +144,7 @@ func (q *GenericQueue[T]) SetProcessing(items ...T) {
 }
 
 // Progress returns the [Progress] for the [GenericQueue].
-func (q *GenericQueue[T]) Progress() Progress {
+func (q *GenericQueue[V]) Progress() Progress {
 	q.RLock()
 	defer q.RUnlock()
 
@@ -204,7 +204,7 @@ func (q *GenericQueue[T]) Progress() Progress {
 //
 // Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped],
 // [DecisionRequeue].
-func (q *GenericQueue[T]) DequeueAndProcess(ctx context.Context, processFunc func(T) int) error {
+func (q *GenericQueue[V]) DequeueAndProcess(ctx context.Context, processFunc func(V) int) error {
 	for {
 		if ctx.Err() != nil {
 			break
@@ -247,7 +247,7 @@ func (q *GenericQueue[T]) DequeueAndProcess(ctx context.Context, processFunc fun
 // It is the responsibility of the processFunc to ensure thread-safety for
 // anything happening inside the processFunc, with the [GenericQueue] only
 // guaranteeing thread-safety for itself.
-func (q *GenericQueue[T]) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(T) int) error {
+func (q *GenericQueue[V]) DequeueAndProcessConc(ctx context.Context, maxWorkers int, processFunc func(V) int) error {
 	var wg sync.WaitGroup
 
 	semaphore := make(chan struct{}, maxWorkers)
@@ -270,7 +270,7 @@ LOOP:
 		}
 
 		wg.Add(1)
-		go func(item T) {
+		go func(item V) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
 

@@ -37,7 +37,7 @@ var keyFunc = func(i int) string {
 func TestNewGenericManager_Success(t *testing.T) {
 	t.Parallel()
 
-	qm := NewGenericManager[int, *FakeQueue]()
+	qm := NewGenericManager[int, int, *FakeQueue]()
 	require.NotNil(t, qm.queues, "queue map should not be nil")
 }
 
@@ -45,7 +45,7 @@ func TestNewGenericManager_Success(t *testing.T) {
 func TestNewGenericManager_GetSuccessful(t *testing.T) {
 	t.Parallel()
 
-	qm := NewGenericManager[int, *FakeQueue]()
+	qm := NewGenericManager[string, int, *FakeQueue]()
 	require.NotNil(t, qm.queues, "queue map should not be nil")
 
 	qm.Enqueue(0, keyFunc, NewFakeQueue)
@@ -82,7 +82,7 @@ func TestNewGenericManager_GetSuccessful(t *testing.T) {
 func TestGenericManager_Enqueue_Success(t *testing.T) {
 	t.Parallel()
 
-	qm := NewGenericManager[int, *FakeQueue]()
+	qm := NewGenericManager[string, int, *FakeQueue]()
 	require.NotNil(t, qm.queues, "queue map should not be nil")
 
 	qm.Enqueue(0, keyFunc, NewFakeQueue)
@@ -98,7 +98,7 @@ func TestGenericManager_Enqueue_Success(t *testing.T) {
 func TestGenericManager_GetQueues_Success(t *testing.T) {
 	t.Parallel()
 
-	qm := NewGenericManager[int, *FakeQueue]()
+	qm := NewGenericManager[string, int, *FakeQueue]()
 	require.NotNil(t, qm.queues, "queue map should not be nil")
 
 	qm.Enqueue(0, keyFunc, NewFakeQueue)
@@ -120,7 +120,7 @@ func TestGenericManager_GetQueues_Success(t *testing.T) {
 func TestGenericManager_GetQueues_Success_Nil(t *testing.T) {
 	t.Parallel()
 
-	qm := &GenericManager[int, FakeQueue]{}
+	qm := &GenericManager[string, int, FakeQueue]{}
 	require.Nil(t, qm.GetQueues(), "returned queues should be nil")
 }
 
@@ -128,7 +128,7 @@ func TestGenericManager_GetQueues_Success_Nil(t *testing.T) {
 func TestGenericManager_Progress_Success(t *testing.T) {
 	t.Parallel()
 
-	qm := NewGenericManager[int, *FakeQueue]()
+	qm := NewGenericManager[string, int, *FakeQueue]()
 	require.NotNil(t, qm.queues, "queue map should not be nil")
 
 	progress := qm.Progress()

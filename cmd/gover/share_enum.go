@@ -81,12 +81,12 @@ func (app *app) Enumerate(ctx context.Context) error {
 		}
 	}
 
-	for sourceName, sourceQueue := range app.queueManager.EnumerationManager.GetQueues() {
-		tasker.Add(func(sourceName string, sourceQueue *queue.EnumerationSourceQueue) func() {
+	for source, sourceQueue := range app.queueManager.EnumerationManager.GetQueues() {
+		tasker.Add(func(source schema.Storage, sourceQueue *queue.EnumerationSourceQueue) func() {
 			return func() {
-				_ = app.processEnumerationQueue(ctx, sourceName, sourceQueue)
+				_ = app.processEnumerationQueue(ctx, source, sourceQueue)
 			}
-		}(sourceName, sourceQueue))
+		}(source, sourceQueue))
 	}
 
 	if err := tasker.LaunchConcAndWait(ctx, runtime.NumCPU()); err != nil {
@@ -101,9 +101,9 @@ func (app *app) Enumerate(ctx context.Context) error {
 // and runs their contained enumeration functions concurrently. This means
 // multiple [schema.Share] on one source [schema.Storage] are read for their
 // [schema.Moveable] at the same time.
-func (app *app) processEnumerationQueue(ctx context.Context, sourceName string, sourceQueue *queue.EnumerationSourceQueue) bool {
+func (app *app) processEnumerationQueue(ctx context.Context, source schema.Storage, sourceQueue *queue.EnumerationSourceQueue) bool {
 	slog.Info("Enumerating shares on source:",
-		"source", sourceName,
+		"source", source.GetName(),
 	)
 
 	if err := sourceQueue.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(enumTask *queue.EnumerationTask) int {
@@ -111,14 +111,14 @@ func (app *app) processEnumerationQueue(ctx context.Context, sourceName string, 
 	}); err != nil {
 		slog.Warn("Skipped enumerating shares on source due to failure:",
 			"err", err,
-			"source", sourceName,
+			"source", source.GetName(),
 		)
 
 		return false
 	}
 
 	slog.Info("Enumerating shares on source done:",
-		"share", sourceName,
+		"share", source.GetName(),
 	)
 
 	return true

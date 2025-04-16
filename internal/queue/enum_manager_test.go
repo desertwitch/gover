@@ -35,10 +35,7 @@ func TestEnumerationManagerEnqueue_Success(t *testing.T) {
 	share := schema.NewMockShare(t)
 
 	storage1 := schema.NewMockStorage(t)
-	storage1.EXPECT().GetName().Return("storage1")
-
 	storage2 := schema.NewMockStorage(t)
-	storage2.EXPECT().GetName().Return("storage2")
 
 	task1 := &EnumerationTask{
 		Share:    share,
@@ -62,11 +59,11 @@ func TestEnumerationManagerEnqueue_Success(t *testing.T) {
 
 	assert.Len(t, manager.GetQueues(), 2, "Manager should have 2 queues (one for each unique storage)")
 
-	storage1Queue, exists := manager.GenericManager.queues["storage1"]
+	storage1Queue, exists := manager.GenericManager.queues[storage1]
 	require.True(t, exists, "A queue for 'storage1' should exist")
 	assert.Len(t, storage1Queue.items, 2, "Queue for 'storage1' should have 2 tasks")
 
-	storage2Queue, exists := manager.GenericManager.queues["storage2"]
+	storage2Queue, exists := manager.GenericManager.queues[storage2]
 	require.True(t, exists, "A queue for 'storage2' should exist")
 	assert.Len(t, storage2Queue.items, 1, "Queue for 'storage2' should have 2 tasks")
 

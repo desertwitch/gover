@@ -1,5 +1,7 @@
 package queue
 
+import "github.com/desertwitch/gover/internal/schema"
+
 // EnumerationManager is a queue manager for enumeration operations. It is used
 // to manage a number of different [EnumerationSourceQueue] that are each
 // independent and bucketized by their source storage name.
@@ -9,13 +11,13 @@ package queue
 //
 // The items contained within [EnumerationSourceQueue] are [EnumerationTask].
 type EnumerationManager struct {
-	*GenericManager[*EnumerationTask, *EnumerationSourceQueue]
+	*GenericManager[schema.Storage, *EnumerationTask, *EnumerationSourceQueue]
 }
 
 // NewEnumerationManager returns a pointer to a new [EnumerationManager].
 func NewEnumerationManager() *EnumerationManager {
 	return &EnumerationManager{
-		GenericManager: NewGenericManager[*EnumerationTask, *EnumerationSourceQueue](),
+		GenericManager: NewGenericManager[schema.Storage, *EnumerationTask, *EnumerationSourceQueue](),
 	}
 }
 
@@ -32,8 +34,8 @@ func (m *EnumerationManager) Progress() Progress {
 // name.
 func (m *EnumerationManager) Enqueue(items ...*EnumerationTask) {
 	for _, item := range items {
-		m.GenericManager.Enqueue(item, func(et *EnumerationTask) string {
-			return et.Source.GetName()
+		m.GenericManager.Enqueue(item, func(et *EnumerationTask) schema.Storage {
+			return et.Source
 		}, NewEnumerationSourceQueue)
 	}
 }

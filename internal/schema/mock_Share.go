@@ -293,6 +293,53 @@ func (_c *MockShare_GetName_Call) RunAndReturn(run func() string) *MockShare_Get
 	return _c
 }
 
+// GetPipeline provides a mock function with no fields
+func (_m *MockShare) GetPipeline() Pipeline {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPipeline")
+	}
+
+	var r0 Pipeline
+	if rf, ok := ret.Get(0).(func() Pipeline); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// MockShare_GetPipeline_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPipeline'
+type MockShare_GetPipeline_Call struct {
+	*mock.Call
+}
+
+// GetPipeline is a helper method to define mock.On call
+func (_e *MockShare_Expecter) GetPipeline() *MockShare_GetPipeline_Call {
+	return &MockShare_GetPipeline_Call{Call: _e.mock.On("GetPipeline")}
+}
+
+func (_c *MockShare_GetPipeline_Call) Run(run func()) *MockShare_GetPipeline_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockShare_GetPipeline_Call) Return(_a0 Pipeline) *MockShare_GetPipeline_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockShare_GetPipeline_Call) RunAndReturn(run func() Pipeline) *MockShare_GetPipeline_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSpaceFloor provides a mock function with no fields
 func (_m *MockShare) GetSpaceFloor() uint64 {
 	ret := _m.Called()

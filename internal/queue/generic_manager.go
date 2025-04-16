@@ -6,31 +6,31 @@ import (
 )
 
 // GenericQueueType defines methods that a managed queue needs to have.
-type GenericQueueType[E comparable] interface {
-	Enqueue(items ...E)
-	GetSuccessful() []E
+type GenericQueueType[V comparable] interface {
+	Enqueue(items ...V)
+	GetSuccessful() []V
 	Progress() Progress
 }
 
 // GenericManager is a generic queue manager for queues of [GenericQueueType].
-type GenericManager[E comparable, T GenericQueueType[E]] struct {
+type GenericManager[K comparable, V comparable, Q GenericQueueType[V]] struct {
 	sync.RWMutex
-	queues map[string]T
+	queues map[K]Q
 }
 
 // NewGenericManager returns a pointer to a new [GenericManager].
-func NewGenericManager[E comparable, T GenericQueueType[E]]() *GenericManager[E, T] {
-	return &GenericManager[E, T]{
-		queues: make(map[string]T),
+func NewGenericManager[K comparable, V comparable, Q GenericQueueType[V]]() *GenericManager[K, V, Q] {
+	return &GenericManager[K, V, Q]{
+		queues: make(map[K]Q),
 	}
 }
 
 // GetSuccessful returns a slice of all queues successfully processed items.
-func (m *GenericManager[E, T]) GetSuccessful() []E {
+func (m *GenericManager[K, V, Q]) GetSuccessful() []V {
 	m.RLock()
 	defer m.RUnlock()
 
-	var result []E
+	var result []V
 	for _, q := range m.queues {
 		result = append(result, q.GetSuccessful()...)
 	}
@@ -40,7 +40,7 @@ func (m *GenericManager[E, T]) GetSuccessful() []E {
 
 // Enqueue bucketizes items into queues according to a getKeyFunc, creating new
 // queues as required using a newQueueFunc.
-func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQueueFunc func() T) {
+func (m *GenericManager[K, V, Q]) Enqueue(item V, getKeyFunc func(V) K, newQueueFunc func() Q) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -56,7 +56,7 @@ func (m *GenericManager[E, T]) Enqueue(item E, getKeyFunc func(E) string, newQue
 
 // GetQueues returns a copy of the internal map holding pointers to all managed
 // queues.
-func (m *GenericManager[E, T]) GetQueues() map[string]T {
+func (m *GenericManager[K, V, Q]) GetQueues() map[K]Q {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -64,7 +64,7 @@ func (m *GenericManager[E, T]) GetQueues() map[string]T {
 		return nil
 	}
 
-	queues := make(map[string]T)
+	queues := make(map[K]Q)
 
 	for k, v := range m.queues {
 		queues[k] = v
@@ -74,7 +74,7 @@ func (m *GenericManager[E, T]) GetQueues() map[string]T {
 }
 
 // Progress returns the [Progress] for the [GenericManager].
-func (m *GenericManager[E, T]) Progress() Progress { //nolint:funlen
+func (m *GenericManager[K, V, Q]) Progress() Progress { //nolint:funlen
 	m.RLock()
 	defer m.RUnlock()
 

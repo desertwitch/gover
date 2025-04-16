@@ -13,13 +13,13 @@ import (
 //
 // The items contained within [EvaluationShareQueue] are [schema.Moveable].
 type EvaluationManager struct {
-	*GenericManager[*schema.Moveable, *EvaluationShareQueue]
+	*GenericManager[schema.Share, *schema.Moveable, *EvaluationShareQueue]
 }
 
 // NewEvaluationManager returns a pointer to a new [EvaluationManager].
 func NewEvaluationManager() *EvaluationManager {
 	return &EvaluationManager{
-		GenericManager: NewGenericManager[*schema.Moveable, *EvaluationShareQueue](),
+		GenericManager: NewGenericManager[schema.Share, *schema.Moveable, *EvaluationShareQueue](),
 	}
 }
 
@@ -35,8 +35,8 @@ func (m *EvaluationManager) Progress() Progress {
 // managed by [EvaluationManager], based on their respective shares names.
 func (m *EvaluationManager) Enqueue(items ...*schema.Moveable) {
 	for _, item := range items {
-		m.GenericManager.Enqueue(item, func(m *schema.Moveable) string {
-			return m.Share.GetName()
+		m.GenericManager.Enqueue(item, func(m *schema.Moveable) schema.Share {
+			return m.Share
 		}, NewEvaluationShareQueue)
 	}
 }

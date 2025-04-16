@@ -50,13 +50,8 @@ func TestTeaUI_Integration(t *testing.T) {
 	handler.LogWriter = NewTeaLogWriter(handler.program)
 
 	share1 := schema.NewMockShare(t)
-	share1.On("GetName").Return("share1")
-
 	share2 := schema.NewMockShare(t)
-	share2.On("GetName").Return("share2")
-
 	share3 := schema.NewMockShare(t)
-	share3.On("GetName").Return("share3")
 
 	go func() {
 		// Simulate some progress work for the UI to render.

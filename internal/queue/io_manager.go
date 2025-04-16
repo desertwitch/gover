@@ -19,13 +19,13 @@ import (
 //
 // The items contained within [IOTargetQueue] are [schema.Moveable].
 type IOManager struct {
-	*GenericManager[*schema.Moveable, *IOTargetQueue]
+	*GenericManager[schema.Storage, *schema.Moveable, *IOTargetQueue]
 }
 
 // NewIOManager returns a pointer to a new [IOManager].
 func NewIOManager() *IOManager {
 	return &IOManager{
-		GenericManager: NewGenericManager[*schema.Moveable, *IOTargetQueue](),
+		GenericManager: NewGenericManager[schema.Storage, *schema.Moveable, *IOTargetQueue](),
 	}
 }
 
@@ -33,8 +33,8 @@ func NewIOManager() *IOManager {
 // managed by [IOManager], based on their respective target storage name.
 func (m *IOManager) Enqueue(items ...*schema.Moveable) {
 	for _, item := range items {
-		m.GenericManager.Enqueue(item, func(m *schema.Moveable) string {
-			return m.Dest.GetName()
+		m.GenericManager.Enqueue(item, func(m *schema.Moveable) schema.Storage {
+			return m.Dest
 		}, NewIOTargetQueue)
 	}
 }

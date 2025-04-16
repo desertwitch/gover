@@ -25,10 +25,7 @@ func TestIOManagerEnqueue_Success(t *testing.T) {
 	manager := NewIOManager()
 
 	dest1 := schema.NewMockStorage(t)
-	dest1.EXPECT().GetName().Return("dest1")
-
 	dest2 := schema.NewMockStorage(t)
-	dest2.EXPECT().GetName().Return("dest2")
 
 	// Create test Moveables with different target storages
 	moveable1 := &schema.Moveable{
@@ -47,11 +44,11 @@ func TestIOManagerEnqueue_Success(t *testing.T) {
 
 	assert.Len(t, manager.queues, 2, "Manager should have 2 queues (one for each unique destination)")
 
-	dest1Queue, exists := manager.queues["dest1"]
+	dest1Queue, exists := manager.queues[dest1]
 	require.True(t, exists, "A queue for 'dest1' should exist")
 	assert.Len(t, dest1Queue.items, 2, "Queue for 'dest1' should have 2 moveables")
 
-	dest2Queue, exists := manager.queues["dest2"]
+	dest2Queue, exists := manager.queues[dest2]
 	require.True(t, exists, "A queue for 'dest2' should exist")
 	assert.Len(t, dest2Queue.items, 1, "Queue for 'dest2' should have 1 moveables")
 
@@ -78,13 +75,8 @@ func TestIOManagerProgress_Success(t *testing.T) {
 	manager := NewIOManager()
 
 	dest1 := schema.NewMockStorage(t)
-	dest1.EXPECT().GetName().Return("dest1")
-
 	dest2 := schema.NewMockStorage(t)
-	dest2.EXPECT().GetName().Return("dest2")
-
 	dest3 := schema.NewMockStorage(t)
-	dest3.EXPECT().GetName().Return("dest3")
 
 	moveable1 := &schema.Moveable{
 		Dest: dest1,
@@ -103,9 +95,9 @@ func TestIOManagerProgress_Success(t *testing.T) {
 	queues := manager.GetQueues()
 	require.Len(t, queues, 3, "should have 3 queues")
 
-	dest1Queue := queues["dest1"]
-	dest2Queue := queues["dest2"]
-	dest3Queue := queues["dest3"]
+	dest1Queue := queues[dest1]
+	dest2Queue := queues[dest2]
+	dest3Queue := queues[dest3]
 
 	item, ok := dest1Queue.Dequeue()
 	assert.True(t, ok)

@@ -30,3 +30,34 @@ func (q *EvaluationShareQueue) Progress() Progress {
 
 	return qProgress
 }
+
+// PreProcess runs a [schema.Pipeline]'s pre-processors on all yet unprocessed
+// queue items.
+//
+// Sorting functions should not be part of pre-processing, as order during
+// subsequent concurrent operations cannot be guaranteed. Sorting functions
+// should be used as post-processing functions instead.
+func (q *EvaluationShareQueue) PreProcess(p schema.Pipeline) bool {
+	if moveables, ok := p.PreProcess(q.items); ok {
+		q.items = moveables
+
+		return true
+	}
+
+	return false
+}
+
+// PostProcess runs a [schema.Pipeline]'s post-processors on all successful
+// queue items.
+//
+// Post-processing functions are ideal for sorting, as the order within a share
+// is maintained when the [Moveable] are passed to the respective IO queues.
+func (q *EvaluationShareQueue) PostProcess(p schema.Pipeline) bool {
+	if moveables, ok := p.PostProcess(q.success); ok {
+		q.success = moveables
+
+		return true
+	}
+
+	return false
+}

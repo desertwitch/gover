@@ -18,13 +18,13 @@ import (
 func (app *app) Evaluate(ctx context.Context) error {
 	tasker := queue.NewTaskManager()
 
-	for shareName, shareQueue := range app.queueManager.EvaluationManager.GetQueues() {
+	for share, shareQueue := range app.queueManager.EvaluationManager.GetQueues() {
 		tasker.Add(
-			func(shareName string, shareQueue *queue.EvaluationShareQueue) func() {
+			func(share schema.Share, shareQueue *queue.EvaluationShareQueue) func() {
 				return func() {
-					_ = app.processEvaluationQueue(ctx, shareName, shareQueue)
+					_ = app.processEvaluationQueue(ctx, share, shareQueue)
 				}
-			}(shareName, shareQueue),
+			}(share, shareQueue),
 		)
 	}
 
@@ -37,22 +37,22 @@ func (app *app) Evaluate(ctx context.Context) error {
 
 // processEvaluationQueue processes an [queue.EvaluationShareQueue]'s items
 // (which are [schema.Moveable] of one specific [schema.Share]).
-func (app *app) processEvaluationQueue(ctx context.Context, shareName string, shareQueue *queue.EvaluationShareQueue) bool {
+func (app *app) processEvaluationQueue(ctx context.Context, share schema.Share, shareQueue *queue.EvaluationShareQueue) bool {
 	slog.Info("Evaluating share:",
-		"share", shareName,
+		"share", share.GetName(),
 	)
 
-	if err := app.evaluateToIO(ctx, shareQueue); err != nil {
+	if err := app.evaluateToIO(ctx, share, shareQueue); err != nil {
 		slog.Warn("Skipped evaluating share due to failure:",
 			"err", err,
-			"share", shareName,
+			"share", share.GetName(),
 		)
 
 		return false
 	}
 
 	slog.Info("Evaluating share done:",
-		"share", shareName,
+		"share", share.GetName(),
 	)
 
 	return true
@@ -62,8 +62,16 @@ func (app *app) processEvaluationQueue(ctx context.Context, shareName string, sh
 // processes items of the [queue.EvaluationShareQueue] concurrently, meaning
 // that multiple [schema.Moveable] of one specific [schema.Share] are processed
 // at the same time.
-func (app *app) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue) error {
+func (app *app) evaluateToIO(ctx context.Context, share schema.Share, q *queue.EvaluationShareQueue) error {
+	if success := q.PreProcess(share.GetPipeline()); !success {
+		return fmt.Errorf("(app-eval) %w", ErrEvalPreProcFailed)
+	}
+
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
+		if success := m.Share.GetPipeline().Process(m); !success {
+			return queue.DecisionSkipped
+		}
+
 		if m.Dest == nil {
 			if success := app.allocHandler.AllocateArrayDestination(m); !success {
 				return queue.DecisionSkipped
@@ -81,6 +89,10 @@ func (app *app) evaluateToIO(ctx context.Context, q *queue.EvaluationShareQueue)
 		return queue.DecisionSuccess
 	}); err != nil {
 		return fmt.Errorf("(app-eval) %w", err)
+	}
+
+	if success := q.PostProcess(share.GetPipeline()); !success {
+		return fmt.Errorf("(app-eval) %w", ErrEvalPostProcFailed)
 	}
 
 	app.queueManager.IOManager.Enqueue(q.GetSuccessful()...)
