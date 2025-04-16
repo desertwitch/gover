@@ -32,7 +32,7 @@ func (p *Pipeline) AddPostProcess(bp schema.BatchProcessor) schema.Pipeline { //
 	return p
 }
 
-// Process sequentially processes all previously added [schema.Processor].
+// Process sequentially runs all previously added [schema.Processor].
 func (p *Pipeline) Process(m *schema.Moveable) bool {
 	for _, fn := range p.mProcessors {
 		if ok := fn(m); !ok {
@@ -43,8 +43,8 @@ func (p *Pipeline) Process(m *schema.Moveable) bool {
 	return true
 }
 
-// PreProcess sequentially processes all previously added
-// [schema.BatchProcessor] pre-processors.
+// PreProcess sequentially runs all previously added [schema.BatchProcessor]
+// pre-processors.
 func (p *Pipeline) PreProcess(moveables []*schema.Moveable) ([]*schema.Moveable, bool) {
 	movbls := make([]*schema.Moveable, len(moveables))
 	copy(movbls, moveables)
@@ -61,8 +61,8 @@ func (p *Pipeline) PreProcess(moveables []*schema.Moveable) ([]*schema.Moveable,
 	return movbls, true
 }
 
-// PostProcess sequentially processes all previously added
-// [schema.BatchProcessor] post-processors.
+// PostProcess sequentially runs all previously added [schema.BatchProcessor]
+// post-processors.
 func (p *Pipeline) PostProcess(moveables []*schema.Moveable) ([]*schema.Moveable, bool) {
 	movbls := make([]*schema.Moveable, len(moveables))
 	copy(movbls, moveables)
