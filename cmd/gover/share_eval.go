@@ -63,13 +63,17 @@ func (app *app) processEvaluationQueue(ctx context.Context, share schema.Share, 
 // that multiple [schema.Moveable] of one specific [schema.Share] are processed
 // at the same time.
 func (app *app) evaluateToIO(ctx context.Context, share schema.Share, q *queue.EvaluationShareQueue) error {
-	if success := q.PreProcess(share.GetPipeline()); !success {
-		return fmt.Errorf("(app-eval) %w", ErrEvalPreProcFailed)
+	if pipeline, exists := app.config.Pipelines.EvaluationPipelines[share.GetName()]; exists {
+		if success := q.PreProcess(pipeline); !success {
+			return fmt.Errorf("(app-eval) %w", ErrPipePreProcFailed)
+		}
 	}
 
 	if err := q.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(m *schema.Moveable) int {
-		if success := m.Share.GetPipeline().Process(m); !success {
-			return queue.DecisionSkipped
+		if pipeline, exists := app.config.Pipelines.EvaluationPipelines[share.GetName()]; exists {
+			if success := pipeline.Process(m); !success {
+				return queue.DecisionSkipped
+			}
 		}
 
 		if m.Dest == nil {
@@ -91,8 +95,10 @@ func (app *app) evaluateToIO(ctx context.Context, share schema.Share, q *queue.E
 		return fmt.Errorf("(app-eval) %w", err)
 	}
 
-	if success := q.PostProcess(share.GetPipeline()); !success {
-		return fmt.Errorf("(app-eval) %w", ErrEvalPostProcFailed)
+	if pipeline, exists := app.config.Pipelines.EvaluationPipelines[share.GetName()]; exists {
+		if success := q.PostProcess(pipeline); !success {
+			return fmt.Errorf("(app-eval) %w", ErrPipePostProcFailed)
+		}
 	}
 
 	app.queueManager.IOManager.Enqueue(q.GetSuccessful()...)

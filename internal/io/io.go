@@ -48,6 +48,8 @@ type unixProvider interface {
 type ioTargetQueue interface {
 	AddBytesTransfered(bytes uint64)
 	DequeueAndProcess(ctx context.Context, processFunc func(*schema.Moveable) int) error
+	PreProcess(p schema.Pipeline[*schema.Moveable]) bool
+	PostProcess(p schema.Pipeline[*schema.Moveable]) bool
 }
 
 // fsElement defines the methods any filesystem element needs to have for IO
@@ -83,7 +85,12 @@ func NewHandler(fsHandler fsProvider, osHandler osProvider, unixHandler unixProv
 // This method does not concurrently operate within a single [ioTargetQueue].
 // Hence this function is usually called on multiple [ioTargetQueue]
 // concurrently, but processing each respective [schema.Storage] in sequence.
-func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool {
+func (i *Handler) ProcessTargetQueue(
+	ctx context.Context,
+	pipelines map[string]schema.Pipeline[*schema.Moveable],
+	target schema.Storage,
+	targetQueue ioTargetQueue,
+) bool {
 	batch := &ioReport{}
 
 	defer func() {
@@ -91,8 +98,24 @@ func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool 
 		i.cleanDirectoryStructure(batch)
 	}()
 
-	if err := q.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
+	if pipeline, exists := pipelines[target.GetName()]; exists {
+		if success := targetQueue.PreProcess(pipeline); !success {
+			slog.Warn("Skipped target storage: pre-processing pipeline failure",
+				"target", target.GetName(),
+			)
+
+			return false
+		}
+	}
+
+	if err := targetQueue.DequeueAndProcess(ctx, func(m *schema.Moveable) int {
 		job := &ioReport{}
+
+		if pipeline, exists := pipelines[target.GetName()]; exists {
+			if success := pipeline.Process(m); !success {
+				return queue.DecisionSkipped
+			}
+		}
 
 		if err := i.processElement(ctx, m, job); err != nil {
 			return queue.DecisionSkipped
@@ -111,11 +134,21 @@ func (i *Handler) ProcessTargetQueue(ctx context.Context, q ioTargetQueue) bool 
 		}
 
 		mergeIOReports(batch, job)
-		q.AddBytesTransfered(m.Metadata.Size)
+		targetQueue.AddBytesTransfered(m.Metadata.Size)
 
 		return queue.DecisionSuccess
 	}); err != nil {
 		return false
+	}
+
+	if pipeline, exists := pipelines[target.GetName()]; exists {
+		if success := targetQueue.PostProcess(pipeline); !success {
+			slog.Warn("Partial failure for target storage: post-processing pipeline failure",
+				"target", target.GetName(),
+			)
+
+			return false
+		}
 	}
 
 	return true

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/desertwitch/gover/internal/schema"
 )
 
 const (
@@ -301,4 +303,32 @@ LOOP:
 	}
 
 	return nil
+}
+
+// PreProcess runs a [schema.Pipeline]'s contained pre-processors on all yet
+// unprocessed queue items.
+//
+// If the queue is being operated on concurrently, sorting functions should not
+// be used as pre-processors. Instead, such functions should be post-processors
+// instead to guarantee that the order is preserved at the end of the queue.
+func (q *GenericQueue[V]) PreProcess(p schema.Pipeline[V]) bool {
+	if items, ok := p.PreProcess(q.items); ok {
+		q.items = items
+
+		return true
+	}
+
+	return false
+}
+
+// PostProcess runs a [schema.Pipeline]'s contained post-processors on all
+// successfully processed queue items.
+func (q *GenericQueue[V]) PostProcess(p schema.Pipeline[V]) bool {
+	if successitems, ok := p.PostProcess(q.success); ok {
+		q.success = successitems
+
+		return true
+	}
+
+	return false
 }

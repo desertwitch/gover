@@ -106,7 +106,23 @@ func (app *app) processEnumerationQueue(ctx context.Context, source schema.Stora
 		"source", source.GetName(),
 	)
 
+	if pipeline, exists := app.config.Pipelines.EnumerationPipelines[source.GetName()]; exists {
+		if success := sourceQueue.PreProcess(pipeline); !success {
+			slog.Warn("Skipped enumerating shares on source due to pre-processing pipeline failure:",
+				"source", source.GetName(),
+			)
+
+			return false
+		}
+	}
+
 	if err := sourceQueue.DequeueAndProcessConc(ctx, runtime.NumCPU(), func(enumTask *queue.EnumerationTask) int {
+		if pipeline, exists := app.config.Pipelines.EnumerationPipelines[source.GetName()]; exists {
+			if success := pipeline.Process(enumTask); !success {
+				return queue.DecisionSkipped
+			}
+		}
+
 		return enumTask.Run()
 	}); err != nil {
 		slog.Warn("Skipped enumerating shares on source due to failure:",
@@ -115,6 +131,16 @@ func (app *app) processEnumerationQueue(ctx context.Context, source schema.Stora
 		)
 
 		return false
+	}
+
+	if pipeline, exists := app.config.Pipelines.EnumerationPipelines[source.GetName()]; exists {
+		if success := sourceQueue.PostProcess(pipeline); !success {
+			slog.Warn("Skipped enumerating shares on source due to post-processing pipeline failure:",
+				"source", source.GetName(),
+			)
+
+			return false
+		}
 	}
 
 	slog.Info("Enumerating shares on source done:",

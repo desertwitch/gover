@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/desertwitch/gover/internal/allocation"
+	"github.com/desertwitch/gover/internal/configuration"
 	"github.com/desertwitch/gover/internal/filesystem"
 	"github.com/desertwitch/gover/internal/io"
 	"github.com/desertwitch/gover/internal/pathing"
@@ -15,6 +16,8 @@ import (
 
 // app is the principal implementation of the application.
 type app struct {
+	config *configuration.AppConfiguration
+
 	// shares is a map of all [schema.Share] that will be checked.
 	shares map[string]schema.Share // map[shareName]schema.Share
 
@@ -38,6 +41,7 @@ func newApp(shares map[string]schema.Share,
 	uiHandler *ui.Handler,
 ) *app {
 	return &app{
+		config:         configuration.NewAppConfiguration(),
 		shares:         shares,
 		queueManager:   queueManager,
 		fsHandler:      fsHandler,

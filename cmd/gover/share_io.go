@@ -18,11 +18,11 @@ func (app *app) IO(ctx context.Context) error {
 
 	queues := app.queueManager.IOManager.GetQueues()
 
-	for _, targetQueue := range queues {
+	for target, targetQueue := range queues {
 		tasker.Add(
 			func(targetQueue *queue.IOTargetQueue) func() {
 				return func() {
-					_ = app.ioHandler.ProcessTargetQueue(ctx, targetQueue)
+					_ = app.ioHandler.ProcessTargetQueue(ctx, app.config.Pipelines.IOPipelines, target, targetQueue)
 				}
 			}(targetQueue),
 		)

@@ -31,5 +31,4 @@ type Share interface {
 	GetSpaceFloor() uint64
 	GetDisableCOW() bool
 	GetIncludedDisks() map[string]Disk
-	GetPipeline() Pipeline
 }

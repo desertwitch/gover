@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/desertwitch/gover/internal/processors"
 	"github.com/desertwitch/gover/internal/schema"
 	"github.com/desertwitch/gover/internal/unraid"
 )
@@ -59,11 +58,4 @@ func (s *shareAdapter) GetIncludedDisks() map[string]schema.Disk {
 	}
 
 	return result
-}
-
-// GetPipeline returns the [schema.Pipeline] for the share.
-func (s *shareAdapter) GetPipeline() schema.Pipeline { //nolint:ireturn
-	pipeline := &processors.Pipeline{}
-
-	return pipeline
 }
