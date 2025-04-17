@@ -17,7 +17,8 @@ type Processor[T any] func(item T) bool
 // be returned through the processor itself.
 type BatchProcessor[T any] func(items []T) ([]T, bool)
 
-// Pipeline describes a structure that holds and executes [Processor] functions.
+// Pipeline describes a structure that holds and executes [Processor] processor
+// and [BatchProcessor] pre-/post-processor functions.
 type Pipeline[T any] interface {
 	// AddPreProcess adds a [BatchProcessor] pre-processor to the pipeline.
 	AddPreProcess(processor BatchProcessor[T]) Pipeline[T]

@@ -2,15 +2,14 @@ package processors
 
 import "github.com/desertwitch/gover/internal/schema"
 
-// GenericPipeline is the principal generic implementation of a
-// [schema.Pipeline].
+// GenericPipeline is the principal implementation of a [schema.Pipeline].
 type GenericPipeline[T any] struct {
 	batchPreProcessors  []schema.BatchProcessor[T]
 	itemProcessors      []schema.Processor[T]
 	batchPostProcessors []schema.BatchProcessor[T]
 }
 
-// Add takes a [schema.Processor] and adds it to the pipeline.
+// Add takes a [schema.Processor] and adds it to the processing pipeline.
 func (p *GenericPipeline[T]) Add(processor schema.Processor[T]) schema.Pipeline[T] {
 	p.itemProcessors = append(p.itemProcessors, processor)
 
@@ -18,7 +17,7 @@ func (p *GenericPipeline[T]) Add(processor schema.Processor[T]) schema.Pipeline[
 }
 
 // AddPreProcess takes a [schema.BatchProcessor] pre-processor and adds it to
-// the pipeline.
+// the pre-processing pipeline.
 func (p *GenericPipeline[T]) AddPreProcess(processor schema.BatchProcessor[T]) schema.Pipeline[T] {
 	p.batchPreProcessors = append(p.batchPreProcessors, processor)
 
@@ -26,14 +25,14 @@ func (p *GenericPipeline[T]) AddPreProcess(processor schema.BatchProcessor[T]) s
 }
 
 // AddPostProcess takes a [schema.BatchProcessor] post-processor and adds it to
-// the pipeline.
+// the post-processing pipeline.
 func (p *GenericPipeline[T]) AddPostProcess(processor schema.BatchProcessor[T]) schema.Pipeline[T] {
 	p.batchPostProcessors = append(p.batchPostProcessors, processor)
 
 	return p
 }
 
-// Process sequentially runs all previously added [schema.Processor].
+// Process sequentially runs all previously added [schema.Processor] processors.
 func (p *GenericPipeline[T]) Process(item T) bool {
 	for _, fn := range p.itemProcessors {
 		if success := fn(item); !success {
