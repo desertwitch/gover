@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Logo" src="gover.png" width="320">
+    <img alt="Logo" src="gover.png" width="260">
     <h1>gover</h1>
     <p>An intelligent, multi-threaded mover rewrite in Go.</p>
 </div>
