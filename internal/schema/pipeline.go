@@ -6,11 +6,11 @@ package schema
 // should be made with [Slog] calls, as no error type can be returned through
 // the processor itself.
 //
-// During execution the pipeline will exit on the first failed processor, so
+// During execution the pipeline should exit on the first failed processor, so
 // "false" should be used only where pipeline failure is intended. The pipeline
-// itself will not be context-aware, rather the Processor can capture a context
-// and handle itself its cancellation by returning "false" where and when early
-// exit from the overall pipeline is warranted and wanted.
+// itself should not be context-aware, rather the Processor can capture a
+// context and handle itself its cancellation by returning "false" where and
+// when early exit from the overall pipeline is warranted and wanted.
 type Processor[T any] func(item T) bool
 
 // BatchProcessor is a function that processes a slice of [T] as part of a
@@ -22,9 +22,9 @@ type Processor[T any] func(item T) bool
 // needs to be aware of should be made with [Slog] calls, as no error type can
 // be returned through the processor itself.
 //
-// During execution the pipeline will exit on the first failed processor, so
+// During execution the pipeline should exit on the first failed processor, so
 // "false" should be used only where pipeline failure is intended. The pipeline
-// itself will not be context-aware, rather the BatchProcessor can capture a
+// itself should not be context-aware, rather the BatchProcessor can capture a
 // context and handle itself its cancellation by returning "false" where and
 // when early exit from the overall pipeline is warranted and wanted.
 type BatchProcessor[T any] func(items []T) ([]T, bool)
