@@ -13,6 +13,8 @@
     <img alt="Coverage" src="https://github.com/desertwitch/gover/actions/workflows/golang-coverage.yml/badge.svg">
     <img alt="Build" src="https://github.com/desertwitch/gover/actions/workflows/golang-build.yml/badge.svg">
     <img alt="Build-Debug" src="https://github.com/desertwitch/gover/actions/workflows/golang-build-debug.yml/badge.svg">
+    <br />
+    <b>This code is more or less stale in development and not safe for non-testing use.</b>
     
 </div>
 
