@@ -19,4 +19,4 @@
     <b>At present stale due to limited time, but hopefully to be resumed at some point.</b>
     <br />
     Of course, contributions via pull request will still be reviewed (as soon as possible).
-</div><br />
+</div>
