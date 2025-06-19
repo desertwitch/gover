@@ -13,8 +13,10 @@
     <img alt="Coverage" src="https://github.com/desertwitch/gover/actions/workflows/golang-coverage.yml/badge.svg">
     <img alt="Build" src="https://github.com/desertwitch/gover/actions/workflows/golang-build.yml/badge.svg">
     <img alt="Build-Debug" src="https://github.com/desertwitch/gover/actions/workflows/golang-build-debug.yml/badge.svg">
-    <br /><br />
-    <b>This code is in development and not safe for non-testing use.</b>
     <br />
-    At present stale due to limited time, hopefully to be resumed at some point.
+    <b>This code is in development and not safe for non-testing use.</b>
+    <br /><br />
+    <b>At present stale due to limited time, but hopefully to be resumed at some point.</b>
+    <br />
+    Of course, contributions via pull request will still be reviewed (as soon as possible).
 </div><br />
