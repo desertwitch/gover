@@ -43,20 +43,6 @@ func (wr *TeaLogWriter) Stop() {
 	close(wr.doneChan)
 }
 
-// processLogs sends any received logs to the [tea.Program] as [tea.Msg]. The
-// logs are received from the internal buffered channel, filled by
-// [TeaLogWriter.Write].
-func (wr *TeaLogWriter) processLogs() {
-	for {
-		select {
-		case <-wr.doneChan:
-			return
-		case msg := <-wr.logChan:
-			wr.program.Send(msg)
-		}
-	}
-}
-
 // Write receives a byte slice containing a log message from e.g. a
 // [slog.Handler]. It is interally sent into a buffered channel, received by
 // [TeaLogWriter.processLogs].
@@ -69,4 +55,18 @@ func (wr *TeaLogWriter) Write(p []byte) (int, error) {
 	}
 
 	return len(p), nil
+}
+
+// processLogs sends any received logs to the [tea.Program] as [tea.Msg]. The
+// logs are received from the internal buffered channel, filled by
+// [TeaLogWriter.Write].
+func (wr *TeaLogWriter) processLogs() {
+	for {
+		select {
+		case <-wr.doneChan:
+			return
+		case msg := <-wr.logChan:
+			wr.program.Send(msg)
+		}
+	}
 }

@@ -98,7 +98,7 @@ func setupSignalHandlers(cancel context.CancelFunc) {
 		for range sigChan2 {
 			buf := make([]byte, stackTraceBufMax)
 			stacklen := runtime.Stack(buf, true)
-			os.Stderr.Write(buf[:stacklen])
+			_, _ = os.Stderr.Write(buf[:stacklen])
 		}
 	}()
 

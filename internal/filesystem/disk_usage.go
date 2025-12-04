@@ -23,6 +23,7 @@ type unixStatfsProvider interface {
 // DiskUsageCacher caches disk usage information in a thread-safe manner.
 type DiskUsageCacher struct {
 	sync.RWMutex
+
 	unixHandler unixStatfsProvider
 	cache       map[string]*diskUsage
 }
@@ -50,37 +51,6 @@ func NewDiskUsageCacher(ctx context.Context, unixHandler unixStatfsProvider) *Di
 	go cacher.periodicUpdate(ctx)
 
 	return cacher
-}
-
-// getDiskUsageFromOS gets the actual [DiskStats] for a given path from the OS.
-func (c *DiskUsageCacher) getDiskUsageFromOS(path string) (DiskStats, error) {
-	var stat unix.Statfs_t
-	if err := c.unixHandler.Statfs(path, &stat); err != nil {
-		return DiskStats{}, fmt.Errorf("(fs-diskstats) failed to statfs: %w", err)
-	}
-
-	stats := DiskStats{
-		TotalSize: stat.Blocks * handleSize(stat.Bsize),
-		FreeSpace: stat.Bavail * handleSize(stat.Bsize),
-	}
-
-	return stats, nil
-}
-
-// periodicUpdate calls [DiskUsageCacher.Update] at a defined
-// [DiskUsageCacherInterval].
-func (c *DiskUsageCacher) periodicUpdate(ctx context.Context) {
-	ticker := time.NewTicker(DiskUsageCacherInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = c.Update()
-		}
-	}
 }
 
 // Update calls [DiskUsageCacher.getDiskUsageFromOS] on all cached
@@ -148,14 +118,42 @@ func (c *DiskUsageCacher) HasEnoughFreeSpace(s schema.Storage, minFree uint64, f
 		return false, fmt.Errorf("(fs-diskstats-efree) failed to get usage: %w", err)
 	}
 
-	requiredFree := minFree
-	if minFree <= fileSize {
-		requiredFree = fileSize
-	}
+	requiredFree := max(minFree, fileSize)
 
 	if stats.FreeSpace > requiredFree {
 		return true, nil
 	}
 
 	return false, nil
+}
+
+// getDiskUsageFromOS gets the actual [DiskStats] for a given path from the OS.
+func (c *DiskUsageCacher) getDiskUsageFromOS(path string) (DiskStats, error) {
+	var stat unix.Statfs_t
+	if err := c.unixHandler.Statfs(path, &stat); err != nil {
+		return DiskStats{}, fmt.Errorf("(fs-diskstats) failed to statfs: %w", err)
+	}
+
+	stats := DiskStats{
+		TotalSize: stat.Blocks * handleSize(stat.Bsize),
+		FreeSpace: stat.Bavail * handleSize(stat.Bsize),
+	}
+
+	return stats, nil
+}
+
+// periodicUpdate calls [DiskUsageCacher.Update] at a defined
+// [DiskUsageCacherInterval].
+func (c *DiskUsageCacher) periodicUpdate(ctx context.Context) {
+	ticker := time.NewTicker(DiskUsageCacherInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = c.Update()
+		}
+	}
 }

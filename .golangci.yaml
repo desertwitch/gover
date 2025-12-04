@@ -7,9 +7,11 @@ linters:
     - exhaustruct
     - gochecknoglobals
     - goconst
+    - noinlineerr
     - testpackage
     - varnamelen
     - wsl
+    - wsl_v5
   settings:
     cyclop:
       max-complexity: 20
@@ -33,6 +35,7 @@ linters:
       checks:
         - all
         - -S1008
+        - -QF1008
     wrapcheck:
       ignore-sig-regexps:
         - unix.*?\(

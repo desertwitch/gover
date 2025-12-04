@@ -65,6 +65,7 @@ type fsElement interface {
 // [schema.Moveable].
 type Handler struct {
 	sync.Mutex
+
 	fsHandler   fsProvider
 	osHandler   osProvider
 	unixHandler unixProvider

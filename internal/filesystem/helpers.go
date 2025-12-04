@@ -80,10 +80,7 @@ func concFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filt
 
 	ch := make(chan T, len(items))
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		semaphore := make(chan struct{}, maxWorkers)
 
 		for _, item := range items {
@@ -107,7 +104,7 @@ func concFilterSlice[T any](ctx context.Context, maxWorkers int, items []T, filt
 				}
 			}(item)
 		}
-	}()
+	})
 
 	go func() {
 		wg.Wait()

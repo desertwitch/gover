@@ -9,6 +9,7 @@ import (
 // TaskManager is a simple task manager for delayed function execution.
 type TaskManager struct {
 	sync.Mutex
+
 	Tasks []func()
 }
 

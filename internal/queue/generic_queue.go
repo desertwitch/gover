@@ -24,6 +24,7 @@ const (
 // GenericQueue is a generic queue that can hold any comparable type of items.
 type GenericQueue[V comparable] struct {
 	sync.RWMutex
+
 	hasStarted  bool
 	hasFinished bool
 	startTime   time.Time
@@ -207,11 +208,7 @@ func (q *GenericQueue[V]) Progress() Progress {
 // Possible decisions to be returned: [DecisionSuccess], [DecisionSkipped],
 // [DecisionRequeue].
 func (q *GenericQueue[V]) DequeueAndProcess(ctx context.Context, processFunc func(V) int) error {
-	for {
-		if ctx.Err() != nil {
-			break
-		}
-
+	for ctx.Err() != nil {
 		item, ok := q.Dequeue()
 		if !ok {
 			break

@@ -70,10 +70,7 @@ func (s *Share) GetIncludedDisks() map[string]*Disk {
 	}
 
 	disks := make(map[string]*Disk)
-
-	for k, v := range s.IncludedDisks {
-		disks[k] = v
-	}
+	maps.Copy(disks, s.IncludedDisks)
 
 	return disks
 }

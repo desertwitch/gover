@@ -10,6 +10,7 @@ import (
 // multiple [slog.Handler] children for logging to multiple targets.
 type slogManager struct {
 	sync.RWMutex
+
 	handlers map[string]slog.Handler
 	attrs    []slog.Attr
 	groups   []string

@@ -27,6 +27,7 @@ type osReadsProvider interface {
 // without overloading the OS with syscalls.
 type InUseChecker struct {
 	sync.RWMutex
+
 	osHandler  osReadsProvider
 	inUsePaths map[string]struct{}
 	isUpdating atomic.Bool
@@ -58,21 +59,6 @@ func (c *InUseChecker) IsInUse(path string) bool {
 	_, exists := c.inUsePaths[path]
 
 	return exists
-}
-
-// periodicUpdate calls [InUseChecker.Update] every [CheckerInterval].
-func (c *InUseChecker) periodicUpdate(ctx context.Context) {
-	ticker := time.NewTicker(CheckerInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = c.Update()
-		}
-	}
 }
 
 // Update queries the operating system for all in-use paths and stores them in
@@ -121,4 +107,19 @@ func (c *InUseChecker) Update() error {
 	}
 
 	return nil
+}
+
+// periodicUpdate calls [InUseChecker.Update] every [CheckerInterval].
+func (c *InUseChecker) periodicUpdate(ctx context.Context) {
+	ticker := time.NewTicker(CheckerInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = c.Update()
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"maps"
 	"sync"
 	"time"
 )
@@ -15,6 +16,7 @@ type GenericQueueType[V comparable] interface {
 // GenericManager is a generic queue manager for queues of [GenericQueueType].
 type GenericManager[K comparable, V comparable, Q GenericQueueType[V]] struct {
 	sync.RWMutex
+
 	queues map[K]Q
 }
 
@@ -65,16 +67,13 @@ func (m *GenericManager[K, V, Q]) GetQueues() map[K]Q {
 	}
 
 	queues := make(map[K]Q)
-
-	for k, v := range m.queues {
-		queues[k] = v
-	}
+	maps.Copy(queues, m.queues)
 
 	return queues
 }
 
 // Progress returns the [Progress] for the [GenericManager].
-func (m *GenericManager[K, V, Q]) Progress() Progress { //nolint:funlen
+func (m *GenericManager[K, V, Q]) Progress() Progress {
 	m.RLock()
 	defer m.RUnlock()
 
