@@ -3,7 +3,10 @@
 BINARY = gover
 SRC_DIR = ./cmd/gover
 
-VERSION := $(shell git rev-parse --short=7 HEAD)
+VERSION := $(shell \
+  tag=$$(git describe --tags --exact-match 2>/dev/null); \
+  if [ -n "$$tag" ]; then echo $$tag | sed 's/^v//'; \
+  else git rev-parse --short=7 HEAD; fi)
 
 .PHONY: all $(BINARY) check clean clean-mocks debug help info lint mocks test test-coverage vendor
 
@@ -48,7 +51,7 @@ test: ## Runs all written tests for and on the application code
 
 test-coverage: ## Runs all coverage tests for and on the application code
 	@go test -failfast -race -covermode=atomic -coverpkg=./... -coverprofile=coverage.tmp ./... && \
-	grep -v "mock_" coverage.tmp > coverage.txt && \
+	coverage.tmp > coverage.txt && \
 	rm coverage.tmp
 
 vendor: ## Pulls the (remote) dependencies into the local vendor folder
