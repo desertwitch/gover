@@ -5,7 +5,7 @@
 </div>
 
 <div align="center">
-    <img alt="Go Version" src="https://img.shields.io/badge/Go-%3E%3D%201.24.1-%23007d9c">
+    <img alt="Go Version" src="https://img.shields.io/badge/Go-%3E%3D%201.25.5-%23007d9c">
     <img alt="Codecov" src="https://codecov.io/gh/desertwitch/gover/graph/badge.svg?token=RDCMNK8QQB">
     <img alt="Lint" src="https://github.com/desertwitch/gover/actions/workflows/golangci-lint.yml/badge.svg">
     <img alt="Tests" src="https://github.com/desertwitch/gover/actions/workflows/golang-tests.yml/badge.svg">
