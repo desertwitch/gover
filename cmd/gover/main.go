@@ -40,9 +40,7 @@ var (
 	exitCode = 0
 	slogMan  = newSlogManager()
 
-	uiEnabled  = flag.Bool("ui", true, "enable the UI")
-	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	memprofile = flag.String("memprofile", "", "write memory profile to this file")
+	uiEnabled = flag.Bool("ui", true, "enable the UI")
 )
 
 // termLogging enables or disables logs to be sent to the terminal (via
@@ -194,15 +192,6 @@ func main() {
 
 	flag.Parse()
 	setupSignalHandlers(cancel)
-
-	memObserver := newMemoryObserver(ctx)
-	defer memObserver.Stop()
-
-	cpuProfiler := newCPUProfiler(ctx, cpuprofile)
-	defer cpuProfiler.Stop()
-
-	allocProfiler := newAllocProfiler(ctx, memprofile)
-	defer allocProfiler.Stop()
 
 	osProvider := &schema.OS{}
 	unixProvider := &schema.Unix{}
