@@ -1,14 +1,9 @@
-with-expecter: true
-dry-run: false
-mockname: "{{.Mock}}{{.InterfaceName | firstUpper | camelcase}}"
-filename: "mock_{{.InterfaceName}}.go"
-dir: "{{.InterfaceDirRelative}}"
-recursive: true
 all: true
-exported: true
-inpackage: true
-resolve-type-alias: false
-disable-version-string: true
-issue-845-fix: True
+dir: '{{.InterfaceDirRelative}}'
+structname: '{{.Mock}}_{{.InterfaceName}}'
+recursive: true
+template: testify
+template-data:
+  unroll-variadic: true
 packages:
-  github.com/desertwitch/gover/internal:
+  github.com/desertwitch/gover/internal: {}
